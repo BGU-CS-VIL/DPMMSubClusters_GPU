@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <CUDAPropsPath Condition="'$(CUDAPropsPath)'==''">$(VCTargetsPath)\BuildCustomizations</CUDAPropsPath>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{64319136-6363-460C-B55C-AB9520DCD68E}</ProjectGuid>
+    <RootNamespace>DPMMSubClusters</RootNamespace>
+    <ProjectName>DPMMSubClusters</ProjectName>
+    <CudaToolkitCustomDir />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTargetPlatformVersion)'==''">
+    <LatestTargetPlatformVersion>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows', '10.0'))</LatestTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <TargetPlatformVersion>$(WindowsTargetPlatformVersion)</TargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup>
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(CUDAPropsPath)\CUDA 10.2.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IntDir>$(Platform)/$(Configuration)/</IntDir>
+    <IncludePath>$(ProjectDir)\inc;$(IncludePath)</IncludePath>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>./;$(CudaToolkitDir)/include;$(CudaToolkitIncludeDir);cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\common\inc;opencv</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cublas.lib;cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CudaToolkitLibDir);$(MSBuildProjectDirectory)\opencv</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)/DPMMSubClusters.exe</OutputFile>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;</CodeGeneration>
+      <AdditionalOptions>-Xcompiler "/wd 4819" %(AdditionalOptions)</AdditionalOptions>
+      <Include>./;../../common/inc</Include>
+      <Defines>WIN32</Defines>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OpenMPSupport>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <CudaCompile>
+      <Runtime>MTd</Runtime>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
+    <PreLinkEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </Command>
+    </PreLinkEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+      <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</OpenMPSupport>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <CudaCompile>
+      <Runtime>MT</Runtime>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
+    <PreLinkEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </Command>
+    </PreLinkEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+    <Bscmake>
+      <PreserveSbr Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</PreserveSbr>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="clusterInfo.h" />
+    <ClInclude Include="cudaKernel.cuh" />
+    <ClInclude Include="cudaKernel_gaussian.cuh" />
+    <ClInclude Include="cudaKernel_multinomial.cuh" />
+    <ClInclude Include="data_generators.h" />
+    <ClInclude Include="distribution_sample.h" />
+    <ClInclude Include="distributions_util\dirichlet.h" />
+    <ClInclude Include="distributions_util\pdflib.hpp" />
+    <ClInclude Include="distributions_util\rnglib.hpp" />
+    <ClInclude Include="dp_parallel_sampling.h" />
+    <ClInclude Include="draw.h" />
+    <ClInclude Include="global_params.h" />
+    <ClInclude Include="hyperparams.h" />
+    <ClInclude Include="local_clusters_actions.h" />
+    <ClInclude Include="distributions\mv_gaussian.h" />
+    <ClInclude Include="distributions\multinomial_dist.h" />
+    <ClInclude Include="moduleTypes.h" />
+    <ClInclude Include="module_tests.h" />
+    <ClInclude Include="priors\multinomial_prior.h" />
+    <ClInclude Include="priors\niw.h" />
+    <ClInclude Include="priors\prior.h" />
+    <ClInclude Include="shared_actions.h" />
+    <ClInclude Include="sufficient_statistics.h" />
+    <ClInclude Include="utils.h" />
+    <CudaCompile Include="cudaKernel.cu" />
+    <CudaCompile Include="cudaKernel_gaussian.cu" />
+    <CudaCompile Include="cudaKernel_multinomial.cu" />
+    <CudaCompile Include="DPMMSubClusters.cu" />
+    <ClInclude Include="ds.h" />
+    <ClInclude Include="inc\dynlink_d3d10.h" />
+    <ClInclude Include="inc\dynlink_d3d11.h" />
+    <ClInclude Include="inc\exception.h" />
+    <ClInclude Include="inc\GL\freeglut.h" />
+    <ClInclude Include="inc\GL\freeglut_ext.h" />
+    <ClInclude Include="inc\GL\freeglut_std.h" />
+    <ClInclude Include="inc\GL\glew.h" />
+    <ClInclude Include="inc\GL\glext.h" />
+    <ClInclude Include="inc\GL\glut.h" />
+    <ClInclude Include="inc\GL\glxew.h" />
+    <ClInclude Include="inc\GL\glxext.h" />
+    <ClInclude Include="inc\GL\wglew.h" />
+    <ClInclude Include="inc\GL\wglext.h" />
+    <ClInclude Include="inc\helper_cuda.h" />
+    <ClInclude Include="inc\helper_cuda_drvapi.h" />
+    <ClInclude Include="inc\helper_cusolver.h" />
+    <ClInclude Include="inc\helper_functions.h" />
+    <ClInclude Include="inc\helper_gl.h" />
+    <ClInclude Include="inc\helper_image.h" />
+    <ClInclude Include="inc\helper_math.h" />
+    <ClInclude Include="inc\helper_multiprocess.h" />
+    <ClInclude Include="inc\helper_nvJPEG.hxx" />
+    <ClInclude Include="inc\helper_string.h" />
+    <ClInclude Include="inc\helper_timer.h" />
+    <ClInclude Include="inc\multithreading.h" />
+    <ClInclude Include="inc\nvMath.h" />
+    <ClInclude Include="inc\nvMatrix.h" />
+    <ClInclude Include="inc\nvQuaternion.h" />
+    <ClInclude Include="inc\nvrtc_helper.h" />
+    <ClInclude Include="inc\nvShaderUtils.h" />
+    <ClInclude Include="inc\nvVector.h" />
+    <ClInclude Include="inc\param.h" />
+    <ClInclude Include="inc\paramgl.h" />
+    <ClInclude Include="inc\rendercheck_d3d10.h" />
+    <ClInclude Include="inc\rendercheck_d3d11.h" />
+    <ClInclude Include="inc\rendercheck_d3d9.h" />
+    <ClInclude Include="inc\rendercheck_gl.h" />
+    <ClInclude Include="inc\rendercheck_gles.h" />
+    <ClInclude Include="DPMMSubClusters.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="clusterInfo.cpp" />
+    <ClCompile Include="data_generators.cpp" />
+    <ClCompile Include="distribution_sample.cpp" />
+    <ClCompile Include="distributions_util\logdet.h" />
+    <ClCompile Include="distributions_util\pdflib.cpp" />
+    <ClCompile Include="distributions_util\rnglib.cpp" />
+    <ClCompile Include="dp_parallel_sampling.cpp" />
+    <ClCompile Include="draw.cpp" />
+    <ClCompile Include="global_params.cpp" />
+    <ClCompile Include="hyperparams.cpp" />
+    <ClCompile Include="local_clusters_actions.cpp" />
+    <ClCompile Include="distributions\mv_gaussian.cpp" />
+    <ClCompile Include="distributions\multinomial_dist.cpp" />
+    <ClCompile Include="module_tests.cpp" />
+    <ClCompile Include="priors\multinomial_prior.cpp" />
+    <ClCompile Include="priors\niw.cpp" />
+    <ClCompile Include="priors\prior.cpp" />
+    <ClCompile Include="shared_actions.cpp" />
+    <ClCompile Include="sufficient_statistics.cpp" />
+    <ClCompile Include="utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\DPMMSubClustersTest\mnm_data.npy" />
+    <None Include="opencv\opencv_world343.dll" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(CUDAPropsPath)\CUDA 10.2.targets" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+  </Target>
+</Project>
