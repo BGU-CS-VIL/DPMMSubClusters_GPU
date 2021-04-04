@@ -11,6 +11,7 @@
 
 #include<time.h>
 #include "cudaKernel.cuh"
+#include "distributions/mv_gaussian.h"
 
 // function to define seed
 __global__ void initCurand(curandState *state, unsigned long long seed, int maxIdx) {
@@ -195,12 +196,12 @@ __global__ void sample_log_cat_array_all(curandState *state, int *dev_sample, in
 	}
 }
 
-__global__ void sample_log_cat_array_sub_cluster_all(curandState *state, int *dev_sample, int maxIdx, int num, double *d_log_likelihood_array, int *indices, double *y, int *a, int *b)
+__global__ void sample_log_cat_array_sub_cluster_all(curandState *state, int *dev_sample, int* d_maxIdx, int num, double *d_log_likelihood_array, int *indices, double *y, int *a, int *b)
 {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	if (idx < maxIdx)
+	if (idx < *d_maxIdx)
 	{
-		sample_by_probability(&state[indices[idx]], d_log_likelihood_array, num, maxIdx, idx, &dev_sample[indices[idx]], y, a, b);
+		sample_by_probability(&state[indices[idx]], d_log_likelihood_array, num, *d_maxIdx, idx, &dev_sample[indices[idx]], y, a, b);
 	}
 }
 
@@ -380,11 +381,11 @@ __global__ void create_suff_stats_dict_worker_all(
 	}
 }
 
-__global__ void dcolwise_dot_all_kernel(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r)
+__global__ void dcolwise_dot_all_kernel(int* d_maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int* d_r_offset)
 {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (idx < maxIdx)
+	if (idx < *d_maxIdx)
 	{
 		double sum = 0;
 		for (int i = 0; i < rows; i++)
@@ -392,7 +393,23 @@ __global__ void dcolwise_dot_all_kernel(int maxIdx, int rows, double* d_a, doubl
 			sum += d_a[idx * rows + i] * d_b[idx * rows + i];
 		}
 
-		d_r[idx] = scalar - sum / 2;
+		d_r[idx + *d_r_offset] = scalar - sum / 2;
+	}
+}
+
+__global__ void dcolwise_dot_with_log_kernel(int* d_maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (idx < *d_maxIdx)
+	{
+		double sum = 0;
+		for (int i = 0; i < rows; i++)
+		{
+			sum += d_a[idx * rows + i] * d_b[idx * rows + i];
+		}
+
+		d_r[idx] = scalar - sum / 2 + log(weight);
 	}
 }
 
@@ -428,25 +445,25 @@ __global__ void build_log_likelihood_array_sub_cluster_kernel(int maxIdx, double
 	}
 }
 
-__global__ void build_log_likelihood_array_sub_cluster_kernel_v2(int maxIdx, double* d_rl, double* d_rr, double* d_lr_weights)
+__global__ void build_log_likelihood_array_sub_cluster_kernel_v2(int *d_maxIdx, double* d_r, int* d_r_offset_r, double* d_lr_weights)
 {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (idx < maxIdx)
+	if (idx < *d_maxIdx)
 	{
 		double maxRow;
 		double sum;
 
-		d_rl[idx] += log(d_lr_weights[0]);
-		d_rr[idx] += log(d_lr_weights[1]);
-		maxRow = fmax(d_rl[idx], d_rr[idx]);
+		d_r[idx] += log(d_lr_weights[0]);
+		d_r[idx + *d_r_offset_r] += log(d_lr_weights[1]);
+		maxRow = fmax(d_r[idx], d_r[idx + *d_r_offset_r]);
 
-		d_rl[idx] = exp(d_rl[idx] - maxRow);
-		d_rr[idx] = exp(d_rr[idx] - maxRow);
-		sum = d_rl[idx] + d_rr[idx];
+		d_r[idx] = exp(d_r[idx] - maxRow);
+		d_r[idx + *d_r_offset_r] = exp(d_r[idx + *d_r_offset_r] - maxRow);
+		sum = d_r[idx] + d_r[idx + *d_r_offset_r];
 
-		d_rl[idx] = d_rl[idx] / sum;
-		d_rr[idx] = d_rr[idx] / sum;
+		d_r[idx] = d_r[idx] / sum;
+		d_r[idx + *d_r_offset_r] = d_r[idx + *d_r_offset_r] / sum;
 	}
 }
 
@@ -478,6 +495,27 @@ __global__ void build_log_likelihood_array_kernel(int maxIdx, double* d_log_like
 		{
 			d_log_likelihood_array[IDX2C(idx, j, rows)] = d_log_likelihood_array[IDX2C(idx, j, rows)] / sum;
 		}
+	}
+}
+
+__global__ void update_labels_by_max_index_kernel(double* parr, int* d_labels, int maxIdx, int dim)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	if (idx < maxIdx)
+	{
+		double max = 0;
+		bool first = true;
+		int max_index = 0;
+		for (int i = 0; i < dim; ++i)
+		{
+			if (first || max < parr[IDX2C(idx, i, maxIdx)])
+			{
+				first = false;
+				max = parr[IDX2C(idx, i, maxIdx)];
+				max_index = i;
+			}
+		}
+		d_labels[idx] = max_index + 1;
 	}
 }
 
@@ -533,6 +571,7 @@ int cudaKernel::sample_log_cat_array_sub_cluster(LabelType *indices, int labelsS
 	int *d_a;
 	int *d_b;
 	double* d_lr_weights;
+	int* d_labelsSize;
 	
 	runCuda(cudaMalloc((void**)&d_indices, sizeof(int) * labelsSize));
 	runCuda(cudaMemcpy(d_indices, indices, sizeof(int) * labelsSize, cudaMemcpyHostToDevice));
@@ -549,13 +588,16 @@ int cudaKernel::sample_log_cat_array_sub_cluster(LabelType *indices, int labelsS
 	runCuda(cudaMalloc((void **)&d_a, sizeof(int)*labelsSize*(log_likelihood_array.cols() + 2)));
 	runCuda(cudaMalloc((void **)&d_b, sizeof(int)*labelsSize*(log_likelihood_array.cols() + 2)));
 
+	runCuda(cudaMalloc((void**)&d_labelsSize, sizeof(int)));
+	runCuda(cudaMemcpy(d_labelsSize, &labelsSize, sizeof(int), cudaMemcpyHostToDevice));
+
 	//	int dev = 0;//GPU index. need to loop for all GPUs
 
 	build_log_likelihood_array_sub_cluster_kernel << <blocks_size, threads >> > (log_likelihood_array.rows(), d_log_likelihood_array, d_lr_weights, log_likelihood_array.rows(), log_likelihood_array.cols());
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
 	
-	sample_log_cat_array_sub_cluster_all << <blocks_size, threads >> > (devState, d_sub_labels, labelsSize, log_likelihood_array.cols(), d_log_likelihood_array, d_indices, d_y, d_a, d_b);
+	sample_log_cat_array_sub_cluster_all << <blocks_size, threads >> > (devState, d_sub_labels, d_labelsSize, log_likelihood_array.cols(), d_log_likelihood_array, d_indices, d_y, d_a, d_b);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
 
@@ -566,45 +608,43 @@ int cudaKernel::sample_log_cat_array_sub_cluster(LabelType *indices, int labelsS
 	runCuda(cudaFree(d_y));
 	runCuda(cudaFree(d_a));
 	runCuda(cudaFree(d_b));
+	runCuda(cudaFree(d_labelsSize));
+
 	return 0;
 }
 
-int cudaKernel::sample_log_cat_array_sub_cluster_v2(double* d_r, int* d_indices, int indicesSize, std::vector<double>& lr_weights, cudaStream_t& stream)
+void cudaKernel::sample_log_cat_array_sub_cluster_v2(
+	double* d_r,
+	int* d_r_offset,
+	double* d_y,
+	int* d_a,
+	int* d_b,
+	int* d_indices,
+	int* d_indicesSize,
+	double* d_lr_weights,
+	cudaStream_t& stream)
 {
-	double* d_y;
-	int* d_a;
-	int* d_b;
-	double* d_lr_weights;
-
-	runCuda(cudaMalloc((void**)&d_lr_weights, sizeof(double) * lr_weights.size()));
-	runCuda(cudaMemcpy(d_lr_weights, lr_weights.data(), sizeof(double) * lr_weights.size(), cudaMemcpyHostToDevice));
-
-	dim3 blocks_size = dim3(indicesSize / threads.x + 1);
-
-	//int n = log_likelihood_array.size();
-	//double* d_log_likelihood_array;
-	//runCuda(cudaMalloc((void**)&d_log_likelihood_array, sizeof(double) * n));
-	//runCuda(cudaMemcpy(d_log_likelihood_array, log_likelihood_array.data(), sizeof(double) * n, cudaMemcpyHostToDevice));
-	runCuda(cudaMalloc((void**)&d_y, sizeof(double) * indicesSize * (2 + 2)));
-	runCuda(cudaMalloc((void**)&d_a, sizeof(int) * indicesSize * (2 + 2)));
-	runCuda(cudaMalloc((void**)&d_b, sizeof(int) * indicesSize * (2 + 2)));
-
-	//	int dev = 0;//GPU index. need to loop for all GPUs
-
-	build_log_likelihood_array_sub_cluster_kernel_v2 << <blocks_size, threads, 0, stream >> > (indicesSize, d_r, d_r + indicesSize, d_lr_weights);
+	build_log_likelihood_array_sub_cluster_kernel_v2 << <blocks, threads, 0, stream >> > (d_indicesSize, d_r, d_r_offset, d_lr_weights);
 	runCuda(cudaPeekAtLastError());
 
-	sample_log_cat_array_sub_cluster_all << <blocks_size, threads, 0, stream >> > (devState, d_sub_labels, indicesSize, 2, d_r, d_indices, d_y, d_a, d_b);
+	//TODO - Can we remove d_y, d_a, d_b?
+	sample_log_cat_array_sub_cluster_all << <blocks, threads, 0, stream >> > (devState, d_sub_labels, d_indicesSize, 2, d_r, d_indices, d_y, d_a, d_b);
 	runCuda(cudaPeekAtLastError());
-	runCuda(cudaStreamSynchronize(stream));
+}
 
-	//free memory
-	runCuda(cudaFree(d_lr_weights));
-//	runCuda(cudaFree(d_log_likelihood_array));
-	runCuda(cudaFree(d_y));
-	runCuda(cudaFree(d_a));
-	runCuda(cudaFree(d_b));
-	return 0;
+void cudaKernel::sample_log_cat_array_v2(
+	double* d_r,
+	double* d_y,
+	int* d_a,
+	int* d_b,
+	int dim,
+	cudaStream_t& stream)
+{
+	build_log_likelihood_array_kernel << <blocks, threads, 0, stream >> > (numLabels, d_r, numLabels, dim);
+	runCuda(cudaPeekAtLastError());
+
+	sample_log_cat_array_all << <blocks, threads, 0, stream >> > (devState, d_labels, numLabels, dim, d_r, d_y, d_a, d_b);
+	runCuda(cudaPeekAtLastError());
 }
 
 int cudaKernel::sample_log_cat_array(Eigen::MatrixXd &log_likelihood_array)
@@ -661,16 +701,13 @@ void cudaKernel::sample_sub_clusters_worker(LabelType label, LabelType* &indices
 	runCuda(cudaFree(d_indices));
 }
 
-void cudaKernel::sample_sub_clusters_worker_v2(LabelType label, int* d_indices, int* d_indicesSize, int& indicesSize, cudaStream_t& stream)
+void cudaKernel::sample_sub_clusters_worker_v2(LabelType label, int* d_indices, int* d_indicesSize, cudaStream_t& stream)
 {
 	runCuda(cudaMemsetAsync(d_indicesSize, 0, sizeof(int), stream));
 
 	find_indices << <blocks, threads, 0, stream >> > (d_labels, numLabels, label, d_indices, d_indicesSize);
 
 	runCuda(cudaPeekAtLastError());
-	//	runCuda(cudaDeviceSynchronize());
-
-	runCuda(cudaMemcpyAsync(&indicesSize, d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost, stream));
 }
 
 void cudaKernel::create_suff_stats_dict_worker(
@@ -800,6 +837,12 @@ void cudaKernel::update_labels(int *updateLabels, int numLabels)
 	runCuda(cudaMemcpy(d_labels, updateLabels, sizeof(int)*numLabels, cudaMemcpyHostToDevice));
 }
 
+void cudaKernel::update_labels_by_max_index(double* parr, int dim, cudaStream_t& stream)
+{
+	update_labels_by_max_index_kernel << <blocks, threads, 0, stream >> > (parr, d_labels, numLabels, dim);
+}
+
+
 void cudaKernel::remove_empty_clusters_worker(int limit)
 {
 	remove_empty_clusters_worker_all << <blocks, threads >> > (d_labels, numLabels, limit);
@@ -869,9 +912,42 @@ void cudaKernel::naive_matrix_multiply(const double* A, const double* B, double*
 	cublasDestroy(handle);
 }
 
-void cudaKernel::dcolwise_dot_all(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r)
+// C(m,k) = A(m,n) * B(n,k)
+void cudaKernel::naive_matrix_multiply_v2(const double* A, const double* B, double* C, int m, int* d_n, int k, cudaStream_t& stream)
 {
-	dcolwise_dot_all_kernel << <blocks, threads >> > (maxIdx, rows, d_a, d_b, scalar, d_r);
+	int lda = m, ldb = k, ldc = m;
+	const double alf = 1;
+	const double bet = 0;
+	const double* alpha = &alf;
+	const double* beta = &bet;
+
+	// Create a handle for CUBLAS
+	cublasHandle_t handle;
+	cublasCreate(&handle);
+	cublasSetStream(handle, stream);
+	// Do the actual multiplication
+	int n;
+	runCuda(cudaMemcpyAsync(&n, d_n, sizeof(int), cudaMemcpyDeviceToHost, stream));
+	//TODO - can we use d_n here?
+	cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+
+	// Destroy the handle
+	cublasDestroy(handle);
+}
+
+void cudaKernel::dcolwise_dot_all(int* d_maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int* d_r_offset)
+{
+	dcolwise_dot_all_kernel << <blocks, threads>> > (d_maxIdx, rows, d_a, d_b, scalar, d_r, d_r_offset);
+}
+
+void cudaKernel::dcolwise_dot_all_v2(int* d_maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int* d_r_offset, cudaStream_t& stream)
+{
+	dcolwise_dot_all_kernel << <blocks, threads, 0, stream >> > (d_maxIdx, rows, d_a, d_b, scalar, d_r, d_r_offset);
+}
+
+void cudaKernel::dcolwise_dot_all_v3(int* d_maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream)
+{
+	dcolwise_dot_with_log_kernel << <blocks, threads, 0, stream >> > (d_maxIdx, rows, d_a, d_b, scalar, d_r, weight);
 }
 
 //void cudaKernel::dcolwise_dot(Eigen::VectorXd& r, const Eigen::MatrixXd& a, const Eigen::MatrixXd& b)
@@ -912,38 +988,87 @@ typedef struct
 
 	int* d_indices;
 
-	int indicesSize;
-
 	double* d_r;
 
 	int* d_indicesSize;
 
+	double* d_z_l;
+	double* d_z_r;
+
+	double* d_mu_l;
+	double* d_mu_r;
+
+	double* d_b_l;
+	double* d_b_r;
+
+	double* d_c_l;
+	double* d_c_r;
+
+	double* d_lr_weights;
+	double* d_y2;
+	int* d_a2;
+	int* d_b2;
+
 } subclusters_labels_plan;
 
-void cudaKernel::create_subclusters_labels(int numClusters, std::vector<thin_cluster_params*> &cluster_params, int dim)
+void cudaKernel::create_subclusters_labels(int numClusters, std::vector<thin_cluster_params*>& cluster_params, int dim)
 //LabelType* indices, LabelType indicesSize, distribution_sample* l_dist, distribution_sample* r_dist, std::vector<double> &lr_weights)
 {
-	subclusters_labels_plan *plan = new subclusters_labels_plan[numClusters];
-	
-	for (int i = 0; i < numClusters; i++)
-	{
-		runCuda(cudaMalloc((void**)&(plan[i].d_indices), sizeof(int) * numLabels));
-		runCuda(cudaMalloc(&(plan[i].d_indicesSize), sizeof(int)));
-	}
+	subclusters_labels_plan* plan = new subclusters_labels_plan[numClusters];
+	int* d_zero;
 
+	//Allocate memory for all streams
 	for (int i = 0; i < numClusters; i++)
 	{
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
-		sample_sub_clusters_worker_v2(i + 1, plan[i].d_indices, plan[i].d_indicesSize, plan[i].indicesSize, plan[i].stream);
+		runCuda(cudaMalloc((void**)&d_zero, sizeof(int)));
+		runCuda(cudaMemset(d_zero, 0, sizeof(int)));
+		runCuda(cudaMalloc((void**)&(plan[i].d_indices), sizeof(int) * numLabels));
+		runCuda(cudaMalloc(&(plan[i].d_indicesSize), sizeof(int)));
+
+		//The following allocation could be used less memory and also later when it's really needed since the upper bound is number of labels but the actual is smaller.
+		//However in order to run in stream we needed to allocate all of them in advance so we use the upper bounder.
+		//Actual memory that required below is indicesSize instead of numLabels.
+		runCuda(cudaMalloc((void**)&(plan[i].d_r), sizeof(double) * numLabels * 2));
+
+		//Left
+		const mv_gaussian* ds_l = (mv_gaussian*)(cluster_params[i]->l_dist);
+		runCuda(cudaMalloc((void**)&(plan[i].d_z_l), sizeof(double) * dim * numLabels));
+		runCuda(cudaMalloc((void**)&(plan[i].d_mu_l), sizeof(double) * ds_l->mu.size()));
+		runCuda(cudaMalloc((void**)&(plan[i].d_b_l), sizeof(double) * ds_l->invSigma.size()));
+		runCuda(cudaMalloc((void**)&(plan[i].d_c_l), sizeof(double) * ds_l->invSigma.rows() * numLabels));
+
+		//Right
+		const mv_gaussian* ds_r = (mv_gaussian*)(cluster_params[i]->r_dist);
+		runCuda(cudaMalloc((void**)&(plan[i].d_z_r), sizeof(double) * dim * numLabels));
+		runCuda(cudaMalloc((void**)&(plan[i].d_mu_r), sizeof(double) * ds_r->mu.size()));
+		runCuda(cudaMalloc((void**)&(plan[i].d_b_r), sizeof(double) * ds_r->invSigma.size()));
+		runCuda(cudaMalloc((void**)&(plan[i].d_c_r), sizeof(double) * ds_r->invSigma.rows() * numLabels));
+
+		//Both
+		runCuda(cudaMalloc((void**)&(plan[i].d_lr_weights), sizeof(double) * cluster_params[i]->lr_weights.size()));
+		runCuda(cudaMemcpyAsync(plan[i].d_lr_weights, cluster_params[i]->lr_weights.data(), sizeof(double) * cluster_params[i]->lr_weights.size(), cudaMemcpyHostToDevice, plan[i].stream));
+		runCuda(cudaMalloc((void**)&(plan[i].d_y2), sizeof(double) * numLabels * (2 + 2)));
+		runCuda(cudaMalloc((void**)&(plan[i].d_a2), sizeof(int) * numLabels * (2 + 2)));
+		runCuda(cudaMalloc((void**)&(plan[i].d_b2), sizeof(int) * numLabels * (2 + 2)));
 	}
 
 	for (int i = 0; i < numClusters; i++)
 	{
-		runCuda(cudaStreamSynchronize(plan[i].stream));
-		runCuda(cudaMalloc((void**)&(plan[i].d_r), sizeof(double) * plan[i].indicesSize * 2));
-		log_likelihood_v2(plan[i].d_r, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->l_dist, plan[i].stream);
-		log_likelihood_v2(plan[i].d_r + plan[i].indicesSize, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->r_dist, plan[i].stream);
-		sample_log_cat_array_sub_cluster_v2(plan[i].d_r, plan[i].d_indices, plan[i].indicesSize, cluster_params[i]->lr_weights, plan[i].stream);
+		//Find indices
+		//Can be used on any GPU
+		sample_sub_clusters_worker_v2(i + 1, plan[i].d_indices, plan[i].d_indicesSize, plan[i].stream);
+
+		//Return the likelihhod in r vector.
+		//Can be used on any GPU
+		log_likelihood_v2(plan[i].d_r, d_zero, plan[i].d_b_l, plan[i].d_c_l, plan[i].d_z_l, plan[i].d_mu_l, plan[i].d_indices, plan[i].d_indicesSize, dim, cluster_params[i]->l_dist, plan[i].stream);
+		log_likelihood_v2(plan[i].d_r, plan[i].d_indicesSize, plan[i].d_b_r, plan[i].d_c_r, plan[i].d_z_r, plan[i].d_mu_r, plan[i].d_indices, plan[i].d_indicesSize, dim, cluster_params[i]->r_dist, plan[i].stream);
+	}
+
+	for (int i = 0; i < numClusters; i++)
+	{
+		//Change the sub labels. Should run on one GPU
+		sample_log_cat_array_sub_cluster_v2(plan[i].d_r, plan[i].d_indicesSize, plan[i].d_y2, plan[i].d_a2, plan[i].d_b2, plan[i].d_indices, plan[i].d_indicesSize, plan[i].d_lr_weights, plan[i].stream);
 	}
 
 	//Wait for all operations to finish
@@ -959,11 +1084,128 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<thin_clu
 		runCuda(cudaFree(plan[i].d_indices));
 		runCuda(cudaFree(plan[i].d_indicesSize));
 		runCuda(cudaFree(plan[i].d_r));
+
+		runCuda(cudaFree(plan[i].d_z_l));
+		runCuda(cudaFree(plan[i].d_z_r));
+
+		runCuda(cudaFree(plan[i].d_mu_l));
+		runCuda(cudaFree(plan[i].d_mu_r));
+
+		runCuda(cudaFree(plan[i].d_b_l));
+		runCuda(cudaFree(plan[i].d_b_r));
+
+		runCuda(cudaFree(plan[i].d_c_r));
+		runCuda(cudaFree(plan[i].d_c_l));
+
+		runCuda(cudaFree(plan[i].d_lr_weights));
+		runCuda(cudaFree(plan[i].d_y2));
+		runCuda(cudaFree(plan[i].d_a2));
+		runCuda(cudaFree(plan[i].d_b2));
 	}
 
 	delete[]plan;
 }
 
+typedef struct
+{
+	//Stream for asynchronous command execution
+	cudaStream_t stream;
+
+	int* d_indicesSize;
+
+	double* d_z;
+
+	double* d_mu;
+
+	double* d_b;
+
+	double* d_c;
+
+	
+
+} clusters_labels_plan;
+
+void cudaKernel::create_clusters_labels(int numClusters, std::vector<thin_cluster_params*>& cluster_params, std::vector<double>& weights, bool bFinal)
+{	
+	clusters_labels_plan* plan = new clusters_labels_plan[numClusters];
+	int* d_zero;
+	double* d_r;
+	double* d_y2;
+	int* d_a2;
+	int* d_b2;
+
+	const mv_gaussian* ds = (mv_gaussian*)(cluster_params[0]->cluster_dist);
+	int dim = ds->invSigma.rows();
+
+	printf("Need %ld,  sizeof(double):%ld,  numLabels:%ld,  numClusters:%ld\n", sizeof(double) * numLabels * numClusters, sizeof(double) , numLabels , numClusters);
+	runCuda(cudaMalloc((void**)&d_r, sizeof(double) * numLabels * numClusters));
+	runCuda(cudaMalloc((void**)&d_y2, sizeof(double) * numLabels * (numClusters + 2)));
+	runCuda(cudaMalloc((void**)&d_a2, sizeof(int) * numLabels * (numClusters + 2)));
+	runCuda(cudaMalloc((void**)&d_b2, sizeof(int) * numLabels * (numClusters + 2)));
+
+	//Allocate memory for all streams
+	for (int i = 0; i < numClusters; i++)
+	{
+		runCuda(cudaStreamCreate(&(plan[i].stream)));
+		runCuda(cudaMalloc((void**)&d_zero, sizeof(int)));
+		runCuda(cudaMemset(d_zero, 0, sizeof(int)));
+//		runCuda(cudaMalloc((void**)&(plan[i].d_indices), sizeof(int) * numLabels));
+		runCuda(cudaMalloc(&(plan[i].d_indicesSize), sizeof(int)));
+		runCuda(cudaMemcpyAsync(plan[i].d_indicesSize, &numLabels, sizeof(int), cudaMemcpyHostToDevice, plan[i].stream));
+
+		const mv_gaussian* ds = (mv_gaussian*)(cluster_params[i]->cluster_dist);
+		runCuda(cudaMalloc((void**)&(plan[i].d_z), sizeof(double) * numClusters * numLabels));
+		runCuda(cudaMalloc((void**)&(plan[i].d_mu), sizeof(double) * ds->mu.size()));
+		runCuda(cudaMalloc((void**)&(plan[i].d_b), sizeof(double) * ds->invSigma.size()));
+
+		printf("ds->invSigma.rows():%ld, ds->invSigma.cols():%ld, numLabels:%ld\n", ds->invSigma.rows(), ds->invSigma.cols(), numLabels);
+		runCuda(cudaMalloc((void**)&(plan[i].d_c), sizeof(double) * ds->invSigma.rows() * numLabels));
+	}
+
+	for (int i = 0; i < numClusters; i++)
+	{
+		log_likelihood_v3(d_r + i * numLabels, d_zero, plan[i].d_b, plan[i].d_c, plan[i].d_z, plan[i].d_mu, plan[i].d_indicesSize, dim, weights[i], cluster_params[i]->cluster_dist, plan[i].stream);
+	}
+
+	//Wait for all operations to finish
+	for (int i = 0; i < numClusters; i++)
+	{
+		runCuda(cudaStreamSynchronize(plan[i].stream));
+	}
+
+	if (bFinal)
+	{
+		update_labels_by_max_index(d_r, numClusters, plan[0].stream);
+	}
+	else
+	{
+		//Change the sub labels. Should run on one GPU
+		sample_log_cat_array_v2(d_r, d_y2, d_a2, d_b2, numClusters, plan[0].stream);
+	}
+	runCuda(cudaStreamSynchronize(plan[0].stream));
+
+	for (int i = 0; i < numClusters; i++)
+	{
+		runCuda(cudaStreamDestroy(plan[i].stream));
+
+		runCuda(cudaFree(plan[i].d_indicesSize));
+
+		runCuda(cudaFree(plan[i].d_z));
+
+		runCuda(cudaFree(plan[i].d_mu));
+
+		runCuda(cudaFree(plan[i].d_b));
+
+		runCuda(cudaFree(plan[i].d_c));
+
+	}
+	runCuda(cudaFree(d_r));
+	runCuda(cudaFree(d_y2));
+	runCuda(cudaFree(d_a2));
+	runCuda(cudaFree(d_b2));
+
+	delete[]plan;
+}
 
 void cudaKernel::checkCUDAError(cudaError_t err, const char* file, int line)
 {

@@ -11,8 +11,31 @@ public:
 
 
 protected:
-	virtual void log_likelihood_v2(double* d_r, int* d_indices, int indicesSize, int dim, const distribution_sample* distribution_sample, cudaStream_t& stream);
+	virtual void log_likelihood_v2(
+		double* d_r,
+		int* d_r_offset,
+		double* d_b,
+		double* d_c,
+		double* d_z,
+		double* d_mu,
+		int* d_indices,
+		int* d_indicesSize,
+		int dim,
+		const distribution_sample* distribution_sample,
+		cudaStream_t& stream);
 
+	void log_likelihood_v3(
+		double* d_r,
+		int* d_r_offset,
+		double* d_b,
+		double* d_c,
+		double* d_z,
+		double* d_mu,
+		int* d_indicesSize,
+		int dim,
+		double weight,
+		const distribution_sample* distribution_sample,
+		cudaStream_t& stream);
 };
 
 #endif //CudaKernel_multinomial_H

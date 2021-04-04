@@ -23,8 +23,6 @@ public:
 	void sample_labels(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits);
 	void sample_labels_worker(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits);
 	void sample_sub_clusters(prior* pPrior, local_group &group);
-	void sample_sub_clusters_worker(prior* pPrior, MatrixXd &group_points);
-	void create_subclusters_labels(prior* pPrior, LabelType *indices, LabelType indicesSize, MatrixXd &points, thin_cluster_params* cluster_params);
 	void update_suff_stats_posterior(prior *pPrior, local_group &group);
 	void update_suff_stats_posterior(prior *pPrior, local_group &group, LabelsType &indices, bool indicesValid);
 	std::map<LabelType, thin_suff_stats*> create_suff_stats_dict_worker(MatrixXd &group_pts, hyperparams* hyper_params, LabelsType &indices);

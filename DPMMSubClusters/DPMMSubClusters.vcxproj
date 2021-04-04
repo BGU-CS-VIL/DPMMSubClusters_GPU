@@ -58,7 +58,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./;$(CudaToolkitDir)/include;$(CudaToolkitIncludeDir);cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\common\inc;opencv</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(CudaToolkitDir)/include;$(CudaToolkitIncludeDir);cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;opencv</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

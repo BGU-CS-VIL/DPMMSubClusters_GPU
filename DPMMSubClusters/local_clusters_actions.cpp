@@ -100,52 +100,9 @@ void local_clusters_actions::sample_sub_clusters(prior* pPrior, local_group &gro
 {
 //TODO-	asynch;
 	//for each GPU
-	sample_sub_clusters_worker(pPrior, group.points);
+	globalParams->cuda->create_subclusters_labels(globalParams->clusters_vector.size(), globalParams->clusters_vector, group.points.rows());
 }
-		
-void local_clusters_actions::sample_sub_clusters_worker(prior* pPrior, MatrixXd &group_points)
-{
-//	concurrency::parallel_for(size_t(0), globalParams->clusters_vector.size(), [&](size_t l)
-	//{
-//		LabelType indicesSize = 0;
-
-//		LabelType* indices = new LabelType[group_points.cols()];
-//		globalParams->cuda->sample_sub_clusters_worker(l + 1, indices, indicesSize);
-
-//		create_subclusters_labels(pPrior, indices, indicesSize, group_points, globalParams->clusters_vector[l]);
-		globalParams->cuda->create_subclusters_labels(globalParams->clusters_vector.size(), globalParams->clusters_vector, group_points.rows());
-//		delete[] indices;
-	//});
-}
-			
-
-void local_clusters_actions::create_subclusters_labels(prior* pPrior, LabelType *indices, LabelType indicesSize, MatrixXd &points, thin_cluster_params* cluster_params)
-{
-	if (indicesSize == 0)
-	{
-		return;
-	}
-
-	//MatrixXd parr = MatrixXd::Zero(indicesSize, 2);
-
-	MatrixXd indicesPoints(points.rows(), indicesSize);
-	for (DimensionsType i = 0; i < points.rows(); i++)
-	{
-		for (LabelType j = 0; j < indicesSize; j++)
-		{
-			indicesPoints(i, j) = points(i, indices[j]);
-		}
-	}
-
-	//VectorXd r = VectorXd::Zero(indicesSize);
-	//globalParams->cuda->log_likelihood(r, indicesPoints, cluster_params->l_dist);
-	//parr.col(0) = r;
-	//r = VectorXd::Zero(indicesSize);
-	//globalParams->cuda->log_likelihood(r, indicesPoints, cluster_params->r_dist);
-	//parr.col(1) = r;
-	//globalParams->cuda->sample_log_cat_array_sub_cluster(indices, indicesSize, parr, cluster_params->lr_weights);
-}
-
+				
 void local_clusters_actions::sample_labels(prior* pPrior, local_group &group, bool bFinal, bool no_more_splits)
 {
 	//TODO-	asynch;
@@ -174,46 +131,48 @@ void local_clusters_actions::sample_labels(prior* pPrior, MatrixXd &points, bool
 
 void local_clusters_actions::sample_labels_worker(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits)
 {		
-	MatrixXd pts = points;
-	std::vector<double> log_weights;
-	for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
-	{
-		log_weights.push_back(log(globalParams->clusters_weights[i]));
-	}
+	globalParams->cuda->create_clusters_labels(globalParams->clusters_vector.size(), globalParams->clusters_vector, globalParams->clusters_weights, bFinal);
 
-	MatrixXd parr = MatrixXd::Zero(points.cols(), globalParams->clusters_vector.size());
-	//	tic = time()
-	//distribution_sample* sd = pPrior->sample_distribution();
-	for (ClusterIndexType i = 0; i < globalParams->clusters_vector.size(); i++)
-	{
-		VectorXd r = parr.col(i);
-		globalParams->cuda->log_likelihood(r, pts, globalParams->clusters_vector[i]->cluster_dist);
-		parr.col(i) = r;
-	}
-	//delete sd;
+	//MatrixXd pts = points;
+	//std::vector<double> log_weights;
+	//for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
+	//{
+	//	log_weights.push_back(log(globalParams->clusters_weights[i]));
+	//}
 
-	for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
-	{
-		parr.col(i) += log(globalParams->clusters_weights[i])* VectorXd::Ones(parr.rows());
-	}
+	//MatrixXd parr = MatrixXd::Zero(points.cols(), globalParams->clusters_vector.size());
+	////	tic = time()
+	////distribution_sample* sd = pPrior->sample_distribution();
+	//for (ClusterIndexType i = 0; i < globalParams->clusters_vector.size(); i++)
+	//{
+	//	VectorXd r = parr.col(i);
+	//	globalParams->cuda->log_likelihood(r, pts, globalParams->clusters_vector[i]->cluster_dist);
+	//	parr.col(i) = r;
+	//}
+	////delete sd;
 
-	if (bFinal)
-	{
-		int *updateLabels = new int[parr.rows()];
-		for (PointType i = 0; i < parr.rows(); ++i)
-		{
-			Eigen::MatrixXd::Index max_index;
-			parr.row(i).maxCoeff(&max_index);
-			updateLabels[i] = max_index + 1;
-		}
+	//for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
+	//{
+	//	parr.col(i) += log(globalParams->clusters_weights[i])* VectorXd::Ones(parr.rows());
+	//}
 
-		globalParams->cuda->update_labels(updateLabels, parr.rows());
-		delete[] updateLabels;
-	}
-	else
-	{
-		globalParams->cuda->sample_log_cat_array(parr);
-	}
+	//if (bFinal)
+	//{
+	//	int *updateLabels = new int[parr.rows()];
+	//	for (PointType i = 0; i < parr.rows(); ++i)
+	//	{
+	//		Eigen::MatrixXd::Index max_index;
+	//		parr.row(i).maxCoeff(&max_index);
+	//		updateLabels[i] = max_index + 1;
+	//	}
+
+	//	globalParams->cuda->update_labels(updateLabels, parr.rows());
+	//	delete[] updateLabels;
+	//}
+	//else
+	//{
+	//	globalParams->cuda->sample_log_cat_array(parr);
+	//}
 }
 
 
