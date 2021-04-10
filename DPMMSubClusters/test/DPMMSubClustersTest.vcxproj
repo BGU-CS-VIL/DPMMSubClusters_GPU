@@ -96,13 +96,13 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
       <AdditionalDependencies>cublas.lib;cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;clusterInfo.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -130,7 +130,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -139,7 +139,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <AdditionalDependencies>cublas.lib;cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;clusterInfo.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

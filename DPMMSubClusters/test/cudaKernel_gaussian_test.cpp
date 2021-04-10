@@ -34,7 +34,7 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, NULL);
 
-		object->sample_log_cat_array(log_likelihood_array);
+		object->sample_log_cat_array(log_likelihood_array, 0);
 		object->get_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -79,7 +79,7 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, NULL);
 
-		object->sample_log_cat_array(log_likelihood_array);
+		object->sample_log_cat_array(log_likelihood_array, 0);
 		object->get_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -129,9 +129,9 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, 12345);
 
-		object->sample_log_cat_array(log_likelihood_array);
+		object->sample_log_cat_array(log_likelihood_array, 0);
 		object->get_labels(labels1);
-		object->sample_log_cat_array(log_likelihood_array);
+		object->sample_log_cat_array(log_likelihood_array, 0);
 		object->get_labels(labels2);
 
 		for (int i = 0; i < numLabels; i++)
@@ -201,7 +201,7 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, NULL);
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights);
+		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -262,10 +262,10 @@ namespace DPMMSubClustersTest
 		object->init(numLabels, points, NULL);
 
 		//First set values for sub labels
-		object->sample_log_cat_array_sub_cluster(allIndices.data(), allIndices.size(), log_likelihood_array_all, lr_weights);
+		object->sample_log_cat_array_sub_cluster(allIndices.data(), allIndices.size(), log_likelihood_array_all, lr_weights, 0);
 
 		//Calculate per index
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array_index, lr_weights);
+		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array_index, lr_weights, 0);
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -339,7 +339,7 @@ namespace DPMMSubClustersTest
 				log_likelihood_array(i, 1) = 1 - leftProb;
 			}
 
-			object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights);
+			object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
 
 			object->get_sub_labels(labels);
 			int countOne = 0;
@@ -413,7 +413,7 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, NULL);
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights);
+		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -491,7 +491,7 @@ namespace DPMMSubClustersTest
 
 		object->init(numLabels, points, NULL);
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights);
+		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -542,6 +542,90 @@ namespace DPMMSubClustersTest
 		EXPECT_TRUE(perc3 > 0.68);
 
 		delete object;
+	}
+
+	TEST(cudaKernel_gaussian_test, naive_matrix_multiply_v3)
+	{
+		int numLabels = 10;
+		MatrixXd points(2, numLabels);
+		cudaStream_t stream;
+		myCudaKernel_gaussian object;
+		object.init(numLabels, points, NULL);
+		int m = 3;
+		int n = 2;
+		int k = 3;
+		MatrixXd A(m, n);
+		A << 0.1, 0.2, 0.3, 0.4, 0.5, 0.6;
+		MatrixXd B(n, k);
+		B << 0.5, 0.6, 0.7, 0.8, 0.9, 0.10;
+		
+		double* d_A;
+		object.allocate_in_device(A, d_A);
+		double* d_B;
+		object.allocate_in_device(B, d_B);
+		double* d_C;
+		object.allocate_in_device(m * k, d_C);
+		object.create_stream(stream);
+
+		object.my_naive_matrix_multiply(d_A, d_B, d_C, m, n, k, stream);
+		object.release_stream(stream);
+		MatrixXd C;
+		object.copy_from_device(d_C, m, k, C);
+
+		object.release_in_device(d_A);
+		object.release_in_device(d_B);
+		object.release_in_device(d_C);
+
+		MatrixXd C_cpu = A * B;
+
+		for (int i = 0; i < C_cpu.rows(); i++)
+		{
+			for (int j = 0; j < C_cpu.cols(); j++)
+			{
+				EXPECT_NEAR(C_cpu(i, j), C(i, j), 0.0001);
+			}
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, naive_matrix_multiply_v3_big_k)
+	{
+		int numLabels = pow(10, 1);
+		MatrixXd points(2, numLabels);
+		cudaStream_t stream;
+		myCudaKernel_gaussian object;
+		object.init(numLabels, points, NULL);
+		int m = 3;
+		int n = 2;
+		int k = numLabels;
+		MatrixXd A = MatrixXd::Random(m, n);
+		MatrixXd B = MatrixXd::Random(n, k);
+
+		double* d_A;
+		object.allocate_in_device(A, d_A);
+		double* d_B;
+		object.allocate_in_device(B, d_B);
+		double* d_C;
+		object.allocate_in_device(m * k, d_C);
+		object.create_stream(stream);
+
+		object.my_naive_matrix_multiply(d_A, d_B, d_C, m, n, k, stream);
+		object.release_stream(stream);
+		MatrixXd C;
+		object.copy_from_device(d_C, m, k, C);
+
+		object.release_in_device(d_A);
+		object.release_in_device(d_B);
+		object.release_in_device(d_C);
+
+		MatrixXd C_cpu = A * B;
+
+		for (int i = 0; i < C_cpu.rows(); i++)
+		{
+			for (int j = 0; j < C_cpu.cols(); j++)
+			{
+				EXPECT_NEAR(C_cpu(i, j), C(i, j), 0.0001);
+			}
+		}
 	}
 
 	//TEST(cudaKernel_gaussian_test, dcolwise_dot)

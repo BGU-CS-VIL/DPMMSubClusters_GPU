@@ -183,9 +183,9 @@ int main3(int argc, char **argv)
         GPU_N = MAX_GPU_COUNT;
     }
 
-    printf("CUDA-capable device count: %i\n", GPU_N);
+    //printf("CUDA-capable device count: %i\n", GPU_N);
 
-    printf("Generating input data...\n\n");
+    //printf("Generating input data...\n\n");
 
     //Subdividing input data across GPUs
     //Get data sizes for each GPU
@@ -227,7 +227,7 @@ int main3(int argc, char **argv)
     }
 
     //Start timing and compute on GPU(s)
-    printf("Computing with %d GPUs...\n", GPU_N);
+//    printf("Computing with %d GPUs...\n", GPU_N);
     // create and start timer
     StopWatchInterface *timer = NULL;
     sdkCreateTimer(&timer);
@@ -288,11 +288,11 @@ int main3(int argc, char **argv)
     }
 
     sdkStopTimer(&timer);
-    printf("  GPU Processing time: %f (ms)\n\n", sdkGetTimerValue(&timer));
+ //   printf("  GPU Processing time: %f (ms)\n\n", sdkGetTimerValue(&timer));
     sdkDeleteTimer(&timer);
   
     // GPU results
-    printf("  GPU sum: %f\n", sumGPU);
+ //   printf("  GPU sum: %f\n", sumGPU);
 
     // Cleanup and shutdown
     for (i = 0; i < GPU_N; i++)

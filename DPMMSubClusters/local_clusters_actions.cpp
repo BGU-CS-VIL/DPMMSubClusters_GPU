@@ -105,89 +105,12 @@ void local_clusters_actions::sample_sub_clusters(prior* pPrior, local_group &gro
 				
 void local_clusters_actions::sample_labels(prior* pPrior, local_group &group, bool bFinal, bool no_more_splits)
 {
-	//TODO-	asynch;
-	sample_labels(pPrior, group.points, bFinal, no_more_splits);
-}
-
-void local_clusters_actions::sample_labels(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits)
-{
-	//for each GPU
-	sample_labels_worker(pPrior, points, bFinal, no_more_splits);
-}
-
-					/*
-					function RestrictedClusterProbs(logPIs::AbstractVector{ V }, clusters,
-						x::AbstractVector) where V < :Real
-					p = Array{ V,1 }(undef, length(clusters))
-					max = typemin(V)
-					for (j, c) in enumerate(values(clusters))
-						@inbounds s = p[j] = logPIs[j] + logAlphapdf(c, x)
-						max = s > max ? s : max
-						end
-						pc = exp.(p . - max)
-						return pc . / sum(pc)
-						end
-						*/
-
-void local_clusters_actions::sample_labels_worker(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits)
-{		
 	globalParams->cuda->create_clusters_labels(globalParams->clusters_vector.size(), globalParams->clusters_vector, globalParams->clusters_weights, bFinal);
-
-	//MatrixXd pts = points;
-	//std::vector<double> log_weights;
-	//for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
-	//{
-	//	log_weights.push_back(log(globalParams->clusters_weights[i]));
-	//}
-
-	//MatrixXd parr = MatrixXd::Zero(points.cols(), globalParams->clusters_vector.size());
-	////	tic = time()
-	////distribution_sample* sd = pPrior->sample_distribution();
-	//for (ClusterIndexType i = 0; i < globalParams->clusters_vector.size(); i++)
-	//{
-	//	VectorXd r = parr.col(i);
-	//	globalParams->cuda->log_likelihood(r, pts, globalParams->clusters_vector[i]->cluster_dist);
-	//	parr.col(i) = r;
-	//}
-	////delete sd;
-
-	//for (ClusterIndexType i = 0; i < globalParams->clusters_weights.size(); i++)
-	//{
-	//	parr.col(i) += log(globalParams->clusters_weights[i])* VectorXd::Ones(parr.rows());
-	//}
-
-	//if (bFinal)
-	//{
-	//	int *updateLabels = new int[parr.rows()];
-	//	for (PointType i = 0; i < parr.rows(); ++i)
-	//	{
-	//		Eigen::MatrixXd::Index max_index;
-	//		parr.row(i).maxCoeff(&max_index);
-	//		updateLabels[i] = max_index + 1;
-	//	}
-
-	//	globalParams->cuda->update_labels(updateLabels, parr.rows());
-	//	delete[] updateLabels;
-	//}
-	//else
-	//{
-	//	globalParams->cuda->sample_log_cat_array(parr);
-	//}
 }
-
 
 
 void local_clusters_actions::update_splittable_cluster_params(prior *pPrior, splittable_cluster_params* &splittable_cluser)
 {
-	//hyperparams* test = splittable_cluser->cluster_params->hyperparams->hyper_params->clone();
-	//splittable_cluser->cluster_params->posterior_hyperparams->hyper_params = pPrior->calc_posterior(test, splittable_cluser->cluster_params->suff_statistics);
-
-
-
-
-
-
-
 	splittable_cluser->cluster_params->posterior_hyperparams = pPrior->calc_posterior(splittable_cluser->cluster_params->prior_hyperparams, splittable_cluser->cluster_params->suff_statistics);
 	splittable_cluser->cluster_params_l->posterior_hyperparams = pPrior->calc_posterior(splittable_cluser->cluster_params_l->prior_hyperparams, splittable_cluser->cluster_params_l->suff_statistics);
 	splittable_cluser->cluster_params_r->posterior_hyperparams = pPrior->calc_posterior(splittable_cluser->cluster_params_r->prior_hyperparams, splittable_cluser->cluster_params_r->suff_statistics);

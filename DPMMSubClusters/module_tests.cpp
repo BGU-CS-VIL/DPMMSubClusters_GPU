@@ -135,7 +135,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 		delete[] tcov[i];
 	}
 
-	for (size_t i = 0; i < 1; i++)
+	for (size_t i = 0; i < 10; i++)
 	{
 		printf("\n\n%ld: Start ***************************************************************\n\n", i);
 		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
@@ -147,7 +147,6 @@ ClusterIndexType module_tests::RandomMessHighDim()
 		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 		std::cout << str << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
-		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[microseconds]" << std::endl;
 		foundClusters = dp.dp_model->group.local_clusters.size();
 		printf("\n\n%ld: End ***************************************************************\n\n", i);
 	}

@@ -49,7 +49,7 @@ namespace DPMMSubClustersTest
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, 15, labels);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)

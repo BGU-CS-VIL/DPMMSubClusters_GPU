@@ -20,8 +20,6 @@ public:
 	void broadcast_cluster_params(std::vector<thin_cluster_params*> &params_vector, std::vector<double> &weights_vector);
 	bool set_global_data(std::vector<thin_cluster_params*> &params_vector, std::vector<double> &weights_vector);
 	void sample_labels(prior* pPrior, local_group &group, bool bFinal, bool no_more_splits);
-	void sample_labels(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits);
-	void sample_labels_worker(prior* pPrior, MatrixXd &points, bool bFinal, bool no_more_splits);
 	void sample_sub_clusters(prior* pPrior, local_group &group);
 	void update_suff_stats_posterior(prior *pPrior, local_group &group);
 	void update_suff_stats_posterior(prior *pPrior, local_group &group, LabelsType &indices, bool indicesValid);
