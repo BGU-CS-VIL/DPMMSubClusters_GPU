@@ -213,6 +213,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	IterationIndexType iters,
 	ClusterIndexType init_clusters,
 	bool verbose,
+	bool draw_labels,
 	bool save_model,
 	int burnout,
 	std::vector<double> gt,
@@ -225,6 +226,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	globalParams->initial_clusters = init_clusters;
 	globalParams->alpha = alpha_param;
 	globalParams->use_verbose = verbose;
+	globalParams->draw_labels = draw_labels;
 	globalParams->should_save_model = save_model;
 	globalParams->burnout_period = burnout;
 	globalParams->max_num_of_clusters = max_clusters;

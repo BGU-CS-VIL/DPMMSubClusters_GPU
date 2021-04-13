@@ -304,11 +304,14 @@ struct local_group
 		model_hyperparams(model_hyperparams), points(points), local_clusters(local_clusters), weights(weights) {}
 	~local_group()
 	{
-		for (std::vector<local_cluster*>::iterator iter = local_clusters.begin(); iter != local_clusters.end(); iter++)
+		if (local_clusters.size() > 0)
 		{
-			delete *iter;
+			for (std::vector<local_cluster*>::iterator iter = local_clusters.begin(); iter != local_clusters.end(); iter++)
+			{
+				delete* iter;
+			}
+			local_clusters.clear();
 		}
-		local_clusters.clear();
 	}
 
 	LabelType num_labels()

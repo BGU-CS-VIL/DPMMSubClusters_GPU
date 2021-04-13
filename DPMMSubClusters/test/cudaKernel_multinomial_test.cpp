@@ -1,19 +1,23 @@
+#include <locale>
+#include <codecvt>
+#include <string>
 #include "pch.h"
 #include "gtest/gtest.h"
 #include "priors/niw.h"
 #include "Eigen/Dense"
 #include "dp_parallel_sampling.h"
 #include "data_generators.h"
-#include "distributions/multinomial_dist.h"
-#include "cudaKernel_multinomial.cuh"
+#include "local_clusters_actions.h"
 #include "myCudaKernel.h"
+#include "myGen.h"
+#include "cudaKernel_multinomial.cuh"
+
 
 namespace DPMMSubClustersTest
 {
-
-	TEST(multinomial_dist_test, log_likelihood)
+	TEST(cudaKernel_multinomial_test, log_likelihood_v3)
 	{
-		cudaKernel_multinomial cuda;
+		myCudaKernel_multinomial cuda;
 		multinomial_dist object;
 		MatrixXd x(2, 10);
 		x << 38.0, 42.0, 40.0, 36.0, 14.0, 11.0, 9.0, 8.0, 5.0, 8.0, 12.0, 8.0, 10.0, 14.0, 36.0, 39.0, 41.0, 42.0, 45.0, 42.0;
@@ -22,10 +26,27 @@ namespace DPMMSubClustersTest
 		alpha.push_back(-0.8658322);
 		alpha.push_back(-0.54593706);
 		multinomial_dist* dist = new multinomial_dist(alpha);
+		cudaStream_t stream;
 
-		cuda.log_likelihood(r, x, dist);
+		double* d_r;
+		cuda.init(10, x, NULL);
+		int deviceId = cuda.peak_device();
+		cuda.allocate_in_device(10, d_r);
+		cuda.create_stream(stream);
+
+		cuda.my_log_likelihood_v3(d_r, 2, dist, stream, deviceId);
+
+		cuda.copy_from_device(d_r, 10, r);
+		cuda.release_stream(stream);
+		cuda.release_in_device(d_r);
 
 		delete dist;
+
+		//Eigen::VectorXd alpha_vec = Eigen::VectorXd::Map(dist->alpha.data(), dist->alpha.size());
+		//r = (alpha_vec.adjoint() * x).row(0);
+
+
+
 
 		EXPECT_NEAR(-39.452866, r(0), 0.0001);
 		EXPECT_NEAR(-40.73245, r(1), 0.0001);

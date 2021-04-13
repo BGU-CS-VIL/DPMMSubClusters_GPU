@@ -14,7 +14,8 @@ struct gpuCapability
 	int* d_sub_labels;
 	double* d_points;
 	curandState* devState;
-
+	int pointsRows;
+	int pointsCols;
 };
 
 //extern "C"
@@ -63,7 +64,6 @@ public:
 	virtual void create_suff_stats_dict_worker(
 		LabelType label,
 		LabelType& indicesSize,
-		Eigen::MatrixXd& group_pts,
 		Eigen::MatrixXd*& pts,
 		Eigen::MatrixXd*& pts1,
 		Eigen::MatrixXd*& pts2);

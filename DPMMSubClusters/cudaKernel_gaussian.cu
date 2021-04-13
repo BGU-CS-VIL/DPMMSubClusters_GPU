@@ -76,6 +76,7 @@ __global__ void divide_points_by_mu_all(double* d_points, int dim, int indicesSi
 	}
 }
 
+
 void cudaKernel_gaussian::log_likelihood_v2(
 	double* d_r,
 	int r_offset,

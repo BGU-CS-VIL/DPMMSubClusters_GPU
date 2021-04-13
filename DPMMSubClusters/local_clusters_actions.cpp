@@ -130,7 +130,6 @@ std::map<LabelType, thin_suff_stats*> local_clusters_actions::create_suff_stats_
 
 		globalParams->cuda->create_suff_stats_dict_worker(indices[index] + 1,
 			indicesLabelsSize,
-			group_pts,
 			pts,
 			pts1,
 			pts2);
@@ -483,7 +482,7 @@ void local_clusters_actions::should_split_local(prior *pPrior, double &should_sp
 	if (log_HR > log(a_random_double))
 	{
 		should_split = 1;
-		std::cout << "************** should_split ***************" << std::endl;
+//		std::cout << "************** should_split ***************" << std::endl;
 	}
 }
 																													
@@ -773,7 +772,7 @@ void local_clusters_actions::group_step(prior *pPrior, local_group &group, bool 
 	}
 	remove_empty_clusters(group);
 
-	if (globalParams->use_verbose)
+	if (globalParams->draw_labels)
 	{
 		LabelsType subLabels;
 		globalParams->cuda->get_sub_labels(subLabels);

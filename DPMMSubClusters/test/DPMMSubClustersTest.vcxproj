@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cudaKernel_gaussian_test.cpp" />
+    <ClCompile Include="cudaKernel_multinomial_test.cpp" />
     <ClCompile Include="data_generators_test.cpp" />
     <ClCompile Include="local_clusters_actions_test.cpp" />
     <ClCompile Include="module_tests_test.cpp" />

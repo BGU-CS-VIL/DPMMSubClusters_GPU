@@ -97,7 +97,7 @@ ClusterIndexType module_tests::RandomMess()
 	niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
 	dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
-	ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, false, 15, labels);
+	ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, false, false, 15, labels);
 
 	for (DimensionsType i = 0; i < D; i++)
 	{
@@ -119,8 +119,8 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	float** tmean;
 	float** tcov;
 	int N = pow(10, 5);
-	//int D = 64;
-	int D = 2;
+	int D = 32;
+	//int D = 2;
 	int numClusters = 20;
 	int numIters = 200;
 	int foundClusters = 0;
@@ -135,22 +135,17 @@ ClusterIndexType module_tests::RandomMessHighDim()
 		delete[] tcov[i];
 	}
 
-	for (size_t i = 0; i < 10; i++)
-	{
-		printf("\n\n%ld: Start ***************************************************************\n\n", i);
-		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
+	niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), D, MatrixXd::Identity(D, D));
 
-		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
-		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, 15, labels);
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
-		std::cout << str << std::endl;
-		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
-		foundClusters = dp.dp_model->group.local_clusters.size();
-		printf("\n\n%ld: End ***************************************************************\n\n", i);
-	}
-	
+	dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, false, false, 15, labels);
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
+	std::cout << str << std::endl;
+	std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
+	foundClusters = dp.dp_model->group.local_clusters.size();
+
 	return foundClusters;
 }
 
@@ -195,6 +190,7 @@ ClusterIndexType module_tests::RunModuleFromFile(std::string path, std::string p
 	global_params globalParams(N, x, random_seed, prior_type::Gaussian);
 	globalParams.initial_clusters = 1;
 	globalParams.use_verbose = true;
+	globalParams.draw_labels = false;
 	globalParams.should_save_model = false;
 	globalParams.burnout_period = 20;
 	globalParams.ground_truth = gt;

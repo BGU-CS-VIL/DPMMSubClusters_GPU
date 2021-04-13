@@ -36,4 +36,31 @@ namespace DPMMSubClustersTest
 
 		delete result;
 	}
+
+	TEST(niw_test, CalcPosterior)
+	{
+		niw object;
+		VectorXd m(2);
+		m << 0.0, 0.0;
+		MatrixXd psi(2, 2);
+		psi << 1.0, 0.0, 0.0, 1.0;
+		niw_hyperparams* prior = new niw_hyperparams(1.0, m, 5.0, psi);
+		VectorXd points_sum(2);
+		points_sum << -350136.8831217289, 59746.60001641512;
+		MatrixXd S(2,2);
+		S << 4.793410496828892e6, -343002.59694666235, -343002.59694666235, 206659.1114939735;
+
+		niw_sufficient_statistics ss(37196.0, points_sum,S);
+		hyperparams* resultBase = object.calc_posterior(prior, &ss);
+		niw_hyperparams* result = (niw_hyperparams*)resultBase;
+
+		delete prior;
+
+		ASSERT_NEAR(40.255979361037014, result->psi(0,0), 0.0001);
+		ASSERT_NEAR(5.897545600162242, result->psi(0, 1), 0.0001);
+		ASSERT_NEAR(5.897545600162242, result->psi(1, 0), 0.0001);
+		ASSERT_NEAR(2.975669253988425, result->psi(1, 1), 0.0001);
+
+		delete result;
+	}
 }

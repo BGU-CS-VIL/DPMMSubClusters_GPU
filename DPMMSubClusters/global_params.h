@@ -61,6 +61,7 @@ public:
 	std::string save_file_prefix;
 
 	bool use_verbose;
+	bool draw_labels;
 	bool should_save_model;
 	double max_num_of_clusters;
 	std::vector<double> ground_truth;

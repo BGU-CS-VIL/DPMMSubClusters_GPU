@@ -57,6 +57,7 @@ public:
 		IterationIndexType iters = 100,
 		ClusterIndexType init_clusters = 1,
 		bool verbose = true,
+		bool draw_labels = false,
 		bool save_model = false,
 		int burnout = 15,
 		std::vector<double> gt = std::vector<double> {},

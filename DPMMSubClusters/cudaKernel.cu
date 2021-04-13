@@ -1,8 +1,9 @@
 #ifndef CudaKernel_CU
 #define CudaKernel_CU
 
-//#pragma warning( disable : 2886 )
-//#pragma warning( disable : 2929)
+#pragma warning( push, 0 )
+
+
 #include <omp.h>
 
 #include <cuda_runtime.h>
@@ -13,6 +14,7 @@
 #include<time.h>
 #include "cudaKernel.cuh"
 #include "distributions/mv_gaussian.h"
+
 
 // function to define seed
 __global__ void initCurand(curandState *state, unsigned long long seed, int maxIdx) {
@@ -598,6 +600,8 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		runCuda(cudaMalloc((void**)&(iter->second.d_sub_labels), numLabels * sizeof(int)));
 		runCuda(cudaMalloc((void**)&(iter->second.d_points), points.size() * sizeof(double)));
 		runCuda(cudaMemcpy(iter->second.d_points, points.data(), points.size() * sizeof(double), cudaMemcpyHostToDevice));
+		iter->second.pointsRows = points.rows();
+		iter->second.pointsCols = points.cols();
 	}
 
 	if (gpuCapabilities.size() > 0)
@@ -839,17 +843,17 @@ void cudaKernel::sample_sub_clusters_worker_v2(LabelType label, int* d_indices, 
 
 void cudaKernel::create_suff_stats_dict_worker(
 	LabelType label,
-	LabelType &indicesSize,
-	Eigen::MatrixXd &group_pts,
-	Eigen::MatrixXd* &pts,
-	Eigen::MatrixXd* &pts1,
-	Eigen::MatrixXd* &pts2)
+	LabelType& indicesSize,
+	Eigen::MatrixXd*& pts,
+	Eigen::MatrixXd*& pts1,
+	Eigen::MatrixXd*& pts2)
 {
 	int deviceId = peak_device();
-	int *d_indices;
-	runCuda(cudaMalloc((void **)&d_indices, sizeof(int)*numLabels));
+	int pointsRows = gpuCapabilities[deviceId].pointsRows;
+	int* d_indices;
+	runCuda(cudaMalloc((void**)&d_indices, sizeof(int) * numLabels));
 
-	int *d_indicesSize;
+	int* d_indicesSize;
 	runCuda(cudaMalloc(&d_indicesSize, sizeof(int)));
 	runCuda(cudaMemset(d_indicesSize, 0, sizeof(int)));
 
@@ -858,21 +862,17 @@ void cudaKernel::create_suff_stats_dict_worker(
 	runCuda(cudaDeviceSynchronize());
 	runCuda(cudaMemcpy(&indicesSize, d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost));
 
-	double *d_group_pts;
-	runCuda(cudaMalloc((void **)&d_group_pts, sizeof(double)*group_pts.size()));
-	runCuda(cudaMemcpy(d_group_pts, group_pts.data(), sizeof(double)*group_pts.size(), cudaMemcpyHostToDevice));
+	double* d_pts;
+	runCuda(cudaMalloc((void**)&d_pts, sizeof(double) * pointsRows * indicesSize));
 
-	double *d_pts;
-	runCuda(cudaMalloc((void **)&d_pts, sizeof(double)*group_pts.rows()*indicesSize));
+	double* d_pts1;
+	runCuda(cudaMalloc((void**)&d_pts1, sizeof(double) * pointsRows * indicesSize));
 
-	double *d_pts1;
-	runCuda(cudaMalloc((void **)&d_pts1, sizeof(double)*group_pts.rows()*indicesSize));
+	double* d_pts2;
+	runCuda(cudaMalloc((void**)&d_pts2, sizeof(double) * pointsRows * indicesSize));
 
-	double *d_pts2;
-	runCuda(cudaMalloc((void **)&d_pts2, sizeof(double)*group_pts.rows()*indicesSize));
-
-	int *d_j1;
-	int *d_j2;
+	int* d_j1;
+	int* d_j2;
 	runCuda(cudaMalloc(&d_j1, sizeof(int)));
 	runCuda(cudaMemset(d_j1, 0, sizeof(int)));
 	runCuda(cudaMalloc(&d_j2, sizeof(int)));
@@ -884,8 +884,8 @@ void cudaKernel::create_suff_stats_dict_worker(
 		numLabels,
 		d_indices,
 		d_indicesSize,
-		d_group_pts,
-		group_pts.rows(),
+		gpuCapabilities[deviceId].d_points,
+		pointsRows,
 		d_pts,
 		d_pts1,
 		d_pts2,
@@ -899,18 +899,17 @@ void cudaKernel::create_suff_stats_dict_worker(
 	runCuda(cudaMemcpy(&j1, d_j1, sizeof(int), cudaMemcpyDeviceToHost));
 	runCuda(cudaMemcpy(&j2, d_j2, sizeof(int), cudaMemcpyDeviceToHost));
 
-	pts = new Eigen::MatrixXd(group_pts.rows(), indicesSize);
-	pts1 = new Eigen::MatrixXd(group_pts.rows(), j1);
-	pts2 = new Eigen::MatrixXd(group_pts.rows(), j2);
+	pts = new Eigen::MatrixXd(pointsRows, indicesSize);
+	pts1 = new Eigen::MatrixXd(pointsRows, j1);
+	pts2 = new Eigen::MatrixXd(pointsRows, j2);
 
-	runCuda(cudaMemcpy(pts->data(), d_pts, sizeof(double)*group_pts.rows()*indicesSize, cudaMemcpyDeviceToHost));
-	runCuda(cudaMemcpy(pts1->data(), d_pts1, sizeof(double)*group_pts.rows()*j1, cudaMemcpyDeviceToHost));
-	runCuda(cudaMemcpy(pts2->data(), d_pts2, sizeof(double)*group_pts.rows()*j2, cudaMemcpyDeviceToHost));
+	runCuda(cudaMemcpy(pts->data(), d_pts, sizeof(double) * pointsRows * indicesSize, cudaMemcpyDeviceToHost));
+	runCuda(cudaMemcpy(pts1->data(), d_pts1, sizeof(double) * pointsRows * j1, cudaMemcpyDeviceToHost));
+	runCuda(cudaMemcpy(pts2->data(), d_pts2, sizeof(double) * pointsRows * j2, cudaMemcpyDeviceToHost));
 
 	runCuda(cudaFree(d_j1));
 	runCuda(cudaFree(d_j2));
 	runCuda(cudaFree(d_indicesSize));
-	runCuda(cudaFree(d_group_pts));
 	runCuda(cudaFree(d_pts));
 	runCuda(cudaFree(d_pts1));
 	runCuda(cudaFree(d_pts2));
@@ -1528,5 +1527,6 @@ void cudaKernel::device_to_device_copy(int srcDeviceId, int trgDeviceId, int dat
 		delete[]data;
 	}
 }
+#pragma warning( pop )
 
 #endif

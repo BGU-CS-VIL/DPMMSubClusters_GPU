@@ -21,7 +21,7 @@ protected:
 		cudaStream_t& stream,
 		int deviceId);
 
-	void log_likelihood_v3(
+	virtual void log_likelihood_v3(
 		double* d_r,
 		int dim,
 		double weight,

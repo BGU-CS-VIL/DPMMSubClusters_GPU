@@ -40,20 +40,10 @@ hyperparams* niw::calc_posterior(const hyperparams* hyperParams, const sufficien
 	v = pNiw_hyperparams->v + suff_statistics->N;
 	m = (pNiw_hyperparams->m*pNiw_hyperparams->k + suff_statistics->points_sum) / k;
 	
-	/*for (size_t i = 0; i < ((niw_sufficient_statistics*)suff_statistics)->S.rows(); i++)
-	{
-		for (size_t j = 0; j < ((niw_sufficient_statistics*)suff_statistics)->S.cols(); j++)
-		{
-			double raz = ((niw_sufficient_statistics*)suff_statistics)->S(i, j);
-			std::cout << raz;
-
-		}
-	}*/
-
 	MatrixXd tempMat = pNiw_hyperparams->v * pNiw_hyperparams->psi + pNiw_hyperparams->k*pNiw_hyperparams->m*pNiw_hyperparams->m.adjoint();
 	psi = (tempMat - k * m*m.adjoint() + ((niw_sufficient_statistics*)suff_statistics)->S) / v;
 	psi = psi.selfadjointView<Upper>();
-
+	psi = (psi + psi.adjoint()) / 2;
 	niw_hyperparams* hyper_params = new niw_hyperparams(k, m, v, psi);
 	return hyper_params;
 }
@@ -95,7 +85,7 @@ distribution_sample* niw::sample_distribution(const hyperparams* pHyperparams, s
 }
 
 
-sufficient_statistics* niw::create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd &points)
+sufficient_statistics* niw::create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd& points)
 {
 	if (points.cols() == 0)
 	{
@@ -103,7 +93,10 @@ sufficient_statistics* niw::create_sufficient_statistics(const hyperparams* hype
 		return new niw_sufficient_statistics(points.cols(), VectorXd::Zero(pNiw_hyperparams->m.size()), MatrixXd::Zero(pNiw_hyperparams->m.size(), pNiw_hyperparams->m.size()));
 	}
 
-	return new niw_sufficient_statistics(points.cols(), points.rowwise().sum(), points * points.adjoint());
+	MatrixXd S = points * points.adjoint();
+	S = 0.5 * (S + S.adjoint());
+
+	return new niw_sufficient_statistics(points.cols(), points.rowwise().sum(), S);
 }
 
 

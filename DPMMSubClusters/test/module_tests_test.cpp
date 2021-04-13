@@ -49,7 +49,7 @@ namespace DPMMSubClustersTest
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, true, false, 15, labels);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)
@@ -101,13 +101,13 @@ namespace DPMMSubClustersTest
 		multinomial_hyper hyper_params(alpha);
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Multinomial);
-		ModelInfo dp = dps.dp_parallel(&hyper_params, 2.0, numIters, 1, true, false, 15);
+		ModelInfo dp = dps.dp_parallel(&hyper_params, 2.0, numIters, 1, true, true, false, 15);
 
 		EXPECT_EQ(2, dp.dp_model->group.local_clusters.size());
 	}
 
 	//Good for testing performance for bottlenecks 
-	TEST(module_tests_test, DISABLED_HighDim)
+	TEST(module_tests_test, HighDim)
 	{
 		srand(12345);
 		data_generators data_generators;
@@ -116,18 +116,18 @@ namespace DPMMSubClustersTest
 		float** tmean;
 		float** tcov;
 		int N = pow(10, 5);
-		int D = 64;
+		int D = 32;
 		int numClusters = 20;
 		int numIters = 200;
 
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 
-		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
+		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 32, MatrixXd::Identity(D, D));
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, false, 15, labels);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)
@@ -139,7 +139,7 @@ namespace DPMMSubClustersTest
 			delete[] tcov[i];
 		}
 
-		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 1);
+		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 6);
 
 		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 		std::cout << str << std::endl;
@@ -167,7 +167,7 @@ namespace DPMMSubClustersTest
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, false, 15, labels);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)
