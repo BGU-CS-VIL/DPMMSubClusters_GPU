@@ -27,7 +27,7 @@ namespace DPMMSubClustersTest
 	class myShared_actions : public shared_actions
 	{
 	public:
-		myShared_actions(global_params* globalParamsIn) :shared_actions(globalParamsIn)
+		myShared_actions(std::shared_ptr<global_params> &globalParamsIn) :shared_actions(globalParamsIn)
 		{
 			dirichletIter = 0;
 		}
@@ -66,9 +66,9 @@ namespace DPMMSubClustersTest
 	TEST(shared_actions_test, sample_cluster_params)
 	{
 		MatrixXd points;
-		myCudaKernel_gaussian* myCudaKernelObj = new myCudaKernel_gaussian();
-		global_params* gp = new global_params(10, points, NULL, prior_type::Gaussian);
-		gp->cuda = myCudaKernelObj;
+		std::unique_ptr<myCudaKernel_gaussian> myCudaKernelObj = std::make_unique<myCudaKernel_gaussian>();
+		std::shared_ptr<global_params> gp = std::make_shared<global_params>(10, points, NULL, prior_type::Gaussian);
+		gp->cuda = std::move(myCudaKernelObj);
 		gp->burnout_period = 15;
 		myShared_actions object(gp);
 
@@ -79,11 +79,11 @@ namespace DPMMSubClustersTest
 		myNiw* prior = new myNiw();
 		niw_hyperparams niwHyperparams(1.0, m, 5.0, psi);
 
-		splittable_cluster_params* cluster_params = new splittable_cluster_params();
+		std::shared_ptr<splittable_cluster_params> cluster_params = std::make_shared<splittable_cluster_params>();
 		//Both
-		cluster_params->cluster_params = new cluster_parameters();
+		cluster_params->cluster_params = std::make_shared<cluster_parameters>();
 		cluster_params->cluster_params->prior_hyperparams = niwHyperparams.clone();
-		mv_gaussian* mvGaussian = new mv_gaussian();
+		std::shared_ptr<mv_gaussian> mvGaussian = std::make_shared<mv_gaussian>();
 		mvGaussian->mu = VectorXd(2);
 		mvGaussian->mu << -0.48733974, 1.2147124;
 		mvGaussian->sigma = MatrixXd(2, 2);
@@ -92,8 +92,8 @@ namespace DPMMSubClustersTest
 		mvGaussian->invSigma << 1.7406019, 0.69490665, 0.69490665, 2.3416147;
 		mvGaussian->logdetSigma = -1.2789663;
 		cluster_params->cluster_params->distribution = mvGaussian;
-		niw_sufficient_statistics* suff_statistics = new niw_sufficient_statistics();
-		suff_statistics->N = 10.0;
+		std::shared_ptr<niw_sufficient_statistics> suff_statistics = std::make_shared<niw_sufficient_statistics>();
+		suff_statistics->N = 10;
 		suff_statistics->points_sum = VectorXd(2);
 		suff_statistics->points_sum << 34.297726, -8.619593;
 		suff_statistics->S = MatrixXd(2, 2);
@@ -107,9 +107,9 @@ namespace DPMMSubClustersTest
 		cluster_params->cluster_params->posterior_hyperparams = niwHyperparams1.clone();
 
 		//Left
-		cluster_params->cluster_params_l = new cluster_parameters();
+		cluster_params->cluster_params_l = std::make_shared<cluster_parameters>();
 		cluster_params->cluster_params_l->prior_hyperparams = niwHyperparams.clone();
-		mvGaussian = new mv_gaussian();
+		mvGaussian = std::make_shared<mv_gaussian>();
 		mvGaussian->mu = VectorXd(2);
 		mvGaussian->mu << -0.48733974, 1.2147124;
 		mvGaussian->sigma = MatrixXd(2, 2);
@@ -119,8 +119,8 @@ namespace DPMMSubClustersTest
 		mvGaussian->logdetSigma = -1.2789663;
 
 		cluster_params->cluster_params_l->distribution = mvGaussian;
-		suff_statistics = new niw_sufficient_statistics();
-		suff_statistics->N = 6.0;
+		suff_statistics = std::make_shared<niw_sufficient_statistics>();
+		suff_statistics->N = 6;
 		suff_statistics->points_sum = VectorXd(2);
 		suff_statistics->points_sum << 21.88504, -11.220918;
 		suff_statistics->S = MatrixXd(2, 2);
@@ -134,9 +134,9 @@ namespace DPMMSubClustersTest
 		cluster_params->cluster_params_l->posterior_hyperparams = niwHyperparams2.clone();
 
 		//Right
-		cluster_params->cluster_params_r = new cluster_parameters();
+		cluster_params->cluster_params_r = std::make_shared<cluster_parameters>();
 		cluster_params->cluster_params_r->prior_hyperparams = niwHyperparams.clone();
-		mvGaussian = new mv_gaussian();
+		mvGaussian = std::make_shared<mv_gaussian>();
 		mvGaussian->mu = VectorXd(2);
 		mvGaussian->mu << -0.48733974, 1.2147124;
 		mvGaussian->sigma = MatrixXd(2, 2);
@@ -146,8 +146,8 @@ namespace DPMMSubClustersTest
 		mvGaussian->logdetSigma = -1.2789663;
 
 		cluster_params->cluster_params_r->distribution = mvGaussian;
-		suff_statistics = new niw_sufficient_statistics();
-		suff_statistics->N = 4.0;
+		suff_statistics = std::make_shared<niw_sufficient_statistics>();
+		suff_statistics->N = 4;
 		suff_statistics->points_sum = VectorXd(2);
 		suff_statistics->points_sum << 12.412685, 2.601328;
 		suff_statistics->S = MatrixXd(2, 2);
@@ -339,24 +339,26 @@ namespace DPMMSubClustersTest
 			if (i == 3)
 			{
 				//left
-				niw_sufficient_statistics* ss = (niw_sufficient_statistics*)cluster_params->cluster_params_l->suff_statistics;
-				ss->N = 7.0;
+				niw_sufficient_statistics* ss = dynamic_cast<niw_sufficient_statistics*>(cluster_params->cluster_params_l->suff_statistics.get());
+
+				ss->N = 7;
 				ss->points_sum << 30.267637, -26.16328;
 				ss->S << 562.07477, -328.94397, -328.94397, 1025.3411;
 
-				niw_hyperparams* nh = (niw_hyperparams*)cluster_params->cluster_params_l->posterior_hyperparams;
+				niw_hyperparams* nh = dynamic_cast<niw_hyperparams*>(cluster_params->cluster_params_l->posterior_hyperparams.get());
+
 				nh->k = 8.0;
 				nh->m << 3.7834547, -3.27041;
 				nh->v = 12.0;
 				nh->psi << 37.71321, -19.163033, -19.163033, 78.73137;
 
 				//right
-				ss = (niw_sufficient_statistics*)cluster_params->cluster_params_r->suff_statistics;
-				ss->N = 3.0;
+				ss = dynamic_cast<niw_sufficient_statistics*>(cluster_params->cluster_params_r->suff_statistics.get());
+				ss->N = 3;
 				ss->points_sum << 4.0300894, 17.54369;
 				ss->S << 36.099518, 58.01129, 58.01129, 144.20627;
 
-				nh = (niw_hyperparams*)cluster_params->cluster_params_r->posterior_hyperparams;
+				nh = dynamic_cast<niw_hyperparams*>(cluster_params->cluster_params_r->posterior_hyperparams.get());
 				nh->k = 4.0;
 				nh->m << 1.0075223, 4.3859224;
 				nh->v = 8.0;
@@ -366,39 +368,39 @@ namespace DPMMSubClustersTest
 			else if (i == 4)
 			{
 				//left
-				niw_sufficient_statistics* ss = (niw_sufficient_statistics*)cluster_params->cluster_params_l->suff_statistics;
-				ss->N = 6.0;
+				niw_sufficient_statistics* ss = dynamic_cast<niw_sufficient_statistics*>(cluster_params->cluster_params_l->suff_statistics.get());
+
+				ss->N = 6;
 				ss->points_sum << 15.408037, -44.35743;
 				ss->S << 479.19385, -476.44736, -476.44736, 803.72107;
 
-				niw_hyperparams* nh = (niw_hyperparams*)cluster_params->cluster_params_l->posterior_hyperparams;
+				niw_hyperparams* nh = dynamic_cast<niw_hyperparams*>(cluster_params->cluster_params_l->posterior_hyperparams.get());
 				nh->k = 7.0;
 				nh->m << 2.2011483, -6.336776;
 				nh->v = 11.0;
 				nh->psi << 40.934406, -34.43728, -34.43728, 47.967087;
 
 				//right
-				ss = (niw_sufficient_statistics*)cluster_params->cluster_params_r->suff_statistics;
-				ss->N = 4.0;
+				ss = dynamic_cast<niw_sufficient_statistics*>(cluster_params->cluster_params_r->suff_statistics.get());
+
+				ss->N = 4;
 				ss->points_sum << 18.889688, 35.73784;
 				ss->S << 118.98046, 205.5147, 205.5147, 365.82626;
 
-				nh = (niw_hyperparams*)cluster_params->cluster_params_r->posterior_hyperparams;
+				nh = dynamic_cast<niw_hyperparams*>(cluster_params->cluster_params_r->posterior_hyperparams.get());
+
 				nh->k = 5.0;
 				nh->m << 3.7779377, 7.1475677;
 				nh->v = 9.0;
 				nh->psi << 5.846266, 7.833262, 7.833262, 12.820848;
 
 			}
-			object.sample_cluster_params(cluster_params, 10, false, prior);
+			object.sample_cluster_params(cluster_params, 10, false);
 		}
 
 		EXPECT_NEAR(-103.156006f, cluster_params->logsublikelihood_hist[0].second, 0.0001f);
 		EXPECT_NEAR(-103.156006f, cluster_params->logsublikelihood_hist[1].second, 0.0001f);
 		EXPECT_NEAR(-92.4774f, cluster_params->logsublikelihood_hist[2].second, 0.0001f);
 		EXPECT_NEAR(-82.60051f, cluster_params->logsublikelihood_hist[3].second, 0.0001f);
-
-		delete cluster_params;
-		delete gp;
 	}
 }

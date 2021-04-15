@@ -7,36 +7,36 @@ using namespace std;
 #include "distributions/multinomial_dist.h"
 #include "cudaKernel_multinomial.cuh"
 
-hyperparams* multinomial_prior::calc_posterior(const hyperparams* hyperParams, const sufficient_statistics* suff_statistics)
+std::shared_ptr<hyperparams> multinomial_prior::calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics)
 {
-	multinomial_hyper* p_hyperparams = (multinomial_hyper*)hyperParams;
+	multinomial_hyper* p_hyperparams = dynamic_cast<multinomial_hyper*>(hyperParams.get());
 	if (suff_statistics->N == 0)
 	{
 		return p_hyperparams->clone();
 	}
 
-	multinomial_hyper* hyper_params = new multinomial_hyper(((multinomial_hyper*)hyperParams)->alpha + suff_statistics->points_sum);
+	std::shared_ptr<hyperparams> hyper_params = std::make_shared<multinomial_hyper>(p_hyperparams->alpha + suff_statistics->points_sum);
 	return hyper_params;
 }
 
-distribution_sample* multinomial_prior::sample_distribution(const hyperparams* pHyperparams, std::mt19937* gen)
+std::shared_ptr<distribution_sample> multinomial_prior::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937> &gen)
 {
 	multinomial_hyper* pHyperParams;
 
 	if (pHyperparams == NULL)
 	{
-		return new multinomial_dist();
+		return std::make_shared<multinomial_dist>();
 	}
 	else
 	{
-		pHyperParams = (multinomial_hyper*)pHyperparams;
+		pHyperParams = dynamic_cast<multinomial_hyper*>(pHyperparams.get());
 	}
 
 	vector<double> alpha_vec(pHyperParams->alpha.data(), pHyperParams->alpha.data() + pHyperParams->alpha.rows() * pHyperParams->alpha.cols());
 
 	// Dirichlet distribution using mt19937 rng
 	dirichlet_distribution<std::mt19937> d(alpha_vec);
-	multinomial_dist* ms = new multinomial_dist();
+	std::shared_ptr<multinomial_dist> ms = std::make_shared<multinomial_dist>();
 	ms->alpha = d(*gen);
 	for (int i = 0; i < alpha_vec.size(); ++i)
 	{
@@ -47,15 +47,15 @@ distribution_sample* multinomial_prior::sample_distribution(const hyperparams* p
 }
 
 
-sufficient_statistics* multinomial_prior::create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd &points)
+std::shared_ptr<sufficient_statistics> multinomial_prior::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
 {
-	return new multinomial_sufficient_statistics(points.cols(), points.rowwise().sum());
+	return std::make_shared<multinomial_sufficient_statistics>((int)points.cols(), points.rowwise().sum());
 }
 
-double multinomial_prior::log_marginal_likelihood(const hyperparams* hyperParams, const hyperparams* posterior_hyper, const sufficient_statistics* suff_stats)
+double multinomial_prior::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats)
 {
-	multinomial_hyper* prior = (multinomial_hyper*)hyperParams;
-	multinomial_hyper* posterior = (multinomial_hyper*)posterior_hyper;
+	multinomial_hyper* prior = dynamic_cast<multinomial_hyper*>(hyperParams.get());
+	multinomial_hyper* posterior = dynamic_cast<multinomial_hyper*>(posterior_hyper.get());
 
 	double val = r8_gamma_log(prior->alpha.sum()) - r8_gamma_log(posterior->alpha.sum());
 	for (int i = 0; i < prior->alpha.size(); i++)
@@ -65,13 +65,13 @@ double multinomial_prior::log_marginal_likelihood(const hyperparams* hyperParams
 	return val;
 }
 
-void multinomial_prior::aggregate_suff_stats(sufficient_statistics* suff_l, sufficient_statistics* suff_r, sufficient_statistics* &suff_out)
+void multinomial_prior::aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out)
 {
 	suff_out->N = suff_l->N + suff_r->N;
 	suff_out->points_sum = suff_l->points_sum + suff_r->points_sum;
 }
 
-cudaKernel* multinomial_prior::get_cuda()
+std::unique_ptr<cudaKernel> multinomial_prior::get_cuda()
 {
-	return new cudaKernel_multinomial();
+	return std::make_unique<cudaKernel_multinomial>();
 }

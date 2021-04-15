@@ -11,13 +11,14 @@ class niw_sufficient_statistics : public sufficient_statistics
 {
 public:
 	niw_sufficient_statistics() {}
-	niw_sufficient_statistics(double N, const VectorXd &points_sum, const MatrixXd &S) : sufficient_statistics(N, points_sum), S(S) 
+	niw_sufficient_statistics(int N, const VectorXd &points_sum, const MatrixXd &S) : sufficient_statistics(N, points_sum), S(S) 
 	{
 	}
 
-	sufficient_statistics *clone()
+	std::shared_ptr<sufficient_statistics> clone()
 	{
-		niw_sufficient_statistics *ss = new niw_sufficient_statistics();
+		std::shared_ptr<niw_sufficient_statistics> ss = std::make_shared<niw_sufficient_statistics>();
+
 		ss->N = N;
 		ss->points_sum = points_sum;
 		ss->S = S;
@@ -32,9 +33,9 @@ public:
 	niw_hyperparams(double k, const VectorXd &m, double v, const MatrixXd &psi) : k(k), m(m), v(v), psi(psi) {}
 	~niw_hyperparams() {}
 
-	virtual hyperparams* clone()
+	std::shared_ptr<hyperparams> clone() override
 	{
-		return new niw_hyperparams(k, m, v, psi);
+		return std::make_shared<niw_hyperparams>(k, m, v, psi);
 	}
 	
 	double k;
@@ -53,17 +54,6 @@ public:
 	}
 	virtual ~niw()
 	{
-		//if (ss != NULL)
-		//{
-		//	delete ss;
-		//	ss = NULL;
-		//}
-
-	/*	if (hyper_params != NULL)
-		{
-			delete hyper_params;
-			hyper_params = NULL;
-		}*/
 	}
 
 	niw *do_clone()
@@ -81,22 +71,14 @@ public:
 	
 	void copy(const niw &niwObj)
 	{
-		/*if (niwObj.hyper_params != NULL)
-		{
-			hyper_params = niwObj.hyper_params->clone();
-		}
-		else
-		{
-			hyper_params = NULL;
-		}*/
 	}
 
-	hyperparams* calc_posterior(const hyperparams* hyperParams, const sufficient_statistics* suff_statistics);
-	distribution_sample* sample_distribution(const hyperparams* pHyperparams, std::mt19937* gen);
-	sufficient_statistics* create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd &points);
-	double log_marginal_likelihood(const hyperparams* hyperParams, const hyperparams* posterior_hyper, const sufficient_statistics* suff_stats) override;
-	void aggregate_suff_stats(sufficient_statistics* suff_l, sufficient_statistics* suff_r, sufficient_statistics* &suff_out);
-	cudaKernel* get_cuda() override;
+	std::shared_ptr<hyperparams> calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics) override;
+	std::shared_ptr<distribution_sample> sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen) override;
+	std::shared_ptr<sufficient_statistics> create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points) override;
+	double log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats) override;
+	void aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out) override;
+	std::unique_ptr<cudaKernel> get_cuda() override;
 
 protected:
 	virtual MatrixXd inverseWishart(const MatrixXd& sigma, double v);

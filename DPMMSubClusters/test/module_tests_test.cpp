@@ -23,7 +23,7 @@ namespace DPMMSubClustersTest
 	TEST(module_tests_test, TestingData)
 	{
 		module_tests mt;
-		std::vector<double> labels;
+		LabelsType labels;
 		mt.TestingData(labels);
 
 		EXPECT_EQ((size_t)50000, labels.size());
@@ -34,22 +34,22 @@ namespace DPMMSubClustersTest
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
-		std::vector<double> labels;
-		float** tmean;
-		float** tcov;
-		int N = pow(10, 5);
+		LabelsType labels;
+		double** tmean;
+		double** tcov;
+		int N = (int)pow(10, 5);
 		int D = 2;
 		int numClusters = 10;
 		int numIters = 100;
 
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 
-		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
+		std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, true, true, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, true, false, 15);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)
@@ -88,7 +88,7 @@ namespace DPMMSubClustersTest
 		int  trials = 50;
 		LabelsType labels;
 		MatrixXd clusters;
-		int N = pow(10, 5);
+		int N = (int)pow(10, 5);
 		int D = 2;
 		int numClusters = 2;
 		MatrixXd  x;
@@ -98,36 +98,36 @@ namespace DPMMSubClustersTest
 
 		data_generators.generate_mnmm_data(N, D, numClusters, trials, x, labels, clusters);
 
-		multinomial_hyper hyper_params(alpha);
+		std::shared_ptr<hyperparams> hyper_params = std::make_shared<multinomial_hyper>(alpha);
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Multinomial);
-		ModelInfo dp = dps.dp_parallel(&hyper_params, 2.0, numIters, 1, true, true, false, 15);
+		ModelInfo dp = dps.dp_parallel(hyper_params, 2.0, numIters, 1, true, true, false, 15);
 
 		EXPECT_EQ(2, dp.dp_model->group.local_clusters.size());
 	}
 
 	//Good for testing performance for bottlenecks 
-	TEST(module_tests_test, HighDim)
+	TEST(module_tests_test, DISABLED_HighDim)
 	{
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
-		std::vector<double> labels;
-		float** tmean;
-		float** tcov;
-		int N = pow(10, 5);
+		LabelsType labels;
+		double** tmean;
+		double** tcov;
+		int N = (int)pow(10, 5);
 		int D = 32;
 		int numClusters = 20;
 		int numIters = 200;
 
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 
-		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 32, MatrixXd::Identity(D, D));
+		std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 32, MatrixXd::Identity(D, D));
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, false, false, false, 15);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)
@@ -152,22 +152,22 @@ namespace DPMMSubClustersTest
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
-		std::vector<double> labels;
-		float** tmean;
-		float** tcov;
-		int N = pow(10, 5);
+		LabelsType labels;
+		double** tmean;
+		double** tcov;
+		int N = (int)pow(10, 5);
 		int D = 2;
 		int numClusters = 20;
 		int numIters = 200;
 
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 
-		niw_hyperparams hyper_params(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
+		std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(&hyper_params, N, numIters, 1, false, false, false, 15, labels);
+		ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, false, false, false, 15);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 		for (DimensionsType i = 0; i < D; i++)

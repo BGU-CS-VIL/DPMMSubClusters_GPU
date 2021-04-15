@@ -1,7 +1,5 @@
 #pragma once
 
-//#include <iostream>
-//#include <stdio.h>
 #include <vector>
 #include "distribution_sample.h"
 #include "moduleTypes.h"
@@ -11,22 +9,12 @@
 
 using namespace Eigen;
 
-//Remove - use niw and multinomial_prior instead
-//class distribution_hyper_params
-//{
-//};
-
-
-
-//import Base.copy
-//
-
 struct model_hyper_params
 {
 	model_hyper_params() {}
-	model_hyper_params(hyperparams* distribution_hyper_params, float alpha, DimensionsType total_dim) : distribution_hyper_params(distribution_hyper_params), alpha(alpha), total_dim(total_dim) {}
-	hyperparams*  distribution_hyper_params;
-	float alpha;
+	model_hyper_params(hyperparams* distribution_hyper_params, double alpha, DimensionsType total_dim) : distribution_hyper_params(distribution_hyper_params), alpha(alpha), total_dim(total_dim) {}
+	std::shared_ptr<hyperparams> distribution_hyper_params;
+	double alpha;
 	DimensionsType total_dim;
 	friend std::ostream& operator<<(std::ostream& os, const model_hyper_params& mhp)
 	{
@@ -48,43 +36,11 @@ public:
 		copy(cp);
 	}
 
-	cluster_parameters *clone()
+	std::shared_ptr<cluster_parameters> clone()
 	{
-		cluster_parameters* cp = new cluster_parameters();
+		std::shared_ptr<cluster_parameters> cp = std::make_shared<cluster_parameters>();
 		cp->copy(*this);
 		return cp;
-	}
-
-	cluster_parameters& operator=(cluster_parameters other)
-	{
-		copy(other);
-		return *this;
-	}
-	~cluster_parameters()
-	{
-		//raz  - to enable back
-		if (prior_hyperparams != NULL)
-		{
-			delete prior_hyperparams;
-			prior_hyperparams = NULL;
-		}
-		if (distribution != NULL)
-		{
-			delete distribution;
-			distribution = NULL;
-		}
-		if (suff_statistics != NULL)
-		{
-			delete suff_statistics;
-			suff_statistics = NULL;
-		}
-		//raz  - to enable back
-
-		if (posterior_hyperparams != NULL)
-		{
-			delete posterior_hyperparams;
-			posterior_hyperparams = NULL;
-		}
 	}
 
 	void copy(const cluster_parameters &cp)
@@ -126,56 +82,29 @@ public:
 		}
 	}
 
-	hyperparams* prior_hyperparams;
-	distribution_sample* distribution;
-	sufficient_statistics *suff_statistics;
-	hyperparams* posterior_hyperparams;
+	std::shared_ptr<hyperparams> prior_hyperparams;
+	std::shared_ptr<distribution_sample> distribution;
+	std::shared_ptr<sufficient_statistics> suff_statistics;
+	std::shared_ptr<hyperparams> posterior_hyperparams;
 };
 
-typedef std::vector<std::pair<bool, float>> Logsublikelihood_hist;
+typedef std::vector<std::pair<bool, double>> Logsublikelihood_hist;
 
 class splittable_cluster_params
 {
 public:
 	splittable_cluster_params() : cluster_params(NULL), cluster_params_l(NULL), cluster_params_r(NULL), splittable(false) {}
 
-	~splittable_cluster_params()
-	{
-		if (cluster_params != NULL)
-		{
-			delete cluster_params;
-			cluster_params = NULL;
-		}
-
-		if (cluster_params_l != NULL)
-		{
-			delete cluster_params_l;
-			cluster_params_l = NULL;
-		}
-
-		if (cluster_params_r != NULL)
-		{
-			delete cluster_params_r;
-			cluster_params_r = NULL;
-		}
-	}
-
 	splittable_cluster_params(const splittable_cluster_params &scp)
 	{
 		copy(scp);
 	}
 
-	splittable_cluster_params *clone()
+	std::shared_ptr<splittable_cluster_params> clone()
 	{
-		splittable_cluster_params* scp = new splittable_cluster_params();
+		std::shared_ptr<splittable_cluster_params> scp = std::make_shared<splittable_cluster_params>();
 		scp->copy(*this);
 		return scp;
-	}
-
-	splittable_cluster_params& operator=(splittable_cluster_params other)
-	{
-		copy(other);
-		return *this;
 	}
 
 	void copy(const splittable_cluster_params &scp)
@@ -212,9 +141,9 @@ public:
 		logsublikelihood_hist = scp.logsublikelihood_hist;
 	}
 
-	cluster_parameters *cluster_params;
-	cluster_parameters *cluster_params_l;
-	cluster_parameters *cluster_params_r;
+	std::shared_ptr<cluster_parameters> cluster_params;
+	std::shared_ptr<cluster_parameters> cluster_params_l;
+	std::shared_ptr<cluster_parameters> cluster_params_r;
 	std::vector<double> lr_weights;
 	bool splittable;
 	Logsublikelihood_hist logsublikelihood_hist;//bool - true is set. false not set
@@ -223,23 +152,23 @@ public:
 class thin_cluster_params
 {
 public:
-	thin_cluster_params(distribution_sample* cluster_dist, distribution_sample* l_dist, distribution_sample* r_dist, const std::vector<double> &lr_weights):cluster_dist(cluster_dist), l_dist(l_dist), r_dist(r_dist), lr_weights(lr_weights)
+	thin_cluster_params(std::shared_ptr<distribution_sample>& cluster_dist, std::shared_ptr<distribution_sample>& l_dist, std::shared_ptr<distribution_sample>& r_dist, const std::vector<double> &lr_weights):cluster_dist(cluster_dist), l_dist(l_dist), r_dist(r_dist), lr_weights(lr_weights)
 	{
 	}
 	~thin_cluster_params()
 	{
 	}
-	distribution_sample* cluster_dist;
-	distribution_sample* l_dist;
-	distribution_sample* r_dist;
+	std::shared_ptr<distribution_sample> cluster_dist;
+	std::shared_ptr<distribution_sample> l_dist;
+	std::shared_ptr<distribution_sample> r_dist;
 	std::vector<double> lr_weights;//between 0 to 1
 };
 
 struct thin_suff_stats
 {
-	sufficient_statistics *cluster_suff;
-	sufficient_statistics *l_suff;
-	sufficient_statistics *r_suff;
+	std::shared_ptr<sufficient_statistics> cluster_suff;
+	std::shared_ptr<sufficient_statistics> l_suff;
+	std::shared_ptr<sufficient_statistics> r_suff;
 };
 
 struct local_cluster
@@ -248,21 +177,16 @@ struct local_cluster
 
 	~local_cluster()
 	{
-		if (cluster_params != NULL)
-		{
-			delete cluster_params;
-			cluster_params = NULL;
-		}
 	}
 
-	local_cluster(const local_cluster &lc)
+	local_cluster(const std::shared_ptr<local_cluster>& lc)
 	{
 		copy(lc);
 	}
 
-	local_cluster *clone()
+	std::shared_ptr<local_cluster> clone()
 	{
-		local_cluster* lc = new local_cluster();
+		std::shared_ptr<local_cluster> lc = std::make_shared<local_cluster>();
 		lc->copy(*this);
 		return lc;
 	}
@@ -290,7 +214,7 @@ struct local_cluster
 		r_count = lc.r_count;
 	}
 
-	splittable_cluster_params *cluster_params;
+	std::shared_ptr<splittable_cluster_params> cluster_params;
 	DimensionsType total_dim;
 	PointType points_count;
 	LabelType l_count;
@@ -300,28 +224,17 @@ struct local_cluster
 struct local_group
 {
 	local_group() {}
-	local_group(model_hyper_params model_hyperparams, MatrixXd points, LabelsType &labels_subcluster, std::vector<local_cluster*> local_clusters, std::vector<double> weights) :
+	local_group(model_hyper_params model_hyperparams, MatrixXd points, LabelsType &labels_subcluster, std::vector<std::shared_ptr<local_cluster>>& local_clusters, std::vector<double> weights) :
 		model_hyperparams(model_hyperparams), points(points), local_clusters(local_clusters), weights(weights) {}
-	~local_group()
-	{
-		if (local_clusters.size() > 0)
-		{
-			for (std::vector<local_cluster*>::iterator iter = local_clusters.begin(); iter != local_clusters.end(); iter++)
-			{
-				delete* iter;
-			}
-			local_clusters.clear();
-		}
-	}
-
+	
 	LabelType num_labels()
 	{
-		return points.cols();
+		return (LabelType)points.cols();
 	}
 
 	model_hyper_params model_hyperparams;
 	MatrixXd points;
-	std::vector<local_cluster*> local_clusters;
+	std::vector<std::shared_ptr<local_cluster>> local_clusters;
 	std::vector<double> weights;
 };
 
@@ -329,11 +242,10 @@ struct local_group
 class pts_less_group
 {
 public:
-	pts_less_group(model_hyper_params model_hyperparam, std::vector<local_cluster*> local_clusters, std::vector<double> weights) :
+	pts_less_group(model_hyper_params model_hyperparam, std::vector<std::shared_ptr<local_cluster>>& local_clusters, std::vector<double>& weights) :
 		model_hyperparams(model_hyperparams), local_clusters(local_clusters), weights(weights) {}
 	model_hyper_params model_hyperparams;
-//	LabelsType labels;
-	std::vector<local_cluster*> local_clusters;
+	std::vector<std::shared_ptr<local_cluster>> local_clusters;
 	std::vector<double> weights;
 
 	friend std::ostream& operator<<(std::ostream& os, const pts_less_group& plg)
@@ -348,17 +260,6 @@ public:
 	}
 };
 
-//
-//mutable struct local_group_stats
-//labels::AbstractArray {
-//	Int64, 1
-//}
-//labels_subcluster::AbstractArray{ Int64,1 }
-//local_clusters::Vector{ local_cluster }
-//end
-//
-//
-
 struct dp_parallel_sampling
 {
 	dp_parallel_sampling() {}
@@ -368,12 +269,6 @@ struct dp_parallel_sampling
 	local_group group;
 };
 
-//function copy_local_cluster(c::local_cluster)
-//return deepcopy(c)
-//end
-//
-//
-
 class ds
 {
 public:
@@ -382,11 +277,3 @@ public:
 		return new pts_less_group(group.model_hyperparams, group.local_clusters, group.weights);
 	}
 };
-
-
-//
-//function create_model_from_saved_data(group::pts_less_group, points::AbstractArray{ Float32,2 }, model_hyperparams::model_hyper_params)
-//group = local_group(group.model_hyperparams, points, group.labels, group.labels_subcluster, group.local_clusters, group.weights)
-//return dp_parallel_sampling(model_hyperparams, group)
-//end
-

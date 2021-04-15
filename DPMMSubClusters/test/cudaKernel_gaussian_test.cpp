@@ -17,14 +17,14 @@ namespace DPMMSubClustersTest
 {
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_less_prob_for_one)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne = 0;
 		int countTwo = 0;
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -33,8 +33,16 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
+		double* d_r;
+		object->allocate_in_device(log_likelihood_array, d_r);
+		cudaStream_t stream;
+		object->create_stream(stream);
 
-		object->sample_log_cat_array(log_likelihood_array, 0);
+		object->sample_log_cat_array(d_r, (int)log_likelihood_array.cols(), stream, deviceId);
+
+		object->release_in_device(d_r);
+		object->release_stream(stream);
 		object->get_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -63,13 +71,13 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_less_prob_for_two)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne = 0;
 		int countTwo = 0;
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -78,8 +86,16 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
+		double* d_r;
+		object->allocate_in_device(log_likelihood_array, d_r);
+		cudaStream_t stream;
+		object->create_stream(stream);
 
-		object->sample_log_cat_array(log_likelihood_array, 0);
+		object->sample_log_cat_array(d_r, (int)log_likelihood_array.cols(), stream, deviceId);
+
+		object->release_in_device(d_r);
+		object->release_stream(stream);
 		object->get_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -108,7 +124,7 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_with_seed)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne1 = 0;
 		int countTwo1 = 0;
 		int countOther1 = 0;
@@ -119,7 +135,7 @@ namespace DPMMSubClustersTest
 
 		LabelsType labels1;
 		LabelsType labels2;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -128,10 +144,21 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, 12345);
-
-		object->sample_log_cat_array(log_likelihood_array, 0);
+		int deviceId = object->peak_first_device();
+		double* d_r;
+		object->allocate_in_device(log_likelihood_array, d_r);
+		cudaStream_t stream;
+		object->create_stream(stream);
+		object->sample_log_cat_array(d_r, (int)log_likelihood_array.cols(), stream, deviceId);
+		object->release_in_device(d_r);
+		object->release_stream(stream);
 		object->get_labels(labels1);
-		object->sample_log_cat_array(log_likelihood_array, 0);
+
+		object->allocate_in_device(log_likelihood_array, d_r);
+		object->create_stream(stream);
+		object->sample_log_cat_array(d_r, (int)log_likelihood_array.cols(), stream, deviceId);
+		object->release_in_device(d_r);
+		object->release_stream(stream);
 		object->get_labels(labels2);
 
 		for (int i = 0; i < numLabels; i++)
@@ -181,14 +208,14 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_sub_cluster_less_prob_for_one_all_indices)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne = 0;
 		int countTwo = 0;
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
 		for (int i = 0; i < numLabels; i++)
@@ -197,11 +224,27 @@ namespace DPMMSubClustersTest
 			log_likelihood_array(i, 1) = 0.6;
 			indices.push_back(i);
 		}
-		std::vector<double> lr_weights = { 0.5,0.5 };
+		Eigen::VectorXd lr_weights(2);
+		lr_weights << 0.5, 0.5;
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
+		cudaStream_t stream;
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
+		object->create_stream(stream);
+		int* d_indices;
+		object->allocate_in_device(indices, d_indices);
+		double* d_lr_weights;
+		double* d_r;
+		object->allocate_in_device(lr_weights, d_lr_weights);
+		object->allocate_in_device(log_likelihood_array, d_r);
+
+		object->sample_log_cat_array_sub_cluster(d_r, (int)indices.size(), d_indices, (int)indices.size(), d_lr_weights, stream, deviceId);
+
+		object->release_in_device(d_indices);
+		object->release_in_device(d_lr_weights);
+		object->release_in_device(d_r);
+		object->release_stream(stream);
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -230,7 +273,7 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_sub_cluster_less_prob_for_one_few_indices)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOneIndex = 0;
 		int countTwoIndex = 0;
 		int countOtherIndex = 0;
@@ -240,7 +283,7 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array_all(numLabels, 2);
 		LabelsType indices;
 		LabelsType allIndices;
@@ -257,15 +300,41 @@ namespace DPMMSubClustersTest
 
 		Eigen::MatrixXd log_likelihood_array_index = log_likelihood_array_all;
 		log_likelihood_array_index.conservativeResize(indices.size(), 2);
-		std::vector<double> lr_weights = { 0.5,0.5 };
+		Eigen::VectorXd lr_weights(2);
+		lr_weights << 0.5, 0.5;
 
 		object->init(numLabels, points, NULL);
 
 		//First set values for sub labels
-		object->sample_log_cat_array_sub_cluster(allIndices.data(), allIndices.size(), log_likelihood_array_all, lr_weights, 0);
+		int deviceId = object->peak_first_device();
+		cudaStream_t stream;
+
+		object->create_stream(stream);
+		int* d_allIndices;
+		object->allocate_in_device(allIndices, d_allIndices);
+		double* d_lr_weights;
+		object->allocate_in_device(lr_weights, d_lr_weights);
+		double* d_log_likelihood_array_all;
+		object->allocate_in_device(log_likelihood_array_all, d_log_likelihood_array_all);
+
+		object->sample_log_cat_array_sub_cluster(d_log_likelihood_array_all, (int)allIndices.size(), d_allIndices, (int)allIndices.size(), d_lr_weights, stream, deviceId);
+
+		object->release_in_device(d_allIndices);
+		object->release_in_device(d_log_likelihood_array_all);
 
 		//Calculate per index
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array_index, lr_weights, 0);
+		int* d_indices;
+		object->allocate_in_device(indices, d_indices);
+		double* d_log_likelihood_array_index;
+		object->allocate_in_device(log_likelihood_array_index, d_log_likelihood_array_index);
+
+		object->sample_log_cat_array_sub_cluster(d_log_likelihood_array_index, (int)indices.size(), d_indices, (int)indices.size(), d_lr_weights, stream, deviceId);
+		object->release_in_device(d_lr_weights);
+		object->release_in_device(d_indices);
+		object->release_in_device(d_log_likelihood_array_index);
+
+		object->release_stream(stream);
+
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -315,16 +384,18 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_sub_cluster_left_increases_prob_in_each_iter)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
-		std::vector<double> lr_weights = { 0.5,0.5 };
+		Eigen::VectorXd lr_weights(2);
+		lr_weights << 0.5, 0.5;
 		MatrixXd points(2, numLabels);
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
 		double leftProb = 0.5;
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -339,7 +410,21 @@ namespace DPMMSubClustersTest
 				log_likelihood_array(i, 1) = 1 - leftProb;
 			}
 
-			object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
+			cudaStream_t stream;
+			object->create_stream(stream);
+			int* d_indices;
+			object->allocate_in_device(indices, d_indices);
+			double* d_lr_weights;
+			object->allocate_in_device(lr_weights, d_lr_weights);
+			double* d_log_likelihood_array;
+			object->allocate_in_device(log_likelihood_array, d_log_likelihood_array);
+
+			object->sample_log_cat_array_sub_cluster(d_log_likelihood_array, (int)indices.size(), d_indices, (int)indices.size(), d_lr_weights, stream, deviceId);
+
+			object->release_in_device(d_indices);
+			object->release_in_device(d_lr_weights);
+			object->release_in_device(d_log_likelihood_array);
+			object->release_stream(stream);
 
 			object->get_sub_labels(labels);
 			int countOne = 0;
@@ -381,7 +466,7 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_sub_cluster_even_left_odd_right)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne = 0;
 		int countTwo = 0;
 		int countFalseOne = 0;
@@ -389,10 +474,11 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
-		std::vector<double> lr_weights = { 0.5,0.5 };
+		Eigen::VectorXd lr_weights(2);
+		lr_weights << 0.5, 0.5;
 
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -412,8 +498,23 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
+		cudaStream_t stream;
+		object->create_stream(stream);
+		int* d_indices;
+		object->allocate_in_device(indices, d_indices);
+		double* d_lr_weights;
+		object->allocate_in_device(lr_weights, d_lr_weights);
+		double* d_log_likelihood_array;
+		object->allocate_in_device(log_likelihood_array, d_log_likelihood_array);
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
+		object->sample_log_cat_array_sub_cluster(d_log_likelihood_array, (int)indices.size(), d_indices, (int)indices.size(), d_lr_weights, stream, deviceId);
+
+		object->release_in_device(d_indices);
+		object->release_in_device(d_lr_weights);
+		object->release_in_device(d_log_likelihood_array);
+		object->release_stream(stream);
+
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -454,7 +555,7 @@ namespace DPMMSubClustersTest
 
 	TEST(cudaKernel_gaussian_test, sample_log_cat_array_sub_cluster_3_groups_of_prob)
 	{
-		int numLabels = pow(10, 5);
+		int numLabels = (int)pow(10, 5);
 		int countOne = 0;
 		int countTwo = 0;
 		int countThree = 0;
@@ -464,10 +565,11 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 
 		LabelsType labels;
-		cudaKernel* object = new cudaKernel_gaussian();
+		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
-		std::vector<double> lr_weights = { 0.5,0.5 };
+		Eigen::VectorXd lr_weights(2);
+		lr_weights << 0.5, 0.5;
 
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -490,8 +592,23 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL);
+		int deviceId = object->peak_first_device();
+		cudaStream_t stream;
+		object->create_stream(stream);
+		int* d_indices;
+		object->allocate_in_device(indices, d_indices);
+		double* d_lr_weights;
+		object->allocate_in_device(lr_weights, d_lr_weights);
+		double* d_log_likelihood_array;
+		object->allocate_in_device(log_likelihood_array, d_log_likelihood_array);
 
-		object->sample_log_cat_array_sub_cluster(indices.data(), indices.size(), log_likelihood_array, lr_weights, 0);
+		object->sample_log_cat_array_sub_cluster(d_log_likelihood_array, (int)indices.size(), d_indices, (int)indices.size(), d_lr_weights, stream, deviceId);
+
+		object->release_in_device(d_indices);
+		object->release_in_device(d_lr_weights);
+		object->release_in_device(d_log_likelihood_array);
+		object->release_stream(stream);
+
 		object->get_sub_labels(labels);
 
 		for (int i = 0; i < numLabels; i++)
@@ -544,7 +661,7 @@ namespace DPMMSubClustersTest
 		delete object;
 	}
 
-	TEST(cudaKernel_gaussian_test, naive_matrix_multiply_v3)
+	TEST(cudaKernel_gaussian_test, naive_matrix_multiply)
 	{
 		int numLabels = 10;
 		MatrixXd points(2, numLabels);
@@ -587,9 +704,9 @@ namespace DPMMSubClustersTest
 		}
 	}
 
-	TEST(cudaKernel_gaussian_test, naive_matrix_multiply_v3_big_k)
+	TEST(cudaKernel_gaussian_test, naive_matrix_multiply_big_k)
 	{
-		int numLabels = pow(10, 1);
+		int numLabels = (int)pow(10, 1);
 		MatrixXd points(2, numLabels);
 		cudaStream_t stream;
 		myCudaKernel_gaussian object;
@@ -628,19 +745,220 @@ namespace DPMMSubClustersTest
 		}
 	}
 
-	//TEST(cudaKernel_gaussian_test, dcolwise_dot)
-	//{
-	//	cudaKernel_gaussian object;
-	//	MatrixXd A(3, 2);
-	//	A << 0.1, 0.2, 0.3, 0.4, 0.5, 0.6;
-	//	MatrixXd B(2, 3);
-	//	B << 0.5, 0.6, 0.7, 0.8, 0.9, 0.10;
-	//	Eigen::VectorXd r;
+	TEST(cudaKernel_gaussian_test, log_likelihood)
+	{
+		double weight = 0.5;
+		MatrixXd x(2, 10);
+		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
+		myCudaKernel_gaussian cuda;
+		cuda.init(10, x, 12345);
+		VectorXd r(10);
+		VectorXd mu(2);
+		mu << -8.180686, -2.1489322;
+		MatrixXd sigma(2, 2);
+		sigma << 110.386635, 57.80892, 57.80892, 31.78561;
+		MatrixXd invSigma(2, 2);
+		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
+		double logdetSigma = 5.117007f;
+		LLT<MatrixXd, Upper> invChol;
 
-	//	object.init(0, NULL);
-	//	object.dcolwise_dot(r, A, B);
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_r;
+		cuda.allocate_in_device(10, d_r);
+		cuda.create_stream(stream);
 
-	//	EXPECT_NEAR(0.55800000000000005, r(0), 0.0001);
-	//	EXPECT_NEAR(0.11600000000000002, r(1), 0.0001);
-	//}
+		cuda.my_log_likelihood_labels(d_r, 2, weight, gaussian, stream, deviceId);
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_r, 10, r);
+		cuda.release_in_device(d_r);
+
+		EXPECT_NEAR(-10.914704733523372, r(0), 0.0001);
+		EXPECT_NEAR(-9.3608854551121343, r(1), 0.0001);
+		EXPECT_NEAR(-12.618434473509506, r(2), 0.0001);
+		EXPECT_NEAR(-15.158315554934889, r(3), 0.0001);
+		EXPECT_NEAR(-9.8075570569084967, r(4), 0.0001);
+		EXPECT_NEAR(-7.1568226940489517, r(5), 0.0001);
+		EXPECT_NEAR(-7.701420836694135, r(6), 0.0001);
+		EXPECT_NEAR(-7.2147277754819097, r(7), 0.0001);
+		EXPECT_NEAR(-9.046606018598947, r(8), 0.0001);
+		EXPECT_NEAR(-42.303768571037402, r(9), 0.0001);
+	}
+
+	TEST(cudaKernel_gaussian_test, log_likelihood_ignore_weight)
+	{
+		double weight = 1; //log(1) => 0 will ignore it part of the calculation
+		MatrixXd x(2, 10);
+		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
+		myCudaKernel_gaussian cuda;
+		cuda.init(10, x, 12345);
+		VectorXd r(10);
+		VectorXd mu(2);
+		mu << -8.180686, -2.1489322;
+		MatrixXd sigma(2, 2);
+		sigma << 110.386635, 57.80892, 57.80892, 31.78561;
+		MatrixXd invSigma(2, 2);
+		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
+		double logdetSigma = 5.117007f;
+		LLT<MatrixXd, Upper> invChol;
+
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_r;
+		cuda.allocate_in_device(10, d_r);
+		cuda.create_stream(stream);
+
+		cuda.my_log_likelihood_labels(d_r, 2, weight, gaussian, stream, deviceId);
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_r, 10, r);
+		cuda.release_in_device(d_r);
+
+		EXPECT_NEAR(-10.221556, r(0), 0.0001);
+		EXPECT_NEAR(-8.667738, r(1), 0.0001);
+		EXPECT_NEAR(-11.925285, r(2), 0.0001);
+		EXPECT_NEAR(-14.465169, r(3), 0.0001);
+		EXPECT_NEAR(-9.114409, r(4), 0.0001);
+		EXPECT_NEAR(-6.4636755, r(5), 0.0001);
+		EXPECT_NEAR(-7.0082736, r(6), 0.0001);
+		EXPECT_NEAR(-6.52158, r(7), 0.0001);
+		EXPECT_NEAR(-8.3534565, r(8), 0.0001);
+		EXPECT_NEAR(-41.610622, r(9), 0.0001);
+	}
+
+	TEST(cudaKernel_gaussian_test, log_likelihood_sigma_is_identity)
+	{
+		double weight = 1; //log(1) => 0 will ignore it part of the calculation
+		MatrixXd x(2, 10);
+		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
+		myCudaKernel_gaussian cuda;
+		cuda.init(10, x, 12345);
+		mv_gaussian object;
+		VectorXd r1(10);
+		VectorXd r2(10);
+		VectorXd mu(2);
+		mu << -8.180686, -2.1489322;
+		MatrixXd sigma(2, 2);
+		sigma << 1, 0, 0, 1;
+		MatrixXd invSigma(2, 2);
+		invSigma << 1, 0, 0, 1;
+		double logdetSigma = 5.117007f;
+		LLT<MatrixXd, Upper> invChol;
+
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_r1;
+		cuda.allocate_in_device(10, d_r1);
+		cuda.create_stream(stream);
+
+		cuda.my_log_likelihood_labels(d_r1, 2, weight, gaussian, stream, deviceId);
+
+		cuda.copy_from_device(d_r1, 10, r1);
+		cuda.release_stream(stream);
+		cuda.release_in_device(d_r1);
+
+		MatrixXd z = x.colwise() - gaussian->mu;
+		r2 = (z.cwiseProduct(gaussian->invSigma * z)).colwise().sum();
+		double scalar = -((gaussian->sigma.size() * log(2 * EIGEN_PI) + gaussian->logdetSigma) / 2);
+		r2 = scalar * VectorXd::Ones(r2.size()) - r2 / 2;
+
+		for (int i = 0; i < 10; i++)
+		{
+			EXPECT_NEAR(r2(i), r1(i), 0.0001);
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, divide_points_by_mu_all)
+	{
+		MatrixXd x(2, 10);
+		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
+		myCudaKernel_gaussian cuda;
+		cuda.init(10, x, 12345);
+		VectorXd r(10);
+		VectorXd mu(2);
+		mu << -8.180686, -2.1489322;
+		MatrixXd sigma(2, 2);
+		sigma << 110.386635, 57.80892, 57.80892, 31.78561;
+		MatrixXd invSigma(2, 2);
+		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
+		double logdetSigma = 5.117007f;
+		LLT<MatrixXd, Upper> invChol;
+		MatrixXd z1;
+
+		mv_gaussian* gaussian = new mv_gaussian(mu, sigma, invSigma, logdetSigma, invChol);
+
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_z;
+		cuda.allocate_in_device(2 * 10, d_z);
+		cuda.create_stream(stream);
+
+		cuda.my_divide_points_by_mu_all(2, gaussian, d_z, stream, deviceId);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_z, 2, 10, z1);
+		cuda.release_in_device(d_z);
+
+		MatrixXd z2 = x.colwise() - gaussian->mu;
+
+		delete gaussian;
+
+		for (int i = 0; i < 2; i++)
+		{
+			for (int j = 0; j < 10; j++)
+			{
+				EXPECT_NEAR(z2(i, j), z1(i, j), 0.0001);
+			}
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, dcolwise_dot_all_labels)
+	{
+		myCudaKernel_gaussian cuda;
+		MatrixXd x(2, 10);
+		MatrixXd A(3, 3);
+		A << 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9;
+		MatrixXd B(3, 3);
+		B << 0.5, 0.6, 0.7, 0.8, 0.9, 0.10, 0.11, 0.12, 0.13;
+		VectorXd C1;
+
+		cuda.init(0, x, NULL);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_A;
+		cuda.allocate_in_device(A, d_A);
+		double* d_B;
+		cuda.allocate_in_device(B, d_B);
+		double* d_C;
+		cuda.allocate_in_device((int)(A.rows() * B.cols()), d_C);
+
+		cuda.create_stream(stream);
+		double scalar = 0.2;
+		double weight = 0.4;
+
+		cuda.my_dcolwise_dot_all_labels((int)(A.rows() * B.cols()), (int)A.rows(), d_A, d_B, scalar, d_C, weight, stream);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_C, (int)A.rows(), C1);
+		cuda.release_in_device(d_A);
+		cuda.release_in_device(d_B);
+		cuda.release_in_device(d_C);
+
+		VectorXd C2 = (A.cwiseProduct(B)).colwise().sum();
+		C2 = scalar * VectorXd::Ones(C2.size()) - C2 / 2;
+		C2 += log(weight) * VectorXd::Ones(C2.rows());
+
+		for (int i = 0; i < C2.rows(); i++)
+		{
+			EXPECT_NEAR(C2(i), C1(i), 0.0001);
+		}
+	}
 }

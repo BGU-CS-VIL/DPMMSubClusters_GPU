@@ -6,26 +6,22 @@
 
 class cudaKernel_multinomial : public cudaKernel
 {
-public:
-	virtual void log_likelihood(Eigen::VectorXd& r, const Eigen::MatrixXd& x, const distribution_sample* distribution_sample);
-
-
 protected:
-	virtual void log_likelihood_v2(
+	virtual void log_likelihood_sub_labels(
 		double* d_r,
 		int r_offset,
 		int* d_indices,
 		int indicesSize,
 		int dim,
-		const distribution_sample* distribution_sample,
+		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,
 		int deviceId);
 
-	virtual void log_likelihood_v3(
+	virtual void log_likelihood_labels(
 		double* d_r,
 		int dim,
 		double weight,
-		const distribution_sample* distribution_sample,
+		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,
 		int deviceId);
 };

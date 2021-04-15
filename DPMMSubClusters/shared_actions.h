@@ -7,19 +7,19 @@
 class shared_actions
 {
 public:
-	shared_actions(global_params *globalParamsIn)
+	shared_actions(std::shared_ptr<global_params>& globalParamsIn)
 	{
 		globalParams = globalParamsIn;
 	}
-	void sample_cluster_params(splittable_cluster_params* &params, float alpha, bool first, prior *pPrior);
-	void create_splittable_from_params(prior *pPrior, cluster_parameters* &params, double alpha, splittable_cluster_params* &scpOut);
-	void should_merge(prior *pPrior, bool &should_merge, cluster_parameters* &cpl, cluster_parameters* &cpr, double alpha, bool bFinal);
-	void merge_clusters_to_splittable(prior *pPrior, splittable_cluster_params* &scpl, cluster_parameters* &cpr, double alpha);
+	void sample_cluster_params(std::shared_ptr<splittable_cluster_params>& params, double alpha, bool first);
+	void create_splittable_from_params(std::shared_ptr<cluster_parameters>& params, double alpha, std::shared_ptr<splittable_cluster_params>& scpOut);
+	void should_merge(bool& should_merge, std::shared_ptr<cluster_parameters>& cpl, std::shared_ptr<cluster_parameters>& cpr, double alpha, bool bFinal);
+	void merge_clusters_to_splittable(std::shared_ptr<splittable_cluster_params>& scpl, std::shared_ptr<cluster_parameters>& cpr, double alpha);
 
 protected:
-	virtual std::vector<double> get_dirichlet_distribution(std::vector<double> &points_count);
+	virtual std::vector<double> get_dirichlet_distribution(std::vector<double>& points_count);
 
 private:
-	global_params *globalParams;
+	std::shared_ptr<global_params> globalParams;
 };
 

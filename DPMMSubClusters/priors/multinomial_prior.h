@@ -10,10 +10,11 @@ class multinomial_sufficient_statistics : public sufficient_statistics
 {
 public:
 	multinomial_sufficient_statistics() {}
-	multinomial_sufficient_statistics(double N, VectorXd points_sum) : sufficient_statistics(N, points_sum) {}
-	sufficient_statistics *clone()
+	multinomial_sufficient_statistics(int N, VectorXd points_sum) : sufficient_statistics(N, points_sum) {}
+	std::shared_ptr<sufficient_statistics> clone()
 	{
-		multinomial_sufficient_statistics *ss = new multinomial_sufficient_statistics();
+		std::shared_ptr<multinomial_sufficient_statistics> ss = std::make_shared<multinomial_sufficient_statistics>();
+
 		ss->N = N;
 		ss->points_sum = points_sum;
 		return ss;
@@ -25,9 +26,9 @@ class multinomial_hyper : public hyperparams
 public:
 	multinomial_hyper(VectorXd alpha) : hyperparams(), alpha(alpha) {}
 
-	virtual hyperparams* clone()
+	std::shared_ptr<hyperparams> clone() override
 	{
-		return new multinomial_hyper(alpha);
+		return std::make_shared<multinomial_hyper>(alpha);
 	}
 
 	VectorXd alpha;
@@ -39,34 +40,21 @@ public:
 	multinomial_prior() {}
 	virtual ~multinomial_prior()
 	{
-		//if (ss != NULL)
-		//{
-		//	delete ss;
-		//	ss = NULL;
-		//}
-
-		//if (hyper_params != NULL)
-		//{
-		//	delete hyper_params;
-		//	hyper_params = NULL;
-		//}
 	}
 
 	multinomial_prior(const multinomial_prior& mp2) {}
 	prior *do_clone()
 	{
 		multinomial_prior *pMp = new multinomial_prior();
-//		pMp->ss = ss != NULL ? ss->clone() : NULL;
-//		pMp->hyper_params = hyper_params != NULL ? hyper_params->clone() : NULL;
 		return pMp;
 	}
 		
-	hyperparams* calc_posterior(const hyperparams* hyperParams, const sufficient_statistics* suff_statistics) override;
-	distribution_sample* sample_distribution(const hyperparams* pHyperparams, std::mt19937* gen) override;
-	sufficient_statistics* create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd &points) override;
-	double log_marginal_likelihood(const hyperparams* hyperParams, const hyperparams* posterior_hyper, const sufficient_statistics* suff_stats) override;
-	void aggregate_suff_stats(sufficient_statistics* suff_l, sufficient_statistics* suff_r, sufficient_statistics* &suff_out) override;
-	cudaKernel* get_cuda() override;
+	std::shared_ptr<hyperparams> calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics) override;
+	std::shared_ptr<distribution_sample> sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937> &gen) override;
+	std::shared_ptr<sufficient_statistics> create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd &points) override;
+	double log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats) override;
+	void aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out) override;
+	std::unique_ptr<cudaKernel> get_cuda() override;
 
 private:
 };

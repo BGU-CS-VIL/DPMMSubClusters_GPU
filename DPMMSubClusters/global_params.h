@@ -2,15 +2,12 @@
 #include <random>
 #include <string>
 #include <vector>
-#include "float.h"
 #include "Eigen/Dense"
 #include "ds.h"
-#include "clusterInfo.h"
 #include "cudaKernel.cuh"
 
 using namespace Eigen;
 
-class hyperparams;
 class prior;
 
 enum prior_type
@@ -25,7 +22,7 @@ public:
 	global_params(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType);
 	~global_params();
 
-	prior* pPrior;
+	std::unique_ptr<prior> pPrior;
 
 	//Data Loading specifics
 	std::string data_path;
@@ -40,8 +37,9 @@ public:
 	int split_stop;
 
 	unsigned long long random_seed;
-	std::random_device *rd;
-	std::mt19937 *gen;
+	std::unique_ptr<std::random_device> rd;
+
+	std::unique_ptr<std::mt19937> gen;
 
 	int max_split_iter;
 	int burnout_period;
@@ -49,9 +47,9 @@ public:
 
 	//Model hyperparams
 	double alpha;
-	hyperparams* hyper_params;
+	std::shared_ptr<hyperparams> hyper_params;
 	double outlier_mod;
-	hyperparams* outlier_hyper_params;
+	std::shared_ptr<hyperparams> outlier_hyper_params;
 
 	//Saving specifics :
 	bool enable_saving;
@@ -64,15 +62,12 @@ public:
 	bool draw_labels;
 	bool should_save_model;
 	double max_num_of_clusters;
-	std::vector<double> ground_truth;
 	MatrixXd glob_parr;
 
-	std::vector<thin_cluster_params*> clusters_vector;
+	std::vector<std::shared_ptr<thin_cluster_params>> clusters_vector;
 	std::vector<double> clusters_weights;
 
-//	clusterInfos clusterInfos;
-	cudaKernel *cuda;
+	std::unique_ptr<cudaKernel> cuda;
 	int numLabels;
 	MatrixXd points;
-
 };

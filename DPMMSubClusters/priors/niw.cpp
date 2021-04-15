@@ -17,19 +17,17 @@
 
 using namespace std;
 
-/*
-niw_hyperparams(k::Float32, m::AbstractArray{ Float32 }, v::Float32, psi::AbstractArray{ Float32 })
-
-[Normal Inverse Wishart](https://en.wikipedia.org/wiki/Normal-inverse-Wishart_distribution)
-*/
-
-hyperparams* niw::calc_posterior(const hyperparams* hyperParams, const sufficient_statistics* suff_statistics)
+//[Normal Inverse Wishart](https://en.wikipedia.org/wiki/Normal-inverse-Wishart_distribution)
+std::shared_ptr<hyperparams> niw::calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics)
 {
-	niw_hyperparams* pNiw_hyperparams = (niw_hyperparams*)hyperParams;
+	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
+
 	if (suff_statistics->N == 0)
 	{
 		return pNiw_hyperparams->clone();
 	}
+
+	niw_sufficient_statistics* ss = dynamic_cast<niw_sufficient_statistics*>(suff_statistics.get());
 
 	double k;
 	VectorXd m;
@@ -38,13 +36,13 @@ hyperparams* niw::calc_posterior(const hyperparams* hyperParams, const sufficien
 
 	k = pNiw_hyperparams->k + suff_statistics->N;
 	v = pNiw_hyperparams->v + suff_statistics->N;
-	m = (pNiw_hyperparams->m*pNiw_hyperparams->k + suff_statistics->points_sum) / k;
-	
-	MatrixXd tempMat = pNiw_hyperparams->v * pNiw_hyperparams->psi + pNiw_hyperparams->k*pNiw_hyperparams->m*pNiw_hyperparams->m.adjoint();
-	psi = (tempMat - k * m*m.adjoint() + ((niw_sufficient_statistics*)suff_statistics)->S) / v;
+	m = (pNiw_hyperparams->m * pNiw_hyperparams->k + suff_statistics->points_sum) / k;
+
+	MatrixXd tempMat = pNiw_hyperparams->v * pNiw_hyperparams->psi + pNiw_hyperparams->k * pNiw_hyperparams->m * pNiw_hyperparams->m.adjoint();
+	psi = (tempMat - k * m * m.adjoint() + ss->S) / v;
 	psi = psi.selfadjointView<Upper>();
 	psi = (psi + psi.adjoint()) / 2;
-	niw_hyperparams* hyper_params = new niw_hyperparams(k, m, v, psi);
+	std::shared_ptr<niw_hyperparams> hyper_params = std::make_shared<niw_hyperparams>(k, m, v, psi);
 	return hyper_params;
 }
 
@@ -58,17 +56,17 @@ double* niw::multinormal_sample(int n, double mu[], double r[])
 	return r8vec_multinormal_sample(n, mu, r);
 }
 
-distribution_sample* niw::sample_distribution(const hyperparams* pHyperparams, std::mt19937* gen)
+std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen)
 {
 	niw_hyperparams* pNiw_hyperparams;
 
 	if (pHyperparams == NULL)
 	{
-		return new mv_gaussian();
+		return std::make_shared<mv_gaussian>();
 	}
 	else
 	{
-		pNiw_hyperparams = (niw_hyperparams*)pHyperparams;
+		pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(pHyperparams.get());
 	}
 
 	MatrixXd niwSigma = pNiw_hyperparams->v* pNiw_hyperparams->psi;
@@ -77,55 +75,54 @@ distribution_sample* niw::sample_distribution(const hyperparams* pHyperparams, s
 	MatrixXd mat1 = (sigma / pNiw_hyperparams->k);
 	LLT<MatrixXd> cholmat1(mat1);
 	MatrixXd L = cholmat1.matrixL();
-	double *mu = multinormal_sample(mat1.rows(), pNiw_hyperparams->m.data(), L.data());
+	double *mu = multinormal_sample((int)mat1.rows(), pNiw_hyperparams->m.data(), L.data());
     MatrixXd invSigma = sigma.inverse();
 	LLT<MatrixXd, Upper> chol(invSigma.selfadjointView<Upper>()); // compute the Cholesky
 	Eigen::VectorXd muV = Eigen::VectorXd::Map(mu, mat1.rows());
-	return new mv_gaussian(muV, sigma, invSigma, logdet(sigma), chol);
+	return std::make_shared<mv_gaussian>(muV, sigma, invSigma, logdet(sigma), chol);
 }
 
-
-sufficient_statistics* niw::create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd& points)
+std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
 {
 	if (points.cols() == 0)
 	{
-		niw_hyperparams* pNiw_hyperparams = (niw_hyperparams*)hyperParams;
-		return new niw_sufficient_statistics(points.cols(), VectorXd::Zero(pNiw_hyperparams->m.size()), MatrixXd::Zero(pNiw_hyperparams->m.size(), pNiw_hyperparams->m.size()));
+		niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
+		return std::make_shared<niw_sufficient_statistics>((int)points.cols(), VectorXd::Zero(pNiw_hyperparams->m.size()), MatrixXd::Zero(pNiw_hyperparams->m.size(), pNiw_hyperparams->m.size()));
 	}
 
 	MatrixXd S = points * points.adjoint();
 	S = 0.5 * (S + S.adjoint());
 
-	return new niw_sufficient_statistics(points.cols(), points.rowwise().sum(), S);
+	return std::make_shared<niw_sufficient_statistics>((int)points.cols(), points.rowwise().sum(), S);
 }
 
 
-double niw::log_marginal_likelihood(const hyperparams* hyperParams, const hyperparams* posterior_hyper, const sufficient_statistics* suff_stats)
+double niw::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats)
 {
-	niw_hyperparams* pNiw_hyperparams = (niw_hyperparams*)hyperParams;
-	niw_hyperparams* pPosterior_hyper = (niw_hyperparams*)posterior_hyper;
-	long D = suff_stats->points_sum.size();
+	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
+	niw_hyperparams* pPosterior_hyper = dynamic_cast<niw_hyperparams*>(posterior_hyper.get());
+	long D = (long)suff_stats->points_sum.size();
 	double logpi = log(EIGEN_PI);
-	return -suff_stats->N*D*0.5*logpi +
+	return -suff_stats->N * D * 0.5 * logpi +
 		utils::log_multivariate_gamma(pPosterior_hyper->v / 2.0, D) -
 		utils::log_multivariate_gamma(pNiw_hyperparams->v / 2.0, D) +
-		(pNiw_hyperparams->v / 2.0)*(D*log(pNiw_hyperparams->v) + logdet(pNiw_hyperparams->psi)) -
-		(pPosterior_hyper->v / 2.0)*(D*log(pPosterior_hyper->v) + logdet(pPosterior_hyper->psi)) +
-		(D / 2.0)*(log(pNiw_hyperparams->k / pPosterior_hyper->k));
+		(pNiw_hyperparams->v / 2.0) * (D * log(pNiw_hyperparams->v) + logdet(pNiw_hyperparams->psi)) -
+		(pPosterior_hyper->v / 2.0) * (D * log(pPosterior_hyper->v) + logdet(pPosterior_hyper->psi)) +
+		(D / 2.0) * (log(pNiw_hyperparams->k / pPosterior_hyper->k));
 }
 
 
-void niw::aggregate_suff_stats(sufficient_statistics* suff_l, sufficient_statistics* suff_r, sufficient_statistics* &suff_out)
+void niw::aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out)
 {
-	niw_sufficient_statistics* niw_suff_l = (niw_sufficient_statistics*)suff_l;
-	niw_sufficient_statistics* niw_suff_r = (niw_sufficient_statistics*)suff_r;
-	niw_sufficient_statistics* niw_suff_out = (niw_sufficient_statistics*)suff_out;
+	niw_sufficient_statistics* niw_suff_l = dynamic_cast<niw_sufficient_statistics*>(suff_l.get());
+	niw_sufficient_statistics* niw_suff_r = dynamic_cast<niw_sufficient_statistics*>(suff_r.get());
+	niw_sufficient_statistics* niw_suff_out = dynamic_cast<niw_sufficient_statistics*>(suff_out.get());
 	niw_suff_out->N = niw_suff_l->N + niw_suff_r->N;
 	niw_suff_out->points_sum = niw_suff_l->points_sum + niw_suff_r->points_sum;
 	niw_suff_out->S = niw_suff_l->S + niw_suff_r->S;
 }
 
-cudaKernel* niw::get_cuda()
+std::unique_ptr<cudaKernel> niw::get_cuda()
 {
-	return new cudaKernel_gaussian();
+	return std::make_unique<cudaKernel_gaussian>();
 }

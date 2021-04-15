@@ -11,26 +11,26 @@ using namespace Eigen;
 
 
 
-class prior 
+class prior
 {
 public:
 	prior() {}//: hyper_params(NULL) {}
-	prior *clone()
+	prior* clone()
 	{
 		return do_clone();
 	}
-	virtual ~prior() 
+	virtual ~prior()
 	{
-		
-	}
-	virtual	hyperparams* calc_posterior(const hyperparams* hyperParams, const sufficient_statistics* suff_statistics) = 0;
-	virtual distribution_sample* sample_distribution(const hyperparams* pHyperparams, std::mt19937* gen) = 0;
-	virtual sufficient_statistics* create_sufficient_statistics(const hyperparams* hyperParams, const hyperparams* posterior, const MatrixXd &points) = 0;
-	virtual double log_marginal_likelihood(const hyperparams* hyperParams, const hyperparams* posterior_hyper, const sufficient_statistics* suff_stats) = 0;
-	virtual void aggregate_suff_stats(sufficient_statistics* suff_l, sufficient_statistics* suff_r, sufficient_statistics* &suff_out) = 0;
-	virtual prior *do_clone() = 0;
-	virtual cudaKernel *get_cuda() = 0;
 
-//	hyperparams *hyper_params;
+	}
+	virtual	std::shared_ptr<hyperparams> calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics) = 0;
+	virtual std::shared_ptr<distribution_sample> sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen) = 0;
+	virtual std::shared_ptr<sufficient_statistics> create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points) = 0;
+	virtual double log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats) = 0;
+	virtual void aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out) = 0;
+	virtual prior* do_clone() = 0;
+	virtual std::unique_ptr<cudaKernel> get_cuda() = 0;
+
+	//	hyperparams *hyper_params;
 };
 

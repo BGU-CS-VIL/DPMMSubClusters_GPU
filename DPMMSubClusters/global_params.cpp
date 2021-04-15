@@ -6,11 +6,11 @@ global_params::global_params(int numLabels, MatrixXd& all_data, unsigned long lo
 {
 	if (priorType == prior_type::Gaussian)
 	{
-		pPrior = new niw();
+		pPrior = std::make_unique<niw>();
 	}
 	else if (priorType == prior_type::Multinomial)
 	{
-		pPrior = new multinomial_prior();
+		pPrior = std::make_unique<multinomial_prior>();
 	}
 	//Data Loading specifics
 	data_path = "/path/to/data/";
@@ -24,8 +24,10 @@ global_params::global_params(int numLabels, MatrixXd& all_data, unsigned long lo
 	split_stop = 5;//Stop split / merge moves at  iterations - split_stop
 
 	random_seed = randomSeed;//When nothing, a random seed will be used.
-	rd = new std::random_device(std::to_string(random_seed));
-	gen = new std::mt19937((*rd)());
+	rd = std::make_unique<std::random_device>(std::to_string(random_seed));
+	std::random_device(std::to_string(random_seed));
+	
+	gen = std::make_unique<std::mt19937>((*rd)());
 
 	max_split_iter = 20;
 	burnout_period = 20;
@@ -33,9 +35,9 @@ global_params::global_params(int numLabels, MatrixXd& all_data, unsigned long lo
 
 	//Model hyperparams
 	alpha = 10.0; //Concetration Parameter
-	hyper_params = NULL;// = new niw_hyperparams(1.0, VectorXd::Zero(2), 5, MatrixXd::Identity(2, 2));
+	hyper_params = NULL;
 	outlier_mod = 0.05; //Concetration Parameter
-	outlier_hyper_params = NULL;// = new niw_hyperparams(1.0, VectorXd::Zero(2), 5, MatrixXd::Identity(2, 2));
+	outlier_hyper_params = NULL;
 
 		//Saving specifics :
 	enable_saving = true;
@@ -55,25 +57,5 @@ global_params::~global_params()
 	if (cuda != NULL)
 	{
 		cuda->release();
-		delete cuda;
-		cuda = NULL;
-	}
-
-	if (rd != NULL)
-	{
-		delete rd;
-		rd = NULL;
-	}
-
-	if (gen != NULL)
-	{
-		delete gen;
-		gen = NULL;
-	}
-
-	if (pPrior != NULL)
-	{
-		delete pPrior;
-		pPrior = NULL;
 	}
 }

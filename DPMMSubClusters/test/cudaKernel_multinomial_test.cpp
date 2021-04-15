@@ -15,7 +15,7 @@
 
 namespace DPMMSubClustersTest
 {
-	TEST(cudaKernel_multinomial_test, log_likelihood_v3)
+	TEST(cudaKernel_multinomial_test, log_likelihood_labels)
 	{
 		myCudaKernel_multinomial cuda;
 		multinomial_dist object;
@@ -25,28 +25,22 @@ namespace DPMMSubClustersTest
 		std::vector<double> alpha;
 		alpha.push_back(-0.8658322);
 		alpha.push_back(-0.54593706);
-		multinomial_dist* dist = new multinomial_dist(alpha);
+
+		std::shared_ptr<multinomial_dist> dist = std::make_shared<multinomial_dist>(alpha);
+
 		cudaStream_t stream;
 
 		double* d_r;
 		cuda.init(10, x, NULL);
-		int deviceId = cuda.peak_device();
+		int deviceId = cuda.peak_first_device();
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
 
-		cuda.my_log_likelihood_v3(d_r, 2, dist, stream, deviceId);
+		cuda.my_log_likelihood_labels(d_r, 2, dist, stream, deviceId);
 
 		cuda.copy_from_device(d_r, 10, r);
 		cuda.release_stream(stream);
 		cuda.release_in_device(d_r);
-
-		delete dist;
-
-		//Eigen::VectorXd alpha_vec = Eigen::VectorXd::Map(dist->alpha.data(), dist->alpha.size());
-		//r = (alpha_vec.adjoint() * x).row(0);
-
-
-
 
 		EXPECT_NEAR(-39.452866, r(0), 0.0001);
 		EXPECT_NEAR(-40.73245, r(1), 0.0001);
@@ -58,6 +52,5 @@ namespace DPMMSubClustersTest
 		EXPECT_NEAR(-29.856014, r(7), 0.0001);
 		EXPECT_NEAR(-28.896328, r(8), 0.0001);
 		EXPECT_NEAR(-29.856014, r(9), 0.0001);
-
 	}
 }

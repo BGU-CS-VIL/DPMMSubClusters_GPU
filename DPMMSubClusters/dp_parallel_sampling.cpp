@@ -11,21 +11,20 @@ using namespace std;
 #include "priors/niw.h"
 #include "priors/multinomial_prior.h"
 #include "draw.h"
-#include "clusterInfo.h"
 #include "utils.h"
 
-/*
-init_model()
+//
+//init_model()
+//
+//Initialize the model, loading the data from external `npy` files, specified in the params file.
+//All prior data as been included previously, and is globaly accessed by the function.
+//
+//Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
 
-Initialize the model, loading the data from external `npy` files, specified in the params file.
-All prior data as been included previously, and is globaly accessed by the function.
 
-Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
-*/
-
-dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_file()
+std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model_from_file()
 {
-	dp_parallel_sampling *dps = new dp_parallel_sampling();
+	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
 
 	std::chrono::steady_clock::time_point begin;
 
@@ -47,7 +46,7 @@ dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_file()
 
 	dps->model_hyperparams.distribution_hyper_params = globalParams->hyper_params;
 	dps->model_hyperparams.alpha = globalParams->alpha;
-	dps->model_hyperparams.total_dim = dps->group.points.cols();
+	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.cols();
 	dps->group.model_hyperparams = dps->model_hyperparams;
 
 	//Each GPU needs to calculate that:
@@ -73,20 +72,16 @@ dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_file()
 	return dps;
 }
 
-/*
-init_model(all_data)
-
-Initialize the model, from `all_data`, should be `Dimensions X Samples`, type `Float32`
-All prior data as been included previously, and is globaly accessed by the function.
-
-Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
-*/
-
-
-
-dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_data(MatrixXd &all_data)
+//
+//init_model(all_data)
+//
+//Initialize the model, from `all_data`, should be `Dimensions X Samples`, type `Float32`
+//All prior data as been included previously, and is globally accessed by the function.
+//
+//Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
+std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model_from_data(MatrixXd &all_data)
 {
-	dp_parallel_sampling *dps = new dp_parallel_sampling();
+	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
 	
 	std::chrono::steady_clock::time_point begin;
 
@@ -95,9 +90,6 @@ dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_data(MatrixXd 
 		begin = std::chrono::steady_clock::now();
 	}
 
-	//TODO - split the data and copy the subset data to each GPUs.
-	//data that was returned is reference metadata to each subset that exists in the GPU. Do I need it?
-	//data = distribute(all_data);
 	dps->group.points = all_data;
 
 	if (globalParams->use_verbose)
@@ -108,57 +100,39 @@ dp_parallel_sampling* dp_parallel_sampling_class::init_model_from_data(MatrixXd 
 
 	dps->model_hyperparams.distribution_hyper_params = globalParams->hyper_params;
 	dps->model_hyperparams.alpha = globalParams->alpha;
-	dps->model_hyperparams.total_dim = dps->group.points.cols();
+	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.cols();
 	dps->group.model_hyperparams = dps->model_hyperparams;
 
-	//Each GPU needs to calculate that:
-	
-	//std::uniform_int_distribution<LabelType> uni(1, globalParams->initial_clusters); // guaranteed unbiased
-	//dps->group.labels.resize(dps->group.points.cols(), 1);
-	//for (PointType i = 0; i < dps->group.points.cols(); i++)
-	//{
-	//	dps->group.labels[i] = uni(rng) + ((globalParams->outlier_mod > 0) ? 1 : 0);
-	//}
 	globalParams->cuda->sample_labels(globalParams->initial_clusters, globalParams->outlier_mod);
 	globalParams->cuda->sample_sub_labels();
 
 	LabelsType subLabels;
 	globalParams->cuda->get_sub_labels(subLabels);
 
-//	draw::CreatePng("firstCluster", dps->group.points, subLabels);
-
 	return dps;
 }
 
 
-/*
-init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_count::Int64))
-
-Initialize the first clusters in the model, according to the number defined by initial_cluster_count
-
-Mutates the model.
-*/
-
-
-void dp_parallel_sampling_class::init_first_clusters(dp_parallel_sampling* &dp_model, ClusterIndexType initial_cluster_count, prior **pPrior)
+//Initialize the first clusters in the model, according to the number defined by initial_cluster_count
+void dp_parallel_sampling_class::init_first_clusters(std::shared_ptr<dp_parallel_sampling>& dp_model, ClusterIndexType initial_cluster_count)
 {
 	local_clusters_actions local_clusters_actions(globalParams);
 	if (globalParams->outlier_mod > 0)
 	{
-		local_cluster *lc = local_clusters_actions.create_outlier_local_cluster(dp_model->group, globalParams->outlier_hyper_params,*pPrior);
+		std::shared_ptr<local_cluster> lc = local_clusters_actions.create_outlier_local_cluster(dp_model->group, globalParams->outlier_hyper_params);
 		dp_model->group.local_clusters.push_back(lc);
 	}
 
 	for (ClusterIndexType i = 0; i < initial_cluster_count; i++)
 	{
-		local_cluster *lc = local_clusters_actions.create_first_local_cluster(dp_model->group, pPrior);
+		std::shared_ptr<local_cluster> lc = local_clusters_actions.create_first_local_cluster(dp_model->group);
 		dp_model->group.local_clusters.push_back(lc);
 	}
 	//synch all GPU call - TODO
 
-	local_clusters_actions.update_suff_stats_posterior(*pPrior, dp_model->group);
-	local_clusters_actions.sample_clusters(dp_model->group, false, *pPrior);
-	std::vector<thin_cluster_params*> tcp;
+	local_clusters_actions.update_suff_stats_posterior(dp_model->group);
+	local_clusters_actions.sample_clusters(dp_model->group, false);
+	std::vector<std::shared_ptr<thin_cluster_params>> tcp;
 	local_clusters_actions.create_thin_cluster_params(dp_model->group.local_clusters, tcp);
 	std::vector<double> weights_vector;
 	weights_vector.push_back(1.0);
@@ -208,7 +182,7 @@ dp_parallel(all_data::AbstractArray{ Float32,2 },
 	
 	
 ModelInfo dp_parallel_sampling_class::dp_parallel(
-	hyperparams* local_hyper_params,
+	std::shared_ptr<hyperparams>& local_hyper_params,
 	double alpha_param,
 	IterationIndexType iters,
 	ClusterIndexType init_clusters,
@@ -216,10 +190,9 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	bool draw_labels,
 	bool save_model,
 	int burnout,
-	std::vector<double> gt,
 	double max_clusters,
 	double outlier_weight,
-	hyperparams* outlier_params)
+	std::shared_ptr<hyperparams> outlier_params)
 {
 	globalParams->iterations = iters;
 	globalParams->hyper_params = local_hyper_params;
@@ -232,18 +205,16 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	globalParams->max_num_of_clusters = max_clusters;
 	globalParams->outlier_mod = outlier_weight;
 	globalParams->outlier_hyper_params = outlier_params;
-	dp_parallel_sampling *dp_model = init_model_from_data(globalParams->points);
-	prior *pPrior = NULL;
-	//	leader_dict = get_node_leaders_dict();
-	init_first_clusters(dp_model, globalParams->initial_clusters, &pPrior);
+	std::shared_ptr<dp_parallel_sampling> dp_model = init_model_from_data(globalParams->points);
+
+	init_first_clusters(dp_model, globalParams->initial_clusters);
 	if (globalParams->use_verbose)
 	{
 		printf("Node Leaders:\n");
 		//		printf(leader_dict);
 		printf("\n");
 	}
-	globalParams->ground_truth = gt;
-	return run_model(pPrior, dp_model, 1);
+	return run_model(dp_model, 1);
 }
 
 		
@@ -408,27 +379,22 @@ fit(Float32.(all_data), local_hyper_params, Float32(alpha_param), iters = Int64(
 	- `likelihood_history` Log likelihood per iteration.
 	- `cluster_count_history` Cluster counts per iteration.
 	*/
-ModelInfo dp_parallel_sampling_class::dp_parallel(global_params *globalParamsIn, std::string model_params)
+ModelInfo dp_parallel_sampling_class::dp_parallel(std::shared_ptr<global_params>& globalParamsIn, std::string model_params)
 {
-	if (globalParams != NULL)
-	{
-		delete globalParams;
-	}
 	globalParams = globalParamsIn;
-	dp_parallel_sampling* dp_model = init_model_from_file();
-	
+	std::shared_ptr<dp_parallel_sampling> dp_model = init_model_from_file();
+
 	//TODO - not in Julia:
 	globalParams->outlier_mod = 0;
-	prior *pPrior = NULL;
-	init_first_clusters(dp_model, globalParams->initial_clusters, &pPrior);
+	init_first_clusters(dp_model, globalParams->initial_clusters);
 	if (globalParams->use_verbose)
 	{
 		printf("Node Leaders:");
 	}
-	return run_model(pPrior, dp_model, 1, model_params.c_str());
+	return run_model(dp_model, 1, model_params.c_str());
 }
 
-ModelInfo dp_parallel_sampling_class::run_model(prior *pPrior, dp_parallel_sampling* &dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)
+ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)
 {
 	ModelInfo	modelInfo;
 	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
@@ -455,29 +421,16 @@ ModelInfo dp_parallel_sampling_class::run_model(prior *pPrior, dp_parallel_sampl
 
 		prev_time = std::chrono::steady_clock::now();
 		local_clusters_actions lca(globalParams);
-		lca.group_step(pPrior, modelInfo.dp_model->group, no_more_splits, final, i == 1);
+		lca.group_step(modelInfo.dp_model->group, no_more_splits, final, i == 1);
 
-		double iter_time = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prev_time).count()) / 1000.0;
+		const double iter_time = (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prev_time).count()) / 1000.0;
 		modelInfo.iter_count.push_back(iter_time);
 
-		modelInfo.cluster_count_history.push_back(modelInfo.dp_model->group.local_clusters.size());
-		//std::string fileName = "run_model" + std::to_string(i) + ".png";
-
-		//draw::CreatePng(fileName.c_str(), modelInfo.dp_model.group.points, modelInfo.dp_model.group.labels);
-		if (globalParams->ground_truth.size() > 0)
-		{
-			//TODO - OR - what does it mean?
-			//v_score_history.push_back(varinfo(Int.(ground_truth), modelInfo.dp_model.group.labels.col(0))));
-			//push!(modelInfo.nmi_score_history, mutualinfo(Int.(ground_truth), modelInfo.dp_model.group.labels.col(0), normed = true));
-		}
-		else
-		{
-			v_score_history.push_back("no gt");
-			modelInfo.nmi_score_history.push_back("no gt");
-		}
+		modelInfo.cluster_count_history.push_back((ClusterIndexType)modelInfo.dp_model->group.local_clusters.size());
+		
 		if (globalParams->use_verbose)
 		{
-			modelInfo.likelihood_history.push_back(calculate_posterior(pPrior, modelInfo.dp_model));
+			modelInfo.likelihood_history.push_back(calculate_posterior(modelInfo.dp_model));
 			printf("Iteration: %ld || Clusters count: %ld\n", i, modelInfo.cluster_count_history.back());
 			//printf("Iteration: %ld || Clusters count: %ld || Log posterior: %f || Vi score: %s || NMI score: %s || Iter Time: %f  || Total time: %f\n",
 			//	i,
@@ -509,7 +462,7 @@ ModelInfo dp_parallel_sampling_class::run_model(prior *pPrior, dp_parallel_sampl
 	return modelInfo;
 }
 
-void dp_parallel_sampling_class::save_model(dp_parallel_sampling* &model,std::string path, std::string filename,long  iter, long long total_time, const char * global_params)
+void dp_parallel_sampling_class::save_model(std::shared_ptr<dp_parallel_sampling>& model,std::string path, std::string filename,long  iter, long long total_time, const char * global_params)
 {
 	std::string fileName = path + filename + "_" + std::to_string(iter) + ".jld2";
 	model_hyper_params hyperparams = model->model_hyperparams;
@@ -520,19 +473,19 @@ void dp_parallel_sampling_class::save_model(dp_parallel_sampling* &model,std::st
 }
 
 
-double dp_parallel_sampling_class::calculate_posterior(prior *pPrior, dp_parallel_sampling* &model)
+double dp_parallel_sampling_class::calculate_posterior(std::shared_ptr<dp_parallel_sampling>& model)
 {
 	//TODO - should be logabsgamma <= abs
 	double log_posterior = r8_gamma_log(model->model_hyperparams.alpha) - r8_gamma_log(model->group.points.cols() + model->model_hyperparams.alpha);
 	for (ClusterIndexType i = 0; i < model->group.local_clusters.size(); ++i)
 	{
-		local_cluster *cluster = model->group.local_clusters[i];
+		std::shared_ptr<local_cluster> cluster = model->group.local_clusters[i];
 		if (cluster->cluster_params->cluster_params->suff_statistics->N == 0)
 		{
 			continue;
 		}
 
-		log_posterior += pPrior->log_marginal_likelihood(cluster->cluster_params->cluster_params->prior_hyperparams,
+		log_posterior += globalParams->pPrior->log_marginal_likelihood(cluster->cluster_params->cluster_params->prior_hyperparams,
 			cluster->cluster_params->cluster_params->posterior_hyperparams,
 			cluster->cluster_params->cluster_params->suff_statistics);
 
@@ -546,59 +499,3 @@ void dp_parallel_sampling_class::set_parr_worker(LabelType numLabels, int cluste
 {
 	globalParams->glob_parr = MatrixXd(numLabels, cluster_count);
 }
-/*
-	"""
-	cluster_statistics(points, labels, clusters)
-
-	Provide avg statsitcs of probabiliy and likelihood for given points, labels and clusters
-
-	# Args and Kwargs
-	- `points` a `DxN` array containing the data
-	- `labels` points labels
-	- `clusters` vector of clusters distributions
-
-
-	# Return values
-	avg_ll, avg_prob
-	- `avg_ll` each cluster avg point ll
-	- `avg_prob` each cluster avg point prob
-
-
-	# Example:
-```julia
-julia > dp = run_model_from_checkpoint("checkpoint__50.jld2")
-Loading Model :
-1.073261 seconds(2.27 M allocations : 113.221 MiB, 2.60% gc time)
-Including params
-Loading data :
-0.000881 seconds(10.02 k allocations : 378.313 KiB)
-Creating model :
-Node Leaders :
-Dict{ Any,Any }(2 = > Any[2, 3])
-Running model :
-...
-```
-"""
-function cluster_statistics(points, labels, clusters)
-parr = zeros(Float32, length(labels), length(clusters))
-tic = time()
-for (k, cluster) in enumerate(clusters)
-log_likelihood!(reshape((@view parr[:, k]), :, 1), points, cluster)
-end
-log_likelihood_array = copy(parr)
-log_likelihood_array[isnan.(log_likelihood_array)] . = -Inf #Numerical errors arent fun
-max_log_prob_arr = maximum(log_likelihood_array, dims = 2)
-log_likelihood_array . -= max_log_prob_arr
-map!(exp, log_likelihood_array, log_likelihood_array)
-# println("lsample log cat2" * string(log_likelihood_array))
-sum_prob_arr = sum(log_likelihood_array, dims = [2])
-log_likelihood_array . /= sum_prob_arr
-avg_ll = zeros(length(clusters))
-avg_prob = zeros(length(clusters))
-for i = 1:length(clusters)
-avg_ll[i] = sum(parr[labels . == i, i]) / sum(labels . == i)
-avg_prob[i] = sum(log_likelihood_array[labels . == i, i]) / sum(labels . == i)
-end
-return avg_ll, avg_prob
-end
-*/

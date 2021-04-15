@@ -50,7 +50,6 @@
     <ClCompile Include="mv_gaussian_test.cpp" />
     <ClCompile Include="niw_test.cpp" />
     <ClCompile Include="shared_actions_test.cpp" />
-    <ClCompile Include="utils_test.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -104,7 +103,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cublas.lib;cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;clusterInfo.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -139,7 +138,7 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>cublas.lib;cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;clusterInfo.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

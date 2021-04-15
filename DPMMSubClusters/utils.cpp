@@ -136,57 +136,6 @@ void utils::saveToFile(const MatrixXd & mat1, const MatrixXd & mat2, const char 
 	myfile.close();
 }
 
-prior* utils::create_sufficient_statistics(hyperparams* dist, sufficient_statistics **suff_statistics, global_params *globalParams, const MatrixXd &pts)
-{
-	//TODO - shold remove it. we should have prior already
-	prior *pPrior = NULL;
-	if (dynamic_cast<niw_hyperparams*>(dist))
-	{
-		pPrior = new niw();
-	}
-	else if (dynamic_cast<multinomial_hyper*>(dist))
-	{
-		pPrior = new multinomial_prior();
-	}
-	*suff_statistics = pPrior->create_sufficient_statistics(dist, dist, pts);
-
-	return pPrior;
-}
-/*
-
-function get_labels_histogram(labels)
-hist_dict = Dict()
-for v in labels
-if haskey(hist_dict, v) == false
-hist_dict[v] = 0
-end
-hist_dict[v] += 1
-end
-return sort(collect(hist_dict), by = x->x[1])
-end
-*/
-/*
-void get_node_leaders_dict()
-{
-	leader_dict = Dict();
-	cur_leader = (nworkers() == 0 ? procs() : workers())[1];
-	leader_dict[cur_leader] = [];
-		for i in(nworkers() == 0 ? procs() : workers())
-		{
-			if i in procs(cur_leader)
-			{
-				push!(leader_dict[cur_leader], i);
-			}
-			else
-			{
-				cur_leader = i;
-				leader_dict[cur_leader] = [i];
-			}
-		}
-	return leader_dict;
-}
-*/
-
 double utils::log_multivariate_gamma(double x, long D)
 {
 	double res = D * (D - 1) / 4.0 * log(EIGEN_PI);
@@ -195,21 +144,4 @@ double utils::log_multivariate_gamma(double x, long D)
 		res += r8_gamma_log((x + (1 - d) / 2.0));
 	}
 	return res;
-}
-
-
-void utils::dcolwise_dot(VectorXd &r, const MatrixXd &a, const MatrixXd &b)
-{
-	/*LabelType n = r.size();
-	for (LabelType j = 0; j < n; j++)
-	{
-		double v = 0;
-		for (DimensionsType i = 0; i < a.rows(); i++)
-		{
-			v += a(i, j) * b(i, j);
-		}
-		r(j) = v;
-	}*/
-	r = (a.cwiseProduct(b)).colwise().sum();
-
 }

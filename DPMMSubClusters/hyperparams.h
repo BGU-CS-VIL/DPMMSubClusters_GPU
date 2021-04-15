@@ -2,7 +2,7 @@
 class hyperparams
 {
 public:
-	virtual hyperparams* clone() = 0;
+	virtual std::shared_ptr<hyperparams> clone() = 0;
 	virtual ~hyperparams() {}
 
 };

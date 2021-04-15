@@ -7,7 +7,7 @@ using namespace Eigen;
 class sufficient_statistics
 {
 public:
-	virtual sufficient_statistics* clone() = 0;
+	virtual std::shared_ptr<sufficient_statistics> clone() = 0;
 	sufficient_statistics() {}
 	sufficient_statistics(int N, const VectorXd &points_sum) :N(N), points_sum(points_sum) {}
 	int N;

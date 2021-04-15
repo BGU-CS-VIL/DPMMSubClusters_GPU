@@ -14,20 +14,10 @@ using namespace Eigen;
 class draw
 {
 public:	
-	static void draw_labels(const char* fileName, MatrixXd &x, LabelsType& labels)
+	static void draw_labels(const char* window, MatrixXd &x, LabelsType& labels)
 	{
-		std::vector<double> labelsVec;
-		for (size_t i = 0; i < labels.size(); i++)
-		{
-			labelsVec.push_back(labels[i]);
-		}
-		draw_labels(fileName, x, labelsVec);
-	}
-
-	static void draw_labels(const char* window, MatrixXd &x, std::vector<double>& labels)
-	{
-		double width = 800;
-		double height = 800;
+		const int width = 800;
+		const int height = 800;
 
 		double minX = x.row(0).minCoeff();
 		double maxX = x.row(0).maxCoeff();
@@ -49,8 +39,8 @@ public:
 		for (size_t i = 0; i < labels.size(); i++)
 		{
 			cv::Point p;
-			p.x = ((x(0, i) - minX) / (maxX - minX))*width;
-			p.y = ((x(1, i) - minY) / (maxY - minY))*height;
+			p.x = (int)(((x(0, i) - minX) / (maxX - minX)) * width);
+			p.y = (int)(((x(1, i) - minY) / (maxY - minY)) * height);
 
 			if (labels[i] < 1)
 			{
