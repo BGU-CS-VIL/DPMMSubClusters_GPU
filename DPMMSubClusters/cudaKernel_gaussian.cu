@@ -67,7 +67,6 @@ void cudaKernel_gaussian::log_likelihood_sub_labels(
 //OUTPUT: d_r - log_likelihhod allocated in device memroy
 void cudaKernel_gaussian::log_likelihood_labels(
 	double* d_r,
-	int dim,
 	double weight, 
 	const std::shared_ptr<distribution_sample>& distribution_sample,
 	cudaStream_t& stream,
@@ -78,6 +77,7 @@ void cudaKernel_gaussian::log_likelihood_labels(
 	double* d_b;
 	double* d_c;
 	double* d_z;
+	int dim = gpuCapabilities[deviceId].pointsRows;
 
 	runCuda(cudaMallocAsync((void**)&d_z, sizeof(double) * dim * numLabels, stream));
 	divide_points_by_mu_all(dim, pDistribution_sample, d_z, stream, deviceId);

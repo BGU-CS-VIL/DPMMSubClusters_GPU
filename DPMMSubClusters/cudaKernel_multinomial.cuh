@@ -19,7 +19,6 @@ protected:
 
 	virtual void log_likelihood_labels(
 		double* d_r,
-		int dim,
 		double weight,
 		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,

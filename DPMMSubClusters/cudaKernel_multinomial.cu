@@ -59,7 +59,6 @@ void cudaKernel_multinomial::log_likelihood_sub_labels(
 
 void cudaKernel_multinomial::log_likelihood_labels(
 	double* d_r,
-	int dim,
 	double weight,
 	const std::shared_ptr<distribution_sample>& distribution_sample,
 	cudaStream_t& stream,
@@ -67,11 +66,11 @@ void cudaKernel_multinomial::log_likelihood_labels(
 {
 	double* d_alpha;
 	multinomial_dist* pDistribution_sample = dynamic_cast<multinomial_dist*>(distribution_sample.get());
-
+	
 	runCuda(cudaMallocAsync((void**)&d_alpha, sizeof(double) * pDistribution_sample->alpha.size(), stream));
 	runCuda(cudaMemcpyAsync(d_alpha, pDistribution_sample->alpha.data(), sizeof(double) * pDistribution_sample->alpha.size(), cudaMemcpyHostToDevice, stream));
 
-	get_first_row_multiple_alpha_with_x_all << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].d_points, dim, numLabels, d_alpha, d_r);
+	get_first_row_multiple_alpha_with_x_all << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].d_points, gpuCapabilities[deviceId].pointsRows, numLabels, d_alpha, d_r);
 
 	runCuda(cudaFreeAsync(d_alpha, stream));
 }

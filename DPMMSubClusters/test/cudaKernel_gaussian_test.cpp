@@ -769,7 +769,7 @@ namespace DPMMSubClustersTest
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
 
-		cuda.my_log_likelihood_labels(d_r, 2, weight, gaussian, stream, deviceId);
+		cuda.my_log_likelihood_labels(d_r, weight, gaussian, stream, deviceId);
 		cuda.release_stream(stream);
 
 		cuda.copy_from_device(d_r, 10, r);
@@ -812,7 +812,7 @@ namespace DPMMSubClustersTest
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
 
-		cuda.my_log_likelihood_labels(d_r, 2, weight, gaussian, stream, deviceId);
+		cuda.my_log_likelihood_labels(d_r, weight, gaussian, stream, deviceId);
 		cuda.release_stream(stream);
 
 		cuda.copy_from_device(d_r, 10, r);
@@ -857,7 +857,7 @@ namespace DPMMSubClustersTest
 		cuda.allocate_in_device(10, d_r1);
 		cuda.create_stream(stream);
 
-		cuda.my_log_likelihood_labels(d_r1, 2, weight, gaussian, stream, deviceId);
+		cuda.my_log_likelihood_labels(d_r1, weight, gaussian, stream, deviceId);
 
 		cuda.copy_from_device(d_r1, 10, r1);
 		cuda.release_stream(stream);

@@ -6,10 +6,8 @@
 #include <cuda_runtime.h>
 #include<curand.h>
 #include<curand_kernel.h>
-
 #include<time.h>
 #include "cudaKernel.cuh"
-#include "distributions/mv_gaussian.h"
 
 
 // function to define seed
@@ -1063,14 +1061,12 @@ void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared
 {
 	int masterDevice = -1;
 	clusters_labels_plan* plan = new clusters_labels_plan[numClusters];
-	mv_gaussian* ds = dynamic_cast<mv_gaussian*>(cluster_params[0]->cluster_dist.get());
-
-	int dim = (int)ds->invSigma.rows();
 
 	//Allocate memory for all streams
 	for (int i = 0; i < numClusters; i++)
 	{
 		plan[i].deviceId = peak_first_device();
+
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
 
 		if (i == 0)
@@ -1091,11 +1087,11 @@ void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared
 		cudaSetDevice(plan[i].deviceId);
 		if (masterDevice == plan[i].deviceId)
 		{
-			log_likelihood_labels(plan[0].d_r + i * numLabels, dim, weights[i], cluster_params[i]->cluster_dist, plan[i].stream, plan[i].deviceId);
+			log_likelihood_labels(plan[0].d_r + i * numLabels, weights[i], cluster_params[i]->cluster_dist, plan[i].stream, plan[i].deviceId);
 		}
 		else
 		{
-			log_likelihood_labels(plan[i].d_r, dim, weights[i], cluster_params[i]->cluster_dist, plan[i].stream, plan[i].deviceId);
+			log_likelihood_labels(plan[i].d_r, weights[i], cluster_params[i]->cluster_dist, plan[i].stream, plan[i].deviceId);
 		}
 	}
 

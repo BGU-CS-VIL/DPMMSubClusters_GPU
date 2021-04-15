@@ -19,12 +19,11 @@ public:
 
 	void my_log_likelihood_labels(
 		double* d_r,
-		int dim,
 		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,
 		int deviceId)
 	{
-		log_likelihood_labels(d_r, dim, 0, distribution_sample, stream, deviceId);
+		log_likelihood_labels(d_r, 0, distribution_sample, stream, deviceId);
 	}
 
 	void allocate_in_device(const MatrixXd& data, double*& d_data)
@@ -87,13 +86,12 @@ public:
 
 	void my_log_likelihood_labels(
 		double* d_r,
-		int dim,
 		double weight,
 		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,
 		int deviceId)
 	{
-		log_likelihood_labels(d_r, dim, weight, distribution_sample, stream, deviceId);
+		log_likelihood_labels(d_r, weight, distribution_sample, stream, deviceId);
 	}
 
 	void my_divide_points_by_mu_all(int dim, const mv_gaussian* dist, double* d_z, cudaStream_t& stream, int deviceId)

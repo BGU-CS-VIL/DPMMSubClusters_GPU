@@ -36,7 +36,7 @@ namespace DPMMSubClustersTest
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
 
-		cuda.my_log_likelihood_labels(d_r, 2, dist, stream, deviceId);
+		cuda.my_log_likelihood_labels(d_r, dist, stream, deviceId);
 
 		cuda.copy_from_device(d_r, 10, r);
 		cuda.release_stream(stream);
