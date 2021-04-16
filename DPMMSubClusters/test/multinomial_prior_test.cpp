@@ -14,7 +14,8 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, 10);
 		points << -1.5580771, -1.8853954, -1.7104398, -0.8927666, 12.372295, 11.839552, 5.025442, 5.809215, -23.470015, -24.226057, 4.9351344, 4.256654, 5.218151, 4.0470524, 6.8685904, 7.0217624, 1.4795746, 1.9674032, -4.5789967, -5.0106354;
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
-		global_params* gp = new global_params(10, points, NULL, prior_type::Multinomial);
+		std::shared_ptr<global_params> gp = std::make_unique<global_params>();
+		gp->init(10, points, NULL, prior_type::Multinomial);
 		gp->cuda = std::move(myCudaKernelObj);
 		multinomial_prior object;
 		VectorXd alpha(2);
@@ -34,7 +35,8 @@ namespace DPMMSubClustersTest
 	{
 		MatrixXd points;
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
-		global_params* gp = new global_params(10, points, NULL, prior_type::Multinomial);
+		std::shared_ptr<global_params> gp = std::make_unique<global_params>(); 
+		gp->init(10, points, NULL, prior_type::Multinomial);
 		gp->cuda = std::move(myCudaKernelObj);
 		multinomial_prior object;
 		VectorXd alpha(2);
@@ -52,7 +54,8 @@ namespace DPMMSubClustersTest
 	{
 		MatrixXd points;
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
-		global_params* gp = new global_params(10, points, NULL, prior_type::Multinomial);
+		std::shared_ptr<global_params> gp = std::make_unique<global_params>();
+		gp->init(10, points, NULL, prior_type::Multinomial);
 		gp->cuda = std::move(myCudaKernelObj);
 		multinomial_prior object;
 		VectorXd alpha_prior(2);
@@ -76,7 +79,8 @@ namespace DPMMSubClustersTest
 	{
 		MatrixXd points;
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
-		global_params* gp = new global_params(10, points, NULL, prior_type::Multinomial);
+		std::shared_ptr<global_params> gp = std::make_unique<global_params>();
+		gp->init(10, points, NULL, prior_type::Multinomial);
 		gp->cuda = std::move(myCudaKernelObj);
 		multinomial_prior object;
 		VectorXd points_l_sum(2);
@@ -94,5 +98,21 @@ namespace DPMMSubClustersTest
 		ASSERT_EQ(22, suff_out->N);
 		ASSERT_NEAR(23968.0, suff_out->points_sum(0), 0.001);
 		ASSERT_NEAR(26032.0, suff_out->points_sum(1), 0.001);
+	}
+
+	TEST(multinomial_prior_test, CreateHyperparams)
+	{
+		std::string strJson = "{\"alpha\":[1.0,2.0]}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		multinomial_prior object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		multinomial_hyper* result = dynamic_cast<multinomial_hyper*>(resultBase.get());
+
+		ASSERT_EQ(2, result->alpha.size());
+		ASSERT_EQ(1.0, result->alpha(0));
+		ASSERT_EQ(2.0, result->alpha(1));
 	}
 }

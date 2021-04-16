@@ -58,12 +58,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;opencv</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform);$(CUDA_PATH_V11_2)\lib\$(Platform);$(MSBuildProjectDirectory)\opencv</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform);$(CUDA_PATH_V11_2)\lib\$(Platform);$(MSBuildProjectDirectory)\opencv;$(MSBuildProjectDirectory)\zlib\out\build\x64-Release</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)/DPMMSubClusters.exe</OutputFile>
     </Link>
     <CudaCompile>
@@ -95,7 +95,8 @@
       </Command>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"
+xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -121,13 +122,15 @@
       </Command>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"
+xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <Bscmake>
       <PreserveSbr Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</PreserveSbr>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cnpy\cnpy.h" />
     <ClInclude Include="cudaKernel.cuh" />
     <ClInclude Include="cudaKernel_gaussian.cuh" />
     <ClInclude Include="cudaKernel_multinomial.cuh" />
@@ -154,6 +157,7 @@
     <CudaCompile Include="cudaKernel.cu" />
     <CudaCompile Include="cudaKernel_gaussian.cu" />
     <CudaCompile Include="cudaKernel_multinomial.cu" />
+    <ClCompile Include="cnpy\cnpy.cpp" />
     <ClCompile Include="main.cpp">
       <FileType>Document</FileType>
     </ClCompile>
@@ -226,10 +230,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(CUDAPropsPath)\CUDA 11.2.targets" />
+    <Import Project="..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets" Condition="Exists('..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
+    <Error Condition="!Exists('..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets'))" />
   </Target>
 </Project>

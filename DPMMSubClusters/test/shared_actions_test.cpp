@@ -67,7 +67,8 @@ namespace DPMMSubClustersTest
 	{
 		MatrixXd points;
 		std::unique_ptr<myCudaKernel_gaussian> myCudaKernelObj = std::make_unique<myCudaKernel_gaussian>();
-		std::shared_ptr<global_params> gp = std::make_shared<global_params>(10, points, NULL, prior_type::Gaussian);
+		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
+		gp->init(10, points, NULL, prior_type::Gaussian);
 		gp->cuda = std::move(myCudaKernelObj);
 		gp->burnout_period = 15;
 		myShared_actions object(gp);

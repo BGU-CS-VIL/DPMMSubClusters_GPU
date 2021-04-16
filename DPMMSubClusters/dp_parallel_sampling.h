@@ -27,12 +27,8 @@ struct ModelInfo
 class dp_parallel_sampling_class
 {
 public:
-	dp_parallel_sampling_class(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
-	{
-		globalParams = std::make_shared<global_params>(numLabels, all_data, randomSeed, priorType);
-	}
-
-	ModelInfo dp_parallel(std::shared_ptr<global_params>& globalParamsIn, std::string model_params);
+	dp_parallel_sampling_class(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType);
+	dp_parallel_sampling_class(std::string modelDataFileName, std::string modelParamsFileName, prior_type priorType);
 
 	ModelInfo dp_parallel(
 		std::shared_ptr<hyperparams>& local_hyper_params,
@@ -47,8 +43,11 @@ public:
 		double outlier_weight = 0,
 		std::shared_ptr<hyperparams> outlier_params = nullptr);
 
-	std::shared_ptr<dp_parallel_sampling> init_model_from_file();
-	std::shared_ptr<dp_parallel_sampling> init_model_from_data(MatrixXd& all_data);
+	ModelInfo dp_parallel_from_file();
+
+	ModelInfo init_and_run_model(MatrixXd& all_data);
+
+	std::shared_ptr<dp_parallel_sampling> init_model(MatrixXd& all_data);
 	void init_first_clusters(std::shared_ptr<dp_parallel_sampling>& dp_model, ClusterIndexType initial_cluster_count);
 	void set_parr_worker(LabelType numLabels, int cluster_count);
 	ModelInfo run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params = NULL, std::chrono::steady_clock::time_point prev_time = std::chrono::steady_clock::now());

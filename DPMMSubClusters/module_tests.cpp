@@ -110,38 +110,6 @@ void module_tests::TestingData(LabelsType &labels)
 	}
 }
 
-void module_tests::ReadPnyFileIntoData(std::string path, std::string prefix, MatrixXd &mat)
-{
-	utils::load_data(path, prefix, mat);
-}
-
-ClusterIndexType module_tests::RunModuleFromFile(std::string path, std::string prefix)
-{
-	printf("Testing Module (Run Module From File)");
-	int D = 2;
-	int N = 10;//TBD
-	unsigned long long random_seed = 0;
-	MatrixXd x;
-
-	dp_parallel_sampling_class dps(N, x, random_seed, prior_type::Gaussian);
-	std::vector<double> gt;
-	std::shared_ptr<global_params> globalParams = std::make_shared<global_params>(N, x, random_seed, prior_type::Gaussian);
-	globalParams->initial_clusters = 1;
-	globalParams->use_verbose = true;
-	globalParams->draw_labels = false;
-	globalParams->should_save_model = false;
-	globalParams->burnout_period = 20;
-	globalParams->max_clusters = DBL_MAX;
-	globalParams->data_path = path;
-	globalParams->data_prefix = prefix;
-	globalParams->hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
-
-
-	ModelInfo dp = dps.dp_parallel(globalParams, "");
-
-	return (ClusterIndexType)dp.dp_model->group.local_clusters.size();
-}
-
 void module_tests::CheckMemoryLeak()
 {
 	srand(12345);

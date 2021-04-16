@@ -24,7 +24,9 @@ public:
 class multinomial_hyper : public hyperparams
 {
 public:
+	multinomial_hyper() {}
 	multinomial_hyper(VectorXd alpha) : hyperparams(), alpha(alpha) {}
+	~multinomial_hyper() {}
 
 	std::shared_ptr<hyperparams> clone() override
 	{
@@ -55,6 +57,7 @@ public:
 	double log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats) override;
 	void aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out) override;
 	std::unique_ptr<cudaKernel> get_cuda() override;
+	std::shared_ptr<hyperparams> create_hyperparams(Json::Value& hyper_params_value) override;
 
 private:
 };

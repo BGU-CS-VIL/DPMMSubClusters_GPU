@@ -30,6 +30,7 @@ public:
 class niw_hyperparams : public hyperparams
 {
 public:
+	niw_hyperparams() {}
 	niw_hyperparams(double k, const VectorXd &m, double v, const MatrixXd &psi) : k(k), m(m), v(v), psi(psi) {}
 	~niw_hyperparams() {}
 
@@ -79,6 +80,7 @@ public:
 	double log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats) override;
 	void aggregate_suff_stats(std::shared_ptr<sufficient_statistics>& suff_l, std::shared_ptr<sufficient_statistics>& suff_r, std::shared_ptr<sufficient_statistics>& suff_out) override;
 	std::unique_ptr<cudaKernel> get_cuda() override;
+	std::shared_ptr<hyperparams> create_hyperparams(Json::Value& hyper_params_value) override;
 
 protected:
 	virtual MatrixXd inverseWishart(const MatrixXd& sigma, double v);

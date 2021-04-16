@@ -13,6 +13,20 @@ using namespace std;
 #include "draw.h"
 #include "utils.h"
 
+dp_parallel_sampling_class::dp_parallel_sampling_class(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
+{
+	globalParams = std::make_shared<global_params>();
+	globalParams->init(numLabels, all_data, randomSeed, priorType);
+}
+
+dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFileName, std::string modelParamsFileName, prior_type priorType)
+{
+	globalParams = std::make_shared<global_params>();
+
+	utils::load_data(modelDataFileName, globalParams->points);
+	globalParams->init(modelParamsFileName, priorType);
+}
+
 //
 //init_model()
 //
@@ -21,57 +35,6 @@ using namespace std;
 //
 //Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
 
-
-std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model_from_file()
-{
-	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
-
-	std::chrono::steady_clock::time_point begin;
-
-	if (globalParams->use_verbose)
-	{
-		begin = std::chrono::steady_clock::now();
-	}
-
-	//TODO - split the data and copy the subset data to each GPUs.
-	//data that was returned is reference metadata to each subset that exists in the GPU. Do I need it?
-	utils::load_data(globalParams->data_path, globalParams->data_prefix, dps->group.points);
-	utils::saveToFile(dps->group.points, "ReadPnyFileIntoData");
-
-	if (globalParams->use_verbose)
-	{
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::cout << "Loading and distributing data took = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[ms]" << std::endl;
-	}
-
-	dps->model_hyperparams.distribution_hyper_params = globalParams->hyper_params;
-	dps->model_hyperparams.alpha = globalParams->alpha;
-	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.cols();
-	dps->group.model_hyperparams = dps->model_hyperparams;
-
-	//Each GPU needs to calculate that:
-
-	std::uniform_int_distribution<LabelType> uni(1, globalParams->initial_clusters); // guaranteed unbiased
-
-	//TODO
-//	dps->group.labels.resize(dps->group.points.cols(), 1);
-//	for (PointType i = 0; i < dps->group.points.cols(); i++)
-//	{
-//		dps->group.labels[i] = uni(rng) + ((globalParams->outlier_mod > 0) ? 1 : 0);
-//	}
-
-	//Also for each GPU
-	//std::uniform_int_distribution<LabelType> uni2(1, 2); // guaranteed unbiased
-	//dps->group.labels_subcluster.resize(dps->group.points.cols(), 1);
-	//for (PointType i = 0; i < dps->group.points.cols(); i++)
-	//{
-	//	dps->group.labels_subcluster[i] = uni2(rng);
-	//}
-	//draw::CreatePng("draw\\firstCluster.png", dps->group.points, dps->group.labels_subcluster);
-
-	return dps;
-}
-
 //
 //init_model(all_data)
 //
@@ -79,25 +42,11 @@ std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model_fro
 //All prior data as been included previously, and is globally accessed by the function.
 //
 //Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
-std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model_from_data(MatrixXd &all_data)
+std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(MatrixXd& all_data)
 {
 	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
-	
-	std::chrono::steady_clock::time_point begin;
-
-	if (globalParams->use_verbose)
-	{
-		begin = std::chrono::steady_clock::now();
-	}
 
 	dps->group.points = all_data;
-
-	if (globalParams->use_verbose)
-	{
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		std::cout << "Loading and distributing data took = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[ms]" << std::endl;
-	}
-
 	dps->model_hyperparams.distribution_hyper_params = globalParams->hyper_params;
 	dps->model_hyperparams.alpha = globalParams->alpha;
 	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.cols();
@@ -128,7 +77,6 @@ void dp_parallel_sampling_class::init_first_clusters(std::shared_ptr<dp_parallel
 		std::shared_ptr<local_cluster> lc = local_clusters_actions.create_first_local_cluster(dp_model->group);
 		dp_model->group.local_clusters.push_back(lc);
 	}
-	//synch all GPU call - TODO
 
 	local_clusters_actions.update_suff_stats_posterior(dp_model->group);
 	local_clusters_actions.sample_clusters(dp_model->group, false);
@@ -140,47 +88,6 @@ void dp_parallel_sampling_class::init_first_clusters(std::shared_ptr<dp_parallel
 }
 
 
-/*
-dp_parallel(all_data::AbstractArray{ Float32,2 },
-	local_hyper_params::distribution_hyper_params,
-	alpha_param::Float32,
-	iters::Int64 = 100,
-	init_clusters::Int64 = 1,
-	seed = nothing,
-	verbose = true,
-	save_model = false,
-	burnout = 15,
-	gt = nothing,
-	max_clusters = Inf,
-	outlier_weight = 0,
-	outlier_params = nothing)
-
-	Run the model.
-	# Args and Kwargs
-	- `all_data::AbstractArray{ Float32,2 }` a `DxN` array containing the data
-	- `local_hyper_params::distribution_hyper_params` the prior hyperparams
-	- `alpha_param::Float32` the concetration parameter
-	- `iters::Int64` number of iterations to run the model
-	- `init_clusters::Int64` number of initial clusters
-	- `seed` define a random seed to be used in all workers, if used must be preceeded with `@everywhere using random`.
-	- `verbose` will perform prints on every iteration.
-	- `save_model` will save a checkpoint every 25 iterations.
-	- `burnout` how long to wait after creating a cluster, and allowing it to split / merge
-	- `gt` Ground truth, when supplied, will perform NMI and VI analysis on every iteration.
-	- `max_clusters` limit the number of cluster
-	- `outlier_weight` constant weight of an extra non - spliting component
-	- `outlier_params` hyperparams for an extra non - spliting component
-
-	# Return values
-	dp_model, iter_count, nmi_score_history, liklihood_history, cluster_count_history
-	- `dp_model` The DPMM model inferred
-	- `iter_count` Timing for each iteration
-	- `nmi_score_history` NMI score per iteration(if gt suppled)
-	- `likelihood_history` Log likelihood per iteration.
-	- `cluster_count_history` Cluster counts per iteration.
-	*/
-	
-	
 ModelInfo dp_parallel_sampling_class::dp_parallel(
 	std::shared_ptr<hyperparams>& local_hyper_params,
 	double alpha_param,
@@ -205,193 +112,21 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	globalParams->max_num_of_clusters = max_clusters;
 	globalParams->outlier_mod = outlier_weight;
 	globalParams->outlier_hyper_params = outlier_params;
-	std::shared_ptr<dp_parallel_sampling> dp_model = init_model_from_data(globalParams->points);
 
-	init_first_clusters(dp_model, globalParams->initial_clusters);
-	if (globalParams->use_verbose)
-	{
-		printf("Node Leaders:\n");
-		//		printf(leader_dict);
-		printf("\n");
-	}
-	return run_model(dp_model, 1);
+	return init_and_run_model(globalParams->points);
 }
 
-		
-
-		/*
-		fit(all_data::AbstractArray{ Float32,2 }, local_hyper_params::distribution_hyper_params, alpha_param::Float32;
-iters::Int64 = 100, init_clusters::Int64 = 1, seed = nothing, verbose = true, save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing)
-
-Run the model(basic mode).
-# Args and Kwargs
-- `all_data::AbstractArray{ Float32,2 }` a `DxN` array containing the data
-- `local_hyper_params::distribution_hyper_params` the prior hyperparams
-- `alpha_param::Float32` the concetration parameter
-- `iters::Int64` number of iterations to run the model
-- `init_clusters::Int64` number of initial clusters
-- `seed` define a random seed to be used in all workers, if used must be preceeded with `@everywhere using random`.
-- `verbose` will perform prints on every iteration.
-- `save_model` will save a checkpoint every 25 iterations.
-- `burnout` how long to wait after creating a cluster, and allowing it to split / merge
-- `gt` Ground truth, when supplied, will perform NMI and VI analysis on every iteration.
-- `max_clusters` limit the number of cluster
-- `outlier_weight` constant weight of an extra non - spliting component
-- `outlier_params` hyperparams for an extra non - spliting component
-
-# Return Values
-- `labels` Labels assignments
-- `clusters` Cluster parameters
-- `weights` The cluster weights, does not sum to `1`, but to `1` minus the weight of all uninstanistaed clusters.
-- `iter_count` Timing for each iteration
-- `nmi_score_history` NMI score per iteration(if gt suppled)
-- `likelihood_history` Log likelihood per iteration.
-- `cluster_count_history` Cluster counts per iteration.
-- `sub_labels` Sub labels assignments
-
-# Example:
-```julia
-julia > x, y, clusters = generate_gaussian_data(10000, 2, 6, 100.0)
-...
-
-julia > hyper_params = DPMMSubClusters.niw_hyperparams(1.0,
-	zeros(2),
-	5,
-	[1 0; 0 1])
-	DPMMSubClusters.niw_hyperparams(1.0f0, Float32[0.0, 0.0], 5.0f0, Float32[1.0 0.0; 0.0 1.0])
-
-	julia > ret_values = fit(x, hyper_params, 10.0, iters = 100, verbose = false)
-
-	...
-
-	julia > unique(ret_values[1])
-	6 - element Array{ Int64,1 }:
-3
-6
-1
-2
-5
-4
-```
-*/
-/*
-function fit(all_data::AbstractArray{ Float32,2 }, local_hyper_params::distribution_hyper_params, alpha_param::Float32;
-iters::Int64 = 100, init_clusters::Int64 = 1, seed = nothing, verbose = true, save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing)
-dp_model, iter_count, nmi_score_history, liklihood_history, cluster_count_history = dp_parallel(all_data, local_hyper_params, alpha_param, iters, init_clusters, seed, verbose, save_model, burnout, gt, max_clusters, outlier_weight, outlier_params)
-return Array(dp_model.group.labels), [x.cluster_params.cluster_params.distribution for x in dp_model.group.local_clusters], dp_model.group.weights, iter_count, nmi_score_history, liklihood_history, cluster_count_history, Array(dp_model.group.labels_subcluster)
-end
-
-*/
-/*
-fit(all_data::AbstractArray{ Float32,2 }, alpha_param::Float32;
-iters::Int64 = 100, init_clusters::Int64 = 1, seed = nothing, verbose = true, save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing)
-
-
-Run the model(basic mode) with default `NIW` prior.
-# Args and Kwargs
-- `all_data::AbstractArray{ Float32,2 }` a `DxN` array containing the data
-- `alpha_param::Float32` the concetration parameter
-- `iters::Int64` number of iterations to run the model
-- `init_clusters::Int64` number of initial clusters
-- `seed` define a random seed to be used in all workers, if used must be preceeded with `@everywhere using random`.
-- `verbose` will perform prints on every iteration.
-- `save_model` will save a checkpoint every 25 iterations.
-- `burnout` how long to wait after creating a cluster, and allowing it to split / merge
-- `gt` Ground truth, when supplied, will perform NMI and VI analysis on every iteration.
-- `outlier_weight` constant weight of an extra non - spliting component
-- `outlier_params` hyperparams for an extra non - spliting component
-
-# Return Values
-- `labels` Labels assignments
-- `clusters` Cluster parameters
-- `weights` The cluster weights, does not sum to `1`, but to `1` minus the weight of all uninstanistaed clusters.
-- `iter_count` Timing for each iteration
-- `nmi_score_history` NMI score per iteration(if gt suppled)
-- `likelihood_history` Log likelihood per iteration.
-- `cluster_count_history` Cluster counts per iteration.
-- `sub_labels` Sub labels assignments
-
-# Example:
-```julia
-julia > x, y, clusters = generate_gaussian_data(10000, 2, 6, 100.0)
-...
-
-julia > ret_values = fit(x, 10.0, iters = 100, verbose = false)
-
-...
-
-julia > unique(ret_values[1])
-6 - element Array{ Int64,1 }:
-3
-6
-1
-2
-5
-4
-```
-"""
-function fit(all_data::AbstractArray{ Float32,2 }, alpha_param::Float32;
-iters::Int64 = 100, init_clusters::Int64 = 1, seed = nothing, verbose = true, save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing)
-data_dim = size(all_data, 1)
-cov_mat = Matrix{ Float32 }(I, data_dim, data_dim)
-local_hyper_params = niw_hyperparams(1, zeros(Float32, data_dim), data_dim + 3, cov_mat)
-dp_model, iter_count, nmi_score_history, liklihood_history, cluster_count_history = dp_parallel(all_data, local_hyper_params, alpha_param, iters, init_clusters, seed, verbose, save_model, burnout, gt, max_clusters, outlier_weight, outlier_params)
-return Array(dp_model.group.labels), [x.cluster_params.cluster_params.distribution for x in dp_model.group.local_clusters], dp_model.group.weights, iter_count, nmi_score_history, liklihood_history, cluster_count_history, Array(dp_model.group.labels_subcluster)
-end
-
-fit(all_data::AbstractArray, alpha_param;
-iters = 100, init_clusters = 1,
-seed = nothing, verbose = true,
-save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing) =
-fit(Float32.(all_data), Float32(alpha_param), iters = Int64(iters),
-	init_clusters = Int64(init_clusters), seed = seed, verbose = verbose,
-	save_model = save_model, burnout = burnout, gt = gt, max_clusters = max_clusters, outlier_weight = outlier_weight, outlier_params = outlier_params)
-
-	fit(all_data::AbstractArray, local_hyper_params::distribution_hyper_params, alpha_param;
-iters = 100, init_clusters::Number = 1,
-seed = nothing, verbose = true,
-save_model = false, burnout = 20, gt = nothing, max_clusters = Inf, outlier_weight = 0, outlier_params = nothing) =
-fit(Float32.(all_data), local_hyper_params, Float32(alpha_param), iters = Int64(iters),
-	init_clusters = Int64(init_clusters), seed = seed, verbose = verbose,
-	save_model = save_model, burnout = burnout, gt = gt, max_clusters = max_clusters, outlier_weight = outlier_weight, outlier_params = outlier_params)
-
-
-
-
-	*/
-
-/*
-	dp_parallel(model_params::String; verbose = true, save_model = true, burnout = 5, gt = nothing)
-
-	Run the model in advanced mode.
-	# Args and Kwargs
-	- `model_params::String` A path to a parameters file(see below)
-	- `verbose` will perform prints on every iteration.
-	- `save_model` will save a checkpoint every `X` iterations, where `X` is specified in the parameter file.
-	- `burnout` how long to wait after creating a cluster, and allowing it to split / merge
-	- `gt` Ground truth, when supplied, will perform NMI and VI analysis on every iteration.
-
-	# Return values
-	dp_model, iter_count, nmi_score_history, liklihood_history, cluster_count_history
-	- `dp_model` The DPMM model inferred
-	- `iter_count` Timing for each iteration
-	- `nmi_score_history` NMI score per iteration(if gt suppled)
-	- `likelihood_history` Log likelihood per iteration.
-	- `cluster_count_history` Cluster counts per iteration.
-	*/
-ModelInfo dp_parallel_sampling_class::dp_parallel(std::shared_ptr<global_params>& globalParamsIn, std::string model_params)
+ModelInfo dp_parallel_sampling_class::dp_parallel_from_file()
 {
-	globalParams = globalParamsIn;
-	std::shared_ptr<dp_parallel_sampling> dp_model = init_model_from_file();
+	return init_and_run_model(globalParams->points);
+}
 
-	//TODO - not in Julia:
-	globalParams->outlier_mod = 0;
+ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
+{
+	std::shared_ptr<dp_parallel_sampling> dp_model = init_model(all_data);
+
 	init_first_clusters(dp_model, globalParams->initial_clusters);
-	if (globalParams->use_verbose)
-	{
-		printf("Node Leaders:");
-	}
-	return run_model(dp_model, 1, model_params.c_str());
+	return run_model(dp_model, 1);
 }
 
 ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)

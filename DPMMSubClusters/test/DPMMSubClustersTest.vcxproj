@@ -45,9 +45,7 @@
     <ClCompile Include="data_generators_test.cpp" />
     <ClCompile Include="local_clusters_actions_test.cpp" />
     <ClCompile Include="module_tests_test.cpp" />
-    <ClCompile Include="multinomial_dist_test.cpp" />
     <ClCompile Include="multinomial_prior_test.cpp" />
-    <ClCompile Include="mv_gaussian_test.cpp" />
     <ClCompile Include="niw_test.cpp" />
     <ClCompile Include="shared_actions_test.cpp" />
     <ClCompile Include="pch.cpp">
@@ -56,6 +54,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="utils_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DPMMSubClusters.vcxproj">
@@ -63,6 +62,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="mnm_data.npy" />
+    <None Include="ModuleTestFile1.json" />
+    <None Include="ModuleTestFile2.json" />
+    <None Include="ModuleTestFile3.json" />
+    <None Include="niw_data_2D.npy" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemDefinitionGroup />
@@ -71,6 +75,7 @@
     <Import Project="..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.3\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.3\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
     <Import Project="..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.3\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.3\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
     <Import Project="..\..\packages\OpenCV.2.4.11\build\native\OpenCV.targets" Condition="Exists('..\..\packages\OpenCV.2.4.11\build\native\OpenCV.targets')" />
+    <Import Project="..\..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets" Condition="Exists('..\..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,7 +94,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>X64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -102,9 +107,14 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\;..\zlib\out\build\x64-Release;$(SolutionDir)packages\jsoncpp-vc140-static-64.1.8.0\lib\native\libs\x64\static\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;zlib.lib;cnpy.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(ProjectDir)*.npy" "$(TargetDir)"
+xcopy /y "$(ProjectDir)../zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"
+xcopy /y "$(ProjectDir)ModuleTestFile*.json" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -124,7 +134,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>X64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -138,9 +148,14 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart_static.lib;distribution_sample.obj;dp_parallel_sampling.obj;global_params.obj;local_clusters_actions.obj;logdet.obj;multinomial_dist.obj;multinomial_prior.obj;mv_gaussian.obj;niw.obj;pdflib.obj;prior.obj;rnglib.obj;sufficient_statistics.obj;utils.obj;shared_actions.obj;draw.obj;module_tests.obj;cudaKernel.cu.obj;opencv_world343.lib;cudaKernel_multinomial.cu.obj;cudaKernel_gaussian.cu.obj;zlib.lib;cnpy.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;..\$(Platform)\$(Configuration)\;..\opencv;$(CUDA_PATH)\lib\x64\;$(CUDA_PATH_V11_2)\lib\x64\;..\zlib\out\build\x64-Release;$(SolutionDir)packages\jsoncpp-vc140-static-64.1.8.0\lib\native\libs\x64\static\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(ProjectDir)*.npy" "$(TargetDir)"
+xcopy /y "$(ProjectDir)../zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"
+xcopy /y "$(ProjectDir)ModuleTestFile*.json" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -148,5 +163,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\OpenCV.2.4.11\build\native\OpenCV.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\OpenCV.2.4.11\build\native\OpenCV.props'))" />
     <Error Condition="!Exists('..\..\packages\OpenCV.2.4.11\build\native\OpenCV.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\OpenCV.2.4.11\build\native\OpenCV.targets'))" />
+    <Error Condition="!Exists('..\..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets'))" />
   </Target>
 </Project>

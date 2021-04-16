@@ -1,0 +1,49 @@
+{
+  "iterations": 200,
+  "initial_clusters": 1,
+  "alpha": 10.0,
+  "use_verbose": true,
+  "draw_labels": false,
+  "should_save_mode": false,
+  "burnout_period": 20,
+  "max_num_of_clusters": 1000000000,
+  "hyper_params": {
+    //Example for niw
+    "m": [
+      0.0,
+      0.0
+    ],
+    "psi": [
+      [
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "k": 1,
+    "v": 5.0
+  },
+  "outlier_mod": 0.05,
+  "outlier_hyper_params": {
+    //Example for niw
+    "m": [
+      0.0,
+      0.0
+    ],
+    "psi": [
+      [
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "k": 1,
+    "v": 5.0
+  }
+}

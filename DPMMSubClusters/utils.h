@@ -9,11 +9,14 @@
 class utils
 {
 public:
-	static void load_data(std::string path, std::string prefix, Eigen::MatrixXd& mat_out, bool swapDimension = true);
+	static void load_data(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension = true);
+	static void save_data(std::string fileName, const Eigen::MatrixXd& mat);
 	static double log_multivariate_gamma(double x, long D);
-	static void saveToFile(const LabelsType & mat, const char * filePrefixName);
-	static void saveToFile(const MatrixXd &mat, const char* filePrefixName);
-	static void saveToFile(const VectorXd & mat, const char * filePrefixName);
-	static void saveToFile(const MatrixXd & mat1, const MatrixXd & mat2, const char * filePrefixName);
+
+private:
+	template<typename T>
+	static void data_to_mat(const T& data, Eigen::MatrixXd& mat);
+
+	static void mat_to_data(const Eigen::MatrixXd& mat, std::vector<double>& data);
 };
 

@@ -126,3 +126,43 @@ std::unique_ptr<cudaKernel> niw::get_cuda()
 {
 	return std::make_unique<cudaKernel_gaussian>();
 }
+
+std::shared_ptr<hyperparams> niw::create_hyperparams(Json::Value& hyper_params_value)
+{
+	shared_ptr<niw_hyperparams> result = std::make_shared<niw_hyperparams>();
+	result->k = hyper_params_value["k"].asDouble();
+
+	Json::Value val = hyper_params_value["m"];
+	int size = val.size();
+	if (size > 0)
+	{
+		result->m.resize(size);
+		for (int i = 0; i < size; i++)
+		{
+			result->m(i) = val.get(i, hyper_params_value["m"]).asDouble();
+		}
+	}
+
+	result->v = hyper_params_value["v"].asDouble();
+
+	val = hyper_params_value["psi"];
+	int rows = val.size();
+	if (rows > 0)
+	{
+		int cols = val.get((Json::ArrayIndex)0, hyper_params_value["psi"]).size();
+		if (cols > 0)
+		{
+			result->psi.resize(rows, cols);
+			for (int i = 0; i < rows; i++)
+			{
+				Json::Value valRow = val.get(i, hyper_params_value["psi"]);
+				for (int j = 0; j < cols; j++)
+				{
+					result->psi(i, j) = valRow.get(j, valRow).asDouble();
+				}
+			}
+		}
+	}
+
+	return result;
+}

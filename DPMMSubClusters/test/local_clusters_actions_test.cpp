@@ -15,7 +15,8 @@ namespace DPMMSubClustersTest
 	{
 		MatrixXd points(2, 10);
 		points << 2.3863995, -4.672651, -2.3842435, -2.2775807, -0.695474, -2.408718, -3.7753334, -6.659004, 16.301395, -15.971787, 8.34453, -5.352129, -5.805547, -5.2975364, -5.7748003, -5.324071, -5.524739, 6.970031, -10.184864, -1.799381;
-		std::shared_ptr<global_params> gp = std::make_shared<global_params>(10, points, NULL, prior_type::Gaussian);
+		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
+		gp->init(10, points, NULL, prior_type::Gaussian);
 		gp->cuda = std::make_unique<myCudaKernel_gaussian>();
 		gp->cuda->init(10, points, NULL);
 		local_clusters_actions object(gp);
@@ -175,7 +176,8 @@ namespace DPMMSubClustersTest
 	TEST(local_clusters_actions_test, should_split_local)
 	{
 		MatrixXd points;
-		std::shared_ptr<global_params> gp = std::make_shared<global_params>(10, points, NULL, prior_type::Gaussian);
+		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
+		gp->init(10, points, NULL, prior_type::Gaussian);
 		gp->gen = std::make_unique<myGen>();
 		gp->cuda = std::make_unique<myCudaKernel_gaussian>();
 		myCudaKernel_gaussian* myCudaKernelObj = dynamic_cast<myCudaKernel_gaussian*>(gp->cuda.get());
@@ -283,7 +285,8 @@ namespace DPMMSubClustersTest
 		MatrixXd group_pts(2, 10);
 		group_pts << 2.3863995, -4.672651, -2.3842435, -2.2775807, -0.695474, -2.408718, -3.7753334, -6.659004, 16.301395, -15.971787, 8.34453, -5.352129, -5.805547, -5.2975364, -5.7748003, -5.324071, -5.524739, 6.970031, -10.184864, -1.799381;
 		std::map<LabelType, std::shared_ptr<thin_suff_stats>> actual;
-		std::shared_ptr<global_params> gp = std::make_shared<global_params>(10, group_pts, NULL, prior_type::Gaussian);
+		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
+		gp->init(10, group_pts, NULL, prior_type::Gaussian);
 		gp->gen = std::make_unique<myGen>();
 		gp->cuda = std::make_unique<myCudaKernel_gaussian>();
 		gp->cuda->init(10, group_pts, NULL);

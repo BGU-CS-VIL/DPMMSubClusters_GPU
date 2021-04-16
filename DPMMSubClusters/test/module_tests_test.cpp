@@ -31,6 +31,8 @@ namespace DPMMSubClustersTest
 
 	TEST(module_tests_test, RandomMess10Clusters)
 	{
+		int actualNumClusters = 0;
+		//	do {
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
@@ -43,7 +45,7 @@ namespace DPMMSubClustersTest
 		int numIters = 100;
 
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
-
+		//		utils::save_data("niw_data_2D", x);
 		std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
 		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
@@ -61,24 +63,14 @@ namespace DPMMSubClustersTest
 			delete[] tcov[i];
 		}
 
-		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 1);
+		actualNumClusters = dp.dp_model->group.local_clusters.size();
 
 		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 		std::cout << str << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
 
-		EXPECT_TRUE(numClusters > 6);
-	}
-
-	TEST(module_tests_test, DISABLED_ReadPnyFileIntoData)
-	{
-		module_tests mt;
-		MatrixXd data;
-		mt.ReadPnyFileIntoData("mnm_data.npy", "", data);
-
-		EXPECT_EQ(100, (int)data.rows());
-		EXPECT_EQ(1000, (int)data.cols());
-		EXPECT_EQ(1, (int)data(0, 2));
+		EXPECT_TRUE(actualNumClusters > 6);
+		//	} while (actualNumClusters != 10);
 	}
 
 	TEST(module_tests_test, MultinomialModel)
@@ -179,11 +171,39 @@ namespace DPMMSubClustersTest
 			delete[] tcov[i];
 		}
 
-		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 1);
-
 		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 		std::cout << str << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
-		EXPECT_TRUE(numClusters > 6);
+		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 6);
+	}
+
+	TEST(module_tests_test, RunModuleFromFile1)
+	{
+		printf("Testing Module (Run Module From File)");
+
+		dp_parallel_sampling_class dps("mnm_data", "ModuleTestFile1.json", prior_type::Multinomial);
+		ModelInfo dp = dps.dp_parallel_from_file();
+
+		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 6);
+	}
+
+	TEST(module_tests_test, RunModuleFromFile2WithOutlier_hyper)
+	{
+		printf("Testing Module (Run Module From File)");
+
+		dp_parallel_sampling_class dps("niw_data_2D", "ModuleTestFile2.json", prior_type::Gaussian);
+		ModelInfo dp = dps.dp_parallel_from_file();
+
+		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 1);
+	}
+
+	TEST(module_tests_test, RunModuleFromFile3WithoutOutlier_hyper)
+	{
+		printf("Testing Module (Run Module From File)");
+
+		dp_parallel_sampling_class dps("niw_data_2D", "ModuleTestFile3.json", prior_type::Gaussian);
+		ModelInfo dp = dps.dp_parallel_from_file();
+
+		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 6);
 	}
 }

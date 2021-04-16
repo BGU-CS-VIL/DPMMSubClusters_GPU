@@ -54,4 +54,118 @@ namespace DPMMSubClustersTest
 		ASSERT_NEAR(5.897545600162242, result->psi(1, 0), 0.0001);
 		ASSERT_NEAR(2.975669253988425, result->psi(1, 1), 0.0001);
 	}
+
+	TEST(niw_test, CreateHyperparams)
+	{
+		std::string strJson = "{\"m\":[1.0,2.0],\"psi\":[[1.0,0.0],[0.0,1.0]],\"k\":1,\"v\":5.0}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		niw object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		niw_hyperparams* result = dynamic_cast<niw_hyperparams*>(resultBase.get());
+
+		ASSERT_EQ(2, result->m.size());
+		ASSERT_EQ(1.0, result->m(0));
+		ASSERT_EQ(2.0, result->m(1));
+		ASSERT_EQ(2, result->psi.rows());
+		ASSERT_EQ(2, result->psi.cols());
+		ASSERT_EQ(1.0, result->psi(0, 0));
+		ASSERT_EQ(0.0, result->psi(0, 1));
+		ASSERT_EQ(0.0, result->psi(1, 0));
+		ASSERT_EQ(1.0, result->psi(1, 1));
+		ASSERT_EQ(1, result->k);
+		ASSERT_EQ(5.0, result->v);
+	}
+
+	TEST(niw_test, CreateHyperparamsNoM)
+	{
+		std::string strJson = "{\"psi\":[[1.0,0.0],[0.0,1.0]],\"k\":1,\"v\":5.0}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		niw object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		niw_hyperparams* result = dynamic_cast<niw_hyperparams*>(resultBase.get());
+
+		ASSERT_EQ(0, result->m.size());
+		ASSERT_EQ(2, result->psi.rows());
+		ASSERT_EQ(2, result->psi.cols());
+		ASSERT_EQ(1.0, result->psi(0, 0));
+		ASSERT_EQ(0.0, result->psi(0, 1));
+		ASSERT_EQ(0.0, result->psi(1, 0));
+		ASSERT_EQ(1.0, result->psi(1, 1));
+		ASSERT_EQ(1, result->k);
+		ASSERT_EQ(5.0, result->v);
+	}
+
+	TEST(niw_test, CreateHyperparamsNoPsi)
+	{
+		std::string strJson = "{\"m\":[1.0,2.0],\"k\":1,\"v\":5.0}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		niw object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		niw_hyperparams* result = dynamic_cast<niw_hyperparams*>(resultBase.get());
+
+		ASSERT_EQ(2, result->m.size());
+		ASSERT_EQ(1.0, result->m(0));
+		ASSERT_EQ(2.0, result->m(1));
+		ASSERT_EQ(0, result->psi.rows());
+		ASSERT_EQ(0, result->psi.cols());
+		ASSERT_EQ(1, result->k);
+		ASSERT_EQ(5.0, result->v);
+	}
+
+	TEST(niw_test, CreateHyperparamsNoK)
+	{
+		std::string strJson = "{\"m\":[1.0,2.0],\"psi\":[[1.0,0.0],[0.0,1.0]],\"v\":5.0}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		niw object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		niw_hyperparams* result = dynamic_cast<niw_hyperparams*>(resultBase.get());
+
+		ASSERT_EQ(2, result->m.size());
+		ASSERT_EQ(1.0, result->m(0));
+		ASSERT_EQ(2.0, result->m(1));
+		ASSERT_EQ(2, result->psi.rows());
+		ASSERT_EQ(2, result->psi.cols());
+		ASSERT_EQ(1.0, result->psi(0, 0));
+		ASSERT_EQ(0.0, result->psi(0, 1));
+		ASSERT_EQ(0.0, result->psi(1, 0));
+		ASSERT_EQ(1.0, result->psi(1, 1));
+		ASSERT_EQ(0, result->k);
+		ASSERT_EQ(5.0, result->v);
+	}
+
+	TEST(niw_test, CreateHyperparamsNoV)
+	{
+		std::string strJson = "{\"m\":[1.0,2.0],\"psi\":[[1.0,0.0],[0.0,1.0]],\"k\":1}";
+		Json::Value root;
+		Json::Reader reader;
+		reader.parse(strJson.c_str(), root);
+
+		niw object;
+		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);
+		niw_hyperparams* result = dynamic_cast<niw_hyperparams*>(resultBase.get());
+
+		ASSERT_EQ(2, result->m.size());
+		ASSERT_EQ(1.0, result->m(0));
+		ASSERT_EQ(2.0, result->m(1));
+		ASSERT_EQ(2, result->psi.rows());
+		ASSERT_EQ(2, result->psi.cols());
+		ASSERT_EQ(1.0, result->psi(0, 0));
+		ASSERT_EQ(0.0, result->psi(0, 1));
+		ASSERT_EQ(0.0, result->psi(1, 0));
+		ASSERT_EQ(1.0, result->psi(1, 1));
+		ASSERT_EQ(1, result->k);
+		ASSERT_EQ(0.0, result->v);
+	}
 }

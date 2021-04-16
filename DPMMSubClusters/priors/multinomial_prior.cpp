@@ -75,3 +75,21 @@ std::unique_ptr<cudaKernel> multinomial_prior::get_cuda()
 {
 	return std::make_unique<cudaKernel_multinomial>();
 }
+
+std::shared_ptr<hyperparams> multinomial_prior::create_hyperparams(Json::Value& hyper_params_value)
+{
+	shared_ptr<multinomial_hyper> result = std::make_shared<multinomial_hyper>();
+
+	Json::Value val = hyper_params_value["alpha"];
+	int size = val.size();
+	if (size > 0)
+	{
+		result->alpha.resize(size);
+		for (int i = 0; i < size; i++)
+		{
+			result->alpha(i) = val.get(i, hyper_params_value["alpha"]).asDouble();
+		}
+	}
+
+	return result;
+}
