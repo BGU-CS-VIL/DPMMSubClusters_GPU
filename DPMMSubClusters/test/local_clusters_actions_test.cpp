@@ -7,7 +7,8 @@
 #include "local_clusters_actions.h"
 #include "myCudaKernel.h"
 #include "myGen.h"
-
+#include "priors/niw_hyperparams.h"
+#include "priors/niw_sufficient_statistics.h"
 
 namespace DPMMSubClustersTest
 {

@@ -6,8 +6,7 @@ int main(int argc, char** argv)
     printf("Eigen uses %ld threads\n", Eigen::nbThreads());
 
     module_tests mt;
-   // mt.RandomMessHighDim();
-    mt.CheckMemoryLeak();
+    mt.RandomMessHighDim();
 
 	return EXIT_SUCCESS;
 }

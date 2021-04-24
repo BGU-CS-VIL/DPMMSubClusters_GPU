@@ -7,6 +7,11 @@
 #include "distribution_sample.h"
 #include "ds.h"
 #include <map>
+#include <cublas_v2.h>
+
+const int TILE_DIM = 32;
+const int BLOCK_ROWS = 8;
+#define BLOCK_DIM 16
 
 struct gpuCapability
 {
@@ -59,6 +64,22 @@ public:
 	void reset_bad_clusters_worker(LabelType index);
 	void get_sub_labels_count(int& l, int& r);
 
+	void create_sufficient_statistics(
+		LabelType label,
+		LabelType& indicesSize,
+		const std::shared_ptr<hyperparams>& hyperParams,
+		const std::shared_ptr<hyperparams>& posterior,
+		std::shared_ptr<thin_suff_stats>& tss);
+	virtual void do_create_sufficient_statistics(
+		double* d_pts,
+		int rows,
+		int cols,
+		const std::shared_ptr<hyperparams>& hyperParams,
+		const std::shared_ptr<hyperparams>& posterior,
+		cudaStream_t& stream,
+		std::shared_ptr<sufficient_statistics>& ss) = 0;
+	void multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M);
+
 	virtual void create_suff_stats_dict_worker(
 		LabelType label,
 		LabelType& indicesSize,
@@ -76,11 +97,14 @@ protected:
 	std::map<int, gpuCapability> gpuCapabilities;
 	int lastDevice;
 
-	void naive_matrix_multiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream);
+	void naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
+	void naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k);
 	void dcolwise_dot_all_sub_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int r_offset, cudaStream_t& stream);
 	void dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream);
 
 	static void checkCUDAError(cudaError_t err, const char* file, int line);
+	static void checkCUDAError(cublasStatus_t err, const char* file, int line);
+
 	virtual void log_likelihood_sub_labels(
 		double* d_r,
 		int r_offset,
@@ -100,6 +124,7 @@ protected:
 	void device_to_device_copy(int srcDeviceId, int trgDeviceId, int dataSize, T* srcData, T*& trgData, bool alreadyAllocated, bool &needToFree);
 	template<typename T>
 	void device_to_device_copy(int srcDeviceId, int trgDeviceId, int dataSize, T* srcData, T*& trgData, bool alreadyAllocated, bool& needToFree, cudaStream_t& stream);
+	void sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaStream_t& stream);
 
 };
 

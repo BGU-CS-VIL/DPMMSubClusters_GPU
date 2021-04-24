@@ -6,6 +6,8 @@
 #include "data_generators.h"
 #include "distributions/multinomial_dist.h"
 #include "myCudaKernel.h"
+#include "priors/multinomial_hyper.h"
+#include "priors/multinomial_sufficient_statistics.h"
 
 namespace DPMMSubClustersTest
 {

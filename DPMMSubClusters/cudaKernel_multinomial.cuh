@@ -23,6 +23,16 @@ protected:
 		const std::shared_ptr<distribution_sample>& distribution_sample,
 		cudaStream_t& stream,
 		int deviceId);
+
+	void do_create_sufficient_statistics(
+		double* d_pts,
+		int rows,
+		int cols,
+		const std::shared_ptr<hyperparams>& hyperParams,
+		const std::shared_ptr<hyperparams>& posterior,
+		cudaStream_t& stream,
+		std::shared_ptr<sufficient_statistics>& ss) override;
+
 };
 
 #endif //CudaKernel_multinomial_H

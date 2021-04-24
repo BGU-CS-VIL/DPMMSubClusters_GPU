@@ -6,6 +6,8 @@ using namespace std;
 #include "distributions_util/pdflib.hpp"
 #include "distributions/multinomial_dist.h"
 #include "cudaKernel_multinomial.cuh"
+#include "multinomial_hyper.h"
+#include "multinomial_sufficient_statistics.h"
 
 std::shared_ptr<hyperparams> multinomial_prior::calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics)
 {

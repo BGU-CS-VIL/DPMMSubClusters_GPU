@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart_static.lib;cublas.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform);$(CUDA_PATH_V11_2)\lib\$(Platform);$(MSBuildProjectDirectory)\opencv;$(MSBuildProjectDirectory)\zlib\out\build\x64-Release</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)/DPMMSubClusters.exe</OutputFile>
     </Link>
@@ -130,6 +130,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="check_time.h" />
     <ClInclude Include="cnpy\cnpy.h" />
     <ClInclude Include="cudaKernel.cuh" />
     <ClInclude Include="cudaKernel_gaussian.cuh" />
@@ -148,8 +149,12 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClInclude Include="distributions\multinomial_dist.h" />
     <ClInclude Include="moduleTypes.h" />
     <ClInclude Include="module_tests.h" />
+    <ClInclude Include="priors\multinomial_hyper.h" />
     <ClInclude Include="priors\multinomial_prior.h" />
+    <ClInclude Include="priors\multinomial_sufficient_statistics.h" />
     <ClInclude Include="priors\niw.h" />
+    <ClInclude Include="priors\niw_hyperparams.h" />
+    <ClInclude Include="priors\niw_sufficient_statistics.h" />
     <ClInclude Include="priors\prior.h" />
     <ClInclude Include="shared_actions.h" />
     <ClInclude Include="sufficient_statistics.h" />
@@ -157,6 +162,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <CudaCompile Include="cudaKernel.cu" />
     <CudaCompile Include="cudaKernel_gaussian.cu" />
     <CudaCompile Include="cudaKernel_multinomial.cu" />
+    <ClCompile Include="check_time.cpp" />
     <ClCompile Include="cnpy\cnpy.cpp" />
     <ClCompile Include="main.cpp">
       <FileType>Document</FileType>
@@ -215,8 +221,12 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClCompile Include="distributions\mv_gaussian.cpp" />
     <ClCompile Include="distributions\multinomial_dist.cpp" />
     <ClCompile Include="module_tests.cpp" />
+    <ClCompile Include="priors\multinomial_hyper.cpp" />
     <ClCompile Include="priors\multinomial_prior.cpp" />
+    <ClCompile Include="priors\multinomial_sufficient_statistics.cpp" />
     <ClCompile Include="priors\niw.cpp" />
+    <ClCompile Include="priors\niw_hyperparams.cpp" />
+    <ClCompile Include="priors\niw_sufficient_statistics.cpp" />
     <ClCompile Include="priors\prior.cpp" />
     <ClCompile Include="shared_actions.cpp" />
     <ClCompile Include="sufficient_statistics.cpp" />

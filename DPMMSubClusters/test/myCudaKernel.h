@@ -109,6 +109,16 @@ public:
 		dcolwise_dot_all_labels(maxIdx, rows, d_a, d_b, scalar, d_r, weight, stream);
 	}
 
+	void my_mul_scalar_sum_A_AT(double* d_A, double* d_B, int n, double scalar, cudaStream_t& stream)
+	{
+		mul_scalar_sum_A_AT(d_A, d_B, n, scalar, stream);
+	}
+
+	void my_sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaStream_t& stream)
+	{
+		sum_rowwise(d_A, d_B, rows, cols, stream);
+	}
+
 	void allocate_in_device(const MatrixXd& data, double*& d_data)
 	{
 		runCuda(cudaMalloc((void**)&d_data, sizeof(double) * data.size()));

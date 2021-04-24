@@ -12,6 +12,7 @@ using namespace std;
 #include "priors/multinomial_prior.h"
 #include "draw.h"
 #include "utils.h"
+#include "check_time.h"
 
 dp_parallel_sampling_class::dp_parallel_sampling_class(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
 {
@@ -44,6 +45,7 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 //Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
 std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(MatrixXd& all_data)
 {
+	CHECK_TIME("dp_parallel_sampling_class::init_model");
 	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
 
 	dps->group.points = all_data;
@@ -54,9 +56,6 @@ std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(Mat
 
 	globalParams->cuda->sample_labels(globalParams->initial_clusters, globalParams->outlier_mod);
 	globalParams->cuda->sample_sub_labels();
-
-	LabelsType subLabels;
-	globalParams->cuda->get_sub_labels(subLabels);
 
 	return dps;
 }
@@ -123,6 +122,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel_from_file()
 
 ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 {
+	CHECK_TIME("dp_parallel_sampling_class::init_and_run_model");
 	std::shared_ptr<dp_parallel_sampling> dp_model = init_model(all_data);
 
 	init_first_clusters(dp_model, globalParams->initial_clusters);
@@ -131,18 +131,19 @@ ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 
 ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)
 {
+	CHECK_TIME("dp_parallel_sampling_class::run_model");
 	ModelInfo	modelInfo;
 	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 	modelInfo.dp_model = dp_model;
 	std::vector<std::string> v_score_history;
 	int cur_parr_count = 10;
 
-	//For all GPUs
-		//TODO - send only part dp_model.group.labels. only the amount of each GPU
 	set_parr_worker(modelInfo.dp_model->group.num_labels(), cur_parr_count);
 
 	for (int i = first_iter; i < globalParams->iterations; ++i)
 	{
+		CHECK_TIME("Iteration #" + std::to_string(i));
+
 		bool final = false;
 		bool no_more_splits = false;
 		if (i >= globalParams->iterations - globalParams->argmax_sample_stop) //We assume the cluters k has been setteled by now, and a low probability random split can do dmg

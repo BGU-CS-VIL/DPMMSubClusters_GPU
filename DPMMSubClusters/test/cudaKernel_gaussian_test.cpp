@@ -452,7 +452,7 @@ namespace DPMMSubClustersTest
 			{
 				EXPECT_TRUE(leftPerc > leftProb - 0.03 && leftPerc < leftProb + 0.03);
 			}
-			else if (j == numLabels-1)
+			else if (j == numLabels - 1)
 			{
 				EXPECT_TRUE(leftPerc > leftProb - 0.23904 && leftPerc < leftProb + 0.23904);
 			}
@@ -675,7 +675,7 @@ namespace DPMMSubClustersTest
 		A << 0.1, 0.2, 0.3, 0.4, 0.5, 0.6;
 		MatrixXd B(n, k);
 		B << 0.5, 0.6, 0.7, 0.8, 0.9, 0.10;
-		
+
 		double* d_A;
 		object.allocate_in_device(A, d_A);
 		double* d_B;
@@ -959,6 +959,110 @@ namespace DPMMSubClustersTest
 		for (int i = 0; i < C2.rows(); i++)
 		{
 			EXPECT_NEAR(C2(i), C1(i), 0.0001);
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, mul_scalar_sum_A_AT)
+	{
+		myCudaKernel_gaussian cuda;
+		MatrixXd A = MatrixXd::Random(5, 5);
+		double scalar = 0.5;
+		MatrixXd B1(5, 5);
+		MatrixXd B2 = scalar * (A + A.transpose());
+		MatrixXd x(5, 10);
+
+		cuda.init(0, x, NULL);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_A;
+		cuda.allocate_in_device(A, d_A);
+		double* d_B;
+		cuda.allocate_in_device(A.size(), d_B);
+
+		cuda.create_stream(stream);
+
+		cuda.my_mul_scalar_sum_A_AT(d_A, d_B, 5, scalar, stream);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_B, B1.rows(), B1.cols(), B1);
+		cuda.release_in_device(d_A);
+		cuda.release_in_device(d_B);
+
+		for (int i = 0; i < B2.rows(); i++)
+		{
+			for (int j = 0; j < B2.cols(); j++)
+			{
+				ASSERT_EQ(B2(i, j), B1(i, j));
+			}
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, sum_rowwise)
+	{
+		int rows = 100;
+		int cols = 76;
+		myCudaKernel_gaussian cuda;
+		MatrixXd A = MatrixXd::Random(rows, cols);
+		VectorXd B1(rows);
+		VectorXd B2 = A.rowwise().sum();
+		MatrixXd x(rows, cols);
+
+		cuda.init(0, x, NULL);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_A;
+		cuda.allocate_in_device(A, d_A);
+		double* d_B;
+		cuda.allocate_in_device(rows, d_B);
+
+		cuda.create_stream(stream);
+
+		cuda.my_sum_rowwise(d_A, d_B, rows, cols, stream);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_B, B1.rows(), B1);
+		cuda.release_in_device(d_A);
+		cuda.release_in_device(d_B);
+
+		for (int i = 0; i < B2.rows(); i++)
+		{
+			ASSERT_EQ(B2(i), B1(i));
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, multiplie_matrix_by_transpose)
+	{
+		int rows = 100;
+		int cols = 76;
+		myCudaKernel_gaussian cuda;
+		MatrixXd A = MatrixXd::Random(rows, cols);
+		MatrixXd B1;
+		MatrixXd B2 = A * A.transpose();
+		MatrixXd x(rows, cols);
+
+		cuda.init(0, x, NULL);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_A;
+		cuda.allocate_in_device(A, d_A);
+		double* d_B;
+		cuda.allocate_in_device(rows * rows, d_B);
+
+		cuda.create_stream(stream);
+
+		cuda.multiplie_matrix_by_transpose(d_A, d_B, rows, cols);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_B, rows, rows, B1);
+		cuda.release_in_device(d_A);
+		cuda.release_in_device(d_B);
+
+		for (int i = 0; i < B2.rows(); i++)
+		{
+			ASSERT_NEAR(B2(i), B1(i), 0.0001);
 		}
 	}
 }

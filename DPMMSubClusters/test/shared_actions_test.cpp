@@ -12,7 +12,8 @@
 #include "myGen.h"
 #include "myCudaKernel.h"
 #include "myNiw.h"
-
+#include "priors/niw_hyperparams.h"
+#include "priors/niw_sufficient_statistics.h"
 
 namespace DPMMSubClustersTest
 {

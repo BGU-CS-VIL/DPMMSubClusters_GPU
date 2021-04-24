@@ -5,14 +5,17 @@ using namespace std;
 #include "distributions_util/dirichlet.h"
 #include "distributions_util/pdflib.hpp"
 #include "prior.h"
-
+#include "check_time.h"
 
 void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_params>& params, double alpha, bool first)
-{	  
+{
+	CHECK_TIME("shared_actions::sample_cluster_params");
 	std::vector<double> points_count;
+
 	params->cluster_params->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params->posterior_hyperparams, globalParams->gen);
 	params->cluster_params_l->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_l->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params_l->posterior_hyperparams, globalParams->gen);
 	params->cluster_params_r->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_r->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params_r->posterior_hyperparams, globalParams->gen);
+
 	points_count.push_back(params->cluster_params_l->suff_statistics->N);
 	points_count.push_back(params->cluster_params_r->suff_statistics->N);
 
@@ -25,7 +28,7 @@ void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_pa
 
 	double log_likihood_l = globalParams->pPrior->log_marginal_likelihood(params->cluster_params_l->prior_hyperparams, params->cluster_params_l->posterior_hyperparams, params->cluster_params_l->suff_statistics);
 	double log_likihood_r = globalParams->pPrior->log_marginal_likelihood(params->cluster_params_r->prior_hyperparams, params->cluster_params_r->posterior_hyperparams, params->cluster_params_r->suff_statistics);
-			
+
 	for (int i = 0; i < globalParams->burnout_period - 1; i++)
 	{
 		params->logsublikelihood_hist[i] = params->logsublikelihood_hist[i + 1];
@@ -39,14 +42,14 @@ void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_pa
 	{
 		if (params->logsublikelihood_hist[i].first)
 		{
-			logsublikelihood_now += params->logsublikelihood_hist[i].second* (1 / (globalParams->burnout_period - 0.1));
+			logsublikelihood_now += params->logsublikelihood_hist[i].second * (1 / (globalParams->burnout_period - 0.1));
 		}
-		else 
+		else
 		{
 			allReady = false;
 		}
 	}
-	
+
 	if (allReady && logsublikelihood_now - params->logsublikelihood_hist[globalParams->burnout_period - 1].second < 1e-2) // propogate abs change to other versions ?
 	{
 		params->splittable = true;

@@ -11,6 +11,8 @@
 #include "moduleTypes.h"
 #include "utils.h"
 #include "distributions_util/logdet.h"
+#include "check_time.h"
+#include "niw_hyperparams.h"
 
 using namespace std;
 
@@ -57,21 +59,33 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
-	int D = 16;
-	//int D = 2;
-	int numClusters = 20;
+	int D = 1000;
+	int numClusters = 3;
 	int numIters = 200;
 	int foundClusters = 0;
+	std::string fileName = "RandomMessHighDim";
 
-	data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
-	for (DimensionsType i = 0; i < D; i++)
+	struct stat buffer;
+	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
-		delete[] tmean[i];
+		CHECK_TIME("module_tests::load_data");
+		utils::load_data(fileName, x);
 	}
-	for (DimensionsType i = 0; i < D; i++)
+	else
 	{
-		delete[] tcov[i];
+		CHECK_TIME("module_tests::generate_data");
+		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
+		for (DimensionsType i = 0; i < D; i++)
+		{
+			delete[] tmean[i];
+		}
+		for (DimensionsType i = 0; i < D; i++)
+		{
+			delete[] tcov[i];
+		}
+		utils::save_data(fileName, x);
 	}
+	
 
 	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), D, MatrixXd::Identity(D, D));
 

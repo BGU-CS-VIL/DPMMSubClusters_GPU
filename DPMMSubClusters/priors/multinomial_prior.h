@@ -2,39 +2,8 @@
 #include "prior.h"
 #include "Eigen/Dense"
 #include "ds.h"
-//#include "global_params.h"
 
 using namespace Eigen;
-
-class multinomial_sufficient_statistics : public sufficient_statistics
-{
-public:
-	multinomial_sufficient_statistics() {}
-	multinomial_sufficient_statistics(int N, VectorXd points_sum) : sufficient_statistics(N, points_sum) {}
-	std::shared_ptr<sufficient_statistics> clone()
-	{
-		std::shared_ptr<multinomial_sufficient_statistics> ss = std::make_shared<multinomial_sufficient_statistics>();
-
-		ss->N = N;
-		ss->points_sum = points_sum;
-		return ss;
-	}
-};
-
-class multinomial_hyper : public hyperparams
-{
-public:
-	multinomial_hyper() {}
-	multinomial_hyper(VectorXd alpha) : hyperparams(), alpha(alpha) {}
-	~multinomial_hyper() {}
-
-	std::shared_ptr<hyperparams> clone() override
-	{
-		return std::make_shared<multinomial_hyper>(alpha);
-	}
-
-	VectorXd alpha;
-};
 
 class multinomial_prior : public prior
 {

@@ -4,7 +4,8 @@
 #include "Eigen/Dense"
 #include "dp_parallel_sampling.h"
 #include "data_generators.h"
-//#include "myNiw.h"
+#include "priors/niw_hyperparams.h"
+#include "priors/niw_sufficient_statistics.h"
 
 namespace DPMMSubClustersTest
 {

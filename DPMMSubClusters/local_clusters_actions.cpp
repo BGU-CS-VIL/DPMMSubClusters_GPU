@@ -11,7 +11,7 @@ using namespace std;
 #include "distributions_util/pdflib.hpp"
 #include "draw.h"
 #include <ppl.h>
-
+#include "check_time.h"
 
 template<typename Func>
 struct lambda_as_visitor_wrapper : Func {
@@ -98,16 +98,19 @@ std::shared_ptr<local_cluster> local_clusters_actions::create_outlier_local_clus
 
 void local_clusters_actions::sample_sub_clusters(local_group& group)
 {
+	CHECK_TIME("local_clusters_actions::sample_sub_clusters");
 	globalParams->cuda->create_subclusters_labels((int)globalParams->clusters_vector.size(), globalParams->clusters_vector, (int)group.points.rows());
 }
 				
 void local_clusters_actions::sample_labels(local_group& group, bool bFinal, bool no_more_splits)
 {
+	CHECK_TIME("local_clusters_actions::sample_labels");
 	globalParams->cuda->create_clusters_labels((int)globalParams->clusters_vector.size(), globalParams->clusters_vector, globalParams->clusters_weights, bFinal);
 }
 
 void local_clusters_actions::update_splittable_cluster_params(std::shared_ptr<splittable_cluster_params>& splittable_cluser)
 {
+	CHECK_TIME("local_clusters_actions::update_splittable_cluster_params");
 	splittable_cluser->cluster_params->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params->prior_hyperparams, splittable_cluser->cluster_params->suff_statistics);
 	splittable_cluser->cluster_params_l->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params_l->prior_hyperparams, splittable_cluser->cluster_params_l->suff_statistics);
 	splittable_cluser->cluster_params_r->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params_r->prior_hyperparams, splittable_cluser->cluster_params_r->suff_statistics);
@@ -115,27 +118,37 @@ void local_clusters_actions::update_splittable_cluster_params(std::shared_ptr<sp
 
 std::map<LabelType, std::shared_ptr<thin_suff_stats>> local_clusters_actions::create_suff_stats_dict_worker(MatrixXd& group_pts, std::shared_ptr<hyperparams>& hyper_params, LabelsType& indices)
 {
+	CHECK_TIME("local_clusters_actions::create_suff_stats_dict_worker");
 	std::map<LabelType, std::shared_ptr<thin_suff_stats>> suff_stats_dict;
 
 	for (LabelType index = 0; index < indices.size(); index++)
 	{
 		LabelType indicesLabelsSize = 0;
 
-		MatrixXd pts;
-		MatrixXd pts1;
-		MatrixXd pts2;
+		////////////////
 
-		globalParams->cuda->create_suff_stats_dict_worker(indices[index] + 1,
-			indicesLabelsSize,
-			pts,
-			pts1,
-			pts2);
+		//std::shared_ptr<thin_suff_stats> tss2 = std::make_shared<thin_suff_stats>();
+		//{
+		//	MatrixXd pts;
+		//	MatrixXd pts1;
+		//	MatrixXd pts2;
+
+		//	globalParams->cuda->create_suff_stats_dict_worker(indices[index] + 1,
+		//		indicesLabelsSize,
+		//		pts,
+		//		pts1,
+		//		pts2);
+
+		//	tss2->l_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts1);
+		//	tss2->r_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts2);
+		//	tss2->cluster_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts);
+		//	//		suff_stats_dict[index] = tss;
+		//}
+
+		////////////////////
 
 		std::shared_ptr<thin_suff_stats> tss = std::make_shared<thin_suff_stats>();
-		tss->l_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts1);
-		tss->r_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts2);
-		tss->cluster_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts);
-
+		globalParams->cuda->create_sufficient_statistics(indices[index] + 1, indicesLabelsSize, hyper_params, hyper_params, tss);
 		suff_stats_dict[index] = tss;
 	}
 
@@ -150,9 +163,11 @@ void local_clusters_actions::update_suff_stats_posterior(local_group &group)
 
 void local_clusters_actions::update_suff_stats_posterior(local_group& group, LabelsType& indices, bool indicesValid)
 {
+	CHECK_TIME("local_clusters_actions::update_suff_stats_posterior");
 	std::map<int, std::map<LabelType, std::shared_ptr<thin_suff_stats>>> workers_suff_dict;
 	if (!indicesValid)
 	{
+		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior fill indices");
 		indices.resize(group.local_clusters.size());
 		std::iota(std::begin(indices), std::end(indices), 0); // Fill with 0, 1, 2...
 	}
@@ -162,44 +177,51 @@ void local_clusters_actions::update_suff_stats_posterior(local_group& group, Lab
 		indices);
 
 	std::vector<std::vector<std::shared_ptr<thin_suff_stats>>>	suff_stats_vectors(indices.size());
-	std::map<ClusterIndexType, ClusterIndexType> cluster_to_index;
-	for (LabelType i = 0; i < indices.size(); i++)
 	{
-		cluster_to_index[indices[i]] = i;
-	}
+		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior loop 1");
 
-	for (std::map<int, std::map<LabelType, std::shared_ptr<thin_suff_stats>>>::const_iterator iter = workers_suff_dict.begin();
-		iter != workers_suff_dict.end();
-		++iter)
-	{
-		for (std::map<LabelType, std::shared_ptr<thin_suff_stats>>::const_iterator iter2 = iter->second.begin();
-			iter2 != iter->second.end();
-			++iter2)
+		std::map<ClusterIndexType, ClusterIndexType> cluster_to_index;
+		for (LabelType i = 0; i < indices.size(); i++)
 		{
-			suff_stats_vectors[cluster_to_index[iter2->first]].push_back(iter2->second);
+			cluster_to_index[indices[i]] = i;
+		}
+
+		for (std::map<int, std::map<LabelType, std::shared_ptr<thin_suff_stats>>>::const_iterator iter = workers_suff_dict.begin();
+			iter != workers_suff_dict.end();
+			++iter)
+		{
+			for (std::map<LabelType, std::shared_ptr<thin_suff_stats>>::const_iterator iter2 = iter->second.begin();
+				iter2 != iter->second.end();
+				++iter2)
+			{
+				suff_stats_vectors[cluster_to_index[iter2->first]].push_back(iter2->second);
+			}
 		}
 	}
 
-	for (LabelType index = 0; index < indices.size(); index++)
 	{
-		if (suff_stats_vectors[index].size() == 0)
+		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior loop 2");
+		for (LabelType index = 0; index < indices.size(); index++)
 		{
-			continue;
-		}
-		std::shared_ptr<local_cluster> pCluster = group.local_clusters[indices[index]];
-		pCluster->cluster_params->cluster_params->suff_statistics = suff_stats_vectors[index][0]->cluster_suff;
-		pCluster->cluster_params->cluster_params_l->suff_statistics = suff_stats_vectors[index][0]->l_suff;
-		pCluster->cluster_params->cluster_params_r->suff_statistics = suff_stats_vectors[index][0]->r_suff;
+			if (suff_stats_vectors[index].size() == 0)
+			{
+				continue;
+			}
+			std::shared_ptr<local_cluster> pCluster = group.local_clusters[indices[index]];
+			pCluster->cluster_params->cluster_params->suff_statistics = suff_stats_vectors[index][0]->cluster_suff;
+			pCluster->cluster_params->cluster_params_l->suff_statistics = suff_stats_vectors[index][0]->l_suff;
+			pCluster->cluster_params->cluster_params_r->suff_statistics = suff_stats_vectors[index][0]->r_suff;
 
-		for (LabelType i = 1; i < suff_stats_vectors[index].size(); i++)
-		{
-			globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params->suff_statistics, suff_stats_vectors[index][i]->cluster_suff, pCluster->cluster_params->cluster_params->suff_statistics);
-			globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params_l->suff_statistics, suff_stats_vectors[index][i]->l_suff, pCluster->cluster_params->cluster_params_l->suff_statistics);
-			globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params_r->suff_statistics, suff_stats_vectors[index][i]->r_suff, pCluster->cluster_params->cluster_params_r->suff_statistics);
-		}
-		pCluster->points_count = pCluster->cluster_params->cluster_params->suff_statistics->N;
+			for (LabelType i = 1; i < suff_stats_vectors[index].size(); i++)
+			{
+				globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params->suff_statistics, suff_stats_vectors[index][i]->cluster_suff, pCluster->cluster_params->cluster_params->suff_statistics);
+				globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params_l->suff_statistics, suff_stats_vectors[index][i]->l_suff, pCluster->cluster_params->cluster_params_l->suff_statistics);
+				globalParams->pPrior->aggregate_suff_stats(pCluster->cluster_params->cluster_params_r->suff_statistics, suff_stats_vectors[index][i]->r_suff, pCluster->cluster_params->cluster_params_r->suff_statistics);
+			}
+			pCluster->points_count = pCluster->cluster_params->cluster_params->suff_statistics->N;
 
-		update_splittable_cluster_params(pCluster->cluster_params);
+			update_splittable_cluster_params(pCluster->cluster_params);
+		}
 	}
 }
 																									
@@ -280,6 +302,7 @@ void local_clusters_actions::should_split_local(double& should_split, std::share
 																													
 void local_clusters_actions::check_and_split(local_group& group, bool bFinal, LabelsType& all_indices)
 {
+	CHECK_TIME("local_clusters_actions::check_and_split");
 	std::vector<double> split_arr = std::vector<double>(group.local_clusters.size(), 0);
 
 	for (ClusterIndexType index = 0; index < group.local_clusters.size(); index++)
@@ -323,6 +346,7 @@ void local_clusters_actions::check_and_split(local_group& group, bool bFinal, La
 
 void local_clusters_actions::check_and_merge(local_group& group, bool bFinal)
 {
+	CHECK_TIME("local_clusters_actions::check_and_merge");
 	bool mergable = false;
 	LabelsType indices;
 	LabelsType new_indices;
@@ -365,28 +389,41 @@ std::vector<double> local_clusters_actions::get_dirichlet_distribution(std::vect
 
 void local_clusters_actions::sample_clusters(local_group &group, bool first)
 {
+	CHECK_TIME("local_clusters_actions::sample_clusters");
+
 	shared_actions sa(globalParams);
 	std::vector<double> points_count;
-	//local_workers = procs(1)[2:end]
-	for (ClusterIndexType i = 0; i < group.local_clusters.size(); i++)
+
 	{
-		if (globalParams->outlier_mod > 0 && i == 1)
+		CHECK_TIME("local_clusters_actions:: Build sample_cluster_params");
+		for (ClusterIndexType i = 0; i < group.local_clusters.size(); i++)
 		{
-			continue;
+			if (globalParams->outlier_mod > 0 && i == 1)
+			{
+				continue;
+			}
+			sa.sample_cluster_params(group.local_clusters[i]->cluster_params, group.model_hyperparams.alpha, first);
+			group.local_clusters[i]->points_count = group.local_clusters[i]->cluster_params->cluster_params->suff_statistics->N;
+			points_count.push_back(group.local_clusters[i]->points_count);
 		}
-		sa.sample_cluster_params(group.local_clusters[i]->cluster_params, group.model_hyperparams.alpha, first);
-		group.local_clusters[i]->points_count = group.local_clusters[i]->cluster_params->cluster_params->suff_statistics->N;
-		points_count.push_back(group.local_clusters[i]->points_count);
 	}
+
 	points_count.push_back(group.model_hyperparams.alpha);
 
-	std::vector<double> dirichlet = get_dirichlet_distribution(points_count);
-	group.weights.clear();
-	for (ClusterIndexType i = 0; i < dirichlet.size() - 1; ++i)
+	std::vector<double> dirichlet;
 	{
-		group.weights.push_back(dirichlet[i] * (1 - globalParams->outlier_mod));
+		CHECK_TIME("local_clusters_actions:: get_dirichlet_distribution");
+		dirichlet = get_dirichlet_distribution(points_count);
 	}
 
+	group.weights.clear();
+	{
+		CHECK_TIME("local_clusters_actions:: Build group.weights");
+		for (ClusterIndexType i = 0; i < dirichlet.size() - 1; ++i)
+		{
+			group.weights.push_back(dirichlet[i] * (1 - globalParams->outlier_mod));
+		}
+	}
 	if (globalParams->outlier_mod > 0)
 	{
 		group.weights.insert(group.weights.begin(), globalParams->outlier_mod);
@@ -396,6 +433,7 @@ void local_clusters_actions::sample_clusters(local_group &group, bool first)
 						
 void local_clusters_actions::create_thin_cluster_params(std::vector<std::shared_ptr<local_cluster>> &clusters, std::vector<std::shared_ptr<thin_cluster_params>> &tcp)
 {
+	CHECK_TIME("local_clusters_actions::create_thin_cluster_params");
 	for (ClusterIndexType i = 0; i < clusters.size(); i++)
 	{
 		tcp.push_back(std::make_shared<thin_cluster_params>(clusters[i]->cluster_params->cluster_params->distribution->clone(),
@@ -421,6 +459,7 @@ void local_clusters_actions::remove_empty_clusters_worker(std::vector<PointType>
 
 void local_clusters_actions::remove_empty_clusters(local_group& group)
 {
+	CHECK_TIME("local_clusters_actions::remove_empty_clusters");
 	std::vector<std::shared_ptr<local_cluster>> new_vec;
 	std::vector<PointType> pts_count;
 
@@ -450,6 +489,7 @@ void local_clusters_actions::reset_bad_clusters_worker(LabelsType &indices, Matr
 
 void local_clusters_actions::reset_bad_clusters(local_group& group)
 {
+	CHECK_TIME("local_clusters_actions::reset_bad_clusters");
 	LabelsType bad_clusters;
 	bad_clusters.reserve(group.local_clusters.size());
 
@@ -470,6 +510,7 @@ void local_clusters_actions::reset_bad_clusters(local_group& group)
 															
 void local_clusters_actions::broadcast_cluster_params(std::vector<std::shared_ptr<thin_cluster_params>>& params_vector, std::vector<double> &weights_vector)
 {
+	CHECK_TIME("local_clusters_actions::broadcast_cluster_params");
 	set_global_data(params_vector, weights_vector);
 }											
 
@@ -481,6 +522,7 @@ void local_clusters_actions::set_global_data(const std::vector<std::shared_ptr<t
 																																																									
 void local_clusters_actions::group_step(local_group &group, bool no_more_splits, bool bFinal, bool first)
 {
+	CHECK_TIME("local_clusters_actions::group_step");
 	sample_clusters(group, false);
 	std::vector<std::shared_ptr<thin_cluster_params>> tcp;
 	create_thin_cluster_params(group.local_clusters, tcp);

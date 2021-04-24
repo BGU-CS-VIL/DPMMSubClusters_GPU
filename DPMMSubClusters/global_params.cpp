@@ -3,6 +3,7 @@
 #include "global_params.h"
 #include "multinomial_prior.h"
 #include "niw.h"
+#include "check_time.h"
 
 void global_params::init(std::string modelParamsFileName, prior_type priorType)
 {
@@ -51,6 +52,7 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 
 void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
 {
+	CHECK_TIME("global_params::init");
 	init_prior(priorType);
 	init_random(randomSeed);
 

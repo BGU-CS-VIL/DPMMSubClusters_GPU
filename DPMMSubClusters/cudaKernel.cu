@@ -8,6 +8,7 @@
 #include<curand_kernel.h>
 #include<time.h>
 #include "cudaKernel.cuh"
+#include "check_time.h"
 
 
 // function to define seed
@@ -453,6 +454,20 @@ __global__ void gpu_matrix_mult(double* a, double* b, double* c, int m, int n, i
 	}
 }
 
+__global__ void sum_rowwise_kernel(double* d_A, double* d_B, int rows, int cols)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	if (idx < rows)
+	{
+		double sum = 0;
+		for (int j = 0; j < cols; j++)
+		{
+			sum += d_A[IDX2C(idx, j, rows)];
+		}
+		d_B[idx] = sum;
+	}
+}
+
 void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed)
 {
 	printf("Init cuda\n");
@@ -660,6 +675,93 @@ void cudaKernel::sample_sub_clusters_worker(LabelType label, int* d_indices, int
 	runCuda(cudaPeekAtLastError());
 }
 
+void cudaKernel::create_sufficient_statistics(
+	LabelType label,
+	LabelType& indicesSize,
+	const std::shared_ptr<hyperparams>& hyperParams,
+	const std::shared_ptr<hyperparams>& posterior,
+	std::shared_ptr<thin_suff_stats>& tss)
+{
+	CHECK_TIME("cudaKernel::create_sufficient_statistics");
+
+	int deviceId = peak_first_device();
+	cudaStream_t stream;
+	runCuda(cudaStreamCreate(&stream));
+	int pointsRows = gpuCapabilities[deviceId].pointsRows;
+	int* d_indices;
+	runCuda(cudaMallocAsync((void**)&d_indices, sizeof(int) * numLabels, stream));
+
+	int* d_indicesSize;
+	runCuda(cudaMallocAsync(&d_indicesSize, sizeof(int), stream));
+	runCuda(cudaMemsetAsync(d_indicesSize, 0, sizeof(int), stream));
+
+	find_indices << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].d_labels, numLabels, label, d_indices, d_indicesSize);
+	runCuda(cudaPeekAtLastError());
+	runCuda(cudaMemcpyAsync(&indicesSize, d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost));
+
+	double* d_pts;
+	runCuda(cudaMallocAsync((void**)&d_pts, sizeof(double) * pointsRows * indicesSize, stream));
+
+	double* d_pts1;
+	runCuda(cudaMallocAsync((void**)&d_pts1, sizeof(double) * pointsRows * indicesSize, stream));
+
+	double* d_pts2;
+	runCuda(cudaMallocAsync((void**)&d_pts2, sizeof(double) * pointsRows * indicesSize, stream));
+
+	int* d_j1;
+	int* d_j2;
+	runCuda(cudaMallocAsync(&d_j1, sizeof(int), stream));
+	runCuda(cudaMemsetAsync(d_j1, 0, sizeof(int), stream));
+	runCuda(cudaMallocAsync(&d_j2, sizeof(int), stream));
+	runCuda(cudaMemsetAsync(d_j2, 0, sizeof(int), stream));
+
+	dim3 blocks_size = dim3(indicesSize / threads.x + 1);
+	create_suff_stats_dict_worker_all << <blocks_size, threads, 0, stream >> > (
+		gpuCapabilities[deviceId].d_sub_labels,
+		numLabels,
+		d_indices,
+		d_indicesSize,
+		gpuCapabilities[deviceId].d_points,
+		pointsRows,
+		d_pts,
+		d_pts1,
+		d_pts2,
+		d_j1,
+		d_j2);
+	runCuda(cudaPeekAtLastError());
+
+	int j1;
+	int j2;
+	runCuda(cudaMemcpyAsync(&j1, d_j1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+	runCuda(cudaMemcpyAsync(&j2, d_j2, sizeof(int), cudaMemcpyDeviceToHost, stream));
+
+	runCuda(cudaStreamSynchronize(stream));
+	do_create_sufficient_statistics(d_pts1, pointsRows, j1, hyperParams, posterior, stream, tss->l_suff);
+	do_create_sufficient_statistics(d_pts2, pointsRows, j2, hyperParams, posterior, stream, tss->r_suff);
+	do_create_sufficient_statistics(d_pts, pointsRows, indicesSize, hyperParams, posterior, stream, tss->cluster_suff);
+
+	runCuda(cudaFreeAsync(d_j1, stream));
+	runCuda(cudaFreeAsync(d_j2, stream));
+	runCuda(cudaFreeAsync(d_indicesSize, stream));
+	runCuda(cudaFreeAsync(d_pts, stream));
+	runCuda(cudaFreeAsync(d_pts1, stream));
+	runCuda(cudaFreeAsync(d_pts2, stream));
+	runCuda(cudaStreamSynchronize(stream));
+	runCuda(cudaStreamDestroy(stream));
+}
+
+// A -> (N x M) 
+void cudaKernel::multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M)
+{
+	cublasHandle_t handle;
+	runCuda(cublasCreate(&handle));
+	double alpha = 1.0;
+	double beta = 0.0;
+	runCuda(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, N, N, M, &alpha, d_A, N, d_A, N, &beta, d_B, N));
+
+	runCuda(cublasDestroy(handle));
+}
+
 void cudaKernel::create_suff_stats_dict_worker(
 	LabelType label,
 	LabelType& indicesSize,
@@ -667,6 +769,7 @@ void cudaKernel::create_suff_stats_dict_worker(
 	Eigen::MatrixXd& pts1,
 	Eigen::MatrixXd& pts2)
 {
+	CHECK_TIME("cudaKernel::create_suff_stats_dict_worker");
 	int deviceId = peak_first_device();
 	int pointsRows = gpuCapabilities[deviceId].pointsRows;
 	int* d_indices;
@@ -896,7 +999,7 @@ void cudaKernel::get_sub_labels_count(int &l, int &r)
 }
 
 // C(m,k) = A(m,n) * B(n,k)
-void cudaKernel::naive_matrix_multiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
+void cudaKernel::naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream)
 {
 	const int BlockSize = 16;
 
@@ -907,7 +1010,23 @@ void cudaKernel::naive_matrix_multiply(double* A, double* B, double* C, int m, i
 
 	if (k > 0)
 	{
-		gpu_matrix_mult << <dimGrid, dimBlock, 0, stream >> > (A, B, C, m, n, k);
+		gpu_matrix_mult << <dimGrid, dimBlock, 0, stream >> > (d_A, d_B, d_C, m, n, k);
+		runCuda(cudaPeekAtLastError());
+	}
+}
+
+void cudaKernel::naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k)
+{
+	const int BlockSize = 16;
+
+	unsigned int grid_rows = (m + BlockSize - 1) / BlockSize;
+	unsigned int grid_cols = (k + BlockSize - 1) / BlockSize;
+	dim3 dimGrid(grid_cols, grid_rows);
+	dim3 dimBlock(BlockSize, BlockSize);
+
+	if (k > 0)
+	{
+		gpu_matrix_mult << <dimGrid, dimBlock >> > (d_A, d_B, d_C, m, n, k);
 		runCuda(cudaPeekAtLastError());
 	}
 }
@@ -1159,6 +1278,15 @@ void cudaKernel::checkCUDAError(cudaError_t err, const char* file, int line)
 	}
 }
 
+void cudaKernel::checkCUDAError(cublasStatus_t err, const char* file, int line)
+{
+	if (CUBLAS_STATUS_SUCCESS != err)
+	{
+		printf("Cuda error: %s(%d):%d.\n", file, line, err);
+		exit(EXIT_FAILURE);
+	}
+}
+
 template<typename T>
 void cudaKernel::device_to_device_copy(int srcDeviceId, int trgDeviceId, int dataSize, T* srcData, T*& trgData, bool alreadyAllocated, bool& needToFree, cudaStream_t& stream)
 {
@@ -1197,6 +1325,14 @@ void cudaKernel::device_to_device_copy(int srcDeviceId, int trgDeviceId, int dat
 
 		delete[]data;
 	}
+}
+
+void cudaKernel::sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaStream_t& stream)
+{
+	dim3 blocks_size = dim3(rows / threads.x + 1);
+
+	sum_rowwise_kernel << <blocks_size, threads, 0, stream >> > (d_A, d_B, rows, cols);
+	runCuda(cudaPeekAtLastError());
 }
 
 #endif

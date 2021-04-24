@@ -9,6 +9,9 @@
 #include <iostream>
 #include <fstream>
 #include "cudaKernel_gaussian.cuh"
+#include "check_time.h"
+#include "niw_hyperparams.h"
+#include "niw_sufficient_statistics.h"
 
 #define STATS_ENABLE_EIGEN_WRAPPERS
 #define STATS_DONT_USE_OPENMP //due to Visual Studio bug. Should be fixed in VS 2019 16.10
@@ -20,6 +23,7 @@ using namespace std;
 //[Normal Inverse Wishart](https://en.wikipedia.org/wiki/Normal-inverse-Wishart_distribution)
 std::shared_ptr<hyperparams> niw::calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics)
 {
+	CHECK_TIME("niw::calc_posterior");
 	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 
 	if (suff_statistics->N == 0)
@@ -48,16 +52,19 @@ std::shared_ptr<hyperparams> niw::calc_posterior(const std::shared_ptr<hyperpara
 
 MatrixXd niw::inverseWishart(const MatrixXd& sigma, double v)
 {
+	CHECK_TIME("niw::inverseWishart");
 	return stats::rinvwish(sigma, v);
 }
 
 double* niw::multinormal_sample(int n, double mu[], double r[])
 {
+	CHECK_TIME("niw::multinormal_sample");
 	return r8vec_multinormal_sample(n, mu, r);
 }
 
 std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen)
 {
+	CHECK_TIME("niw::sample_distribution");
 	niw_hyperparams* pNiw_hyperparams;
 
 	if (pHyperparams == NULL)
@@ -69,36 +76,41 @@ std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_
 		pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(pHyperparams.get());
 	}
 
-	MatrixXd niwSigma = pNiw_hyperparams->v* pNiw_hyperparams->psi;
+	MatrixXd niwSigma = pNiw_hyperparams->v * pNiw_hyperparams->psi;
 	MatrixXd sigma = inverseWishart(niwSigma, pNiw_hyperparams->v);
-
 	MatrixXd mat1 = (sigma / pNiw_hyperparams->k);
 	LLT<MatrixXd> cholmat1(mat1);
 	MatrixXd L = cholmat1.matrixL();
-	double *mu = multinormal_sample((int)mat1.rows(), pNiw_hyperparams->m.data(), L.data());
-    MatrixXd invSigma = sigma.inverse();
+	double* mu = multinormal_sample((int)mat1.rows(), pNiw_hyperparams->m.data(), L.data());
+	MatrixXd invSigma = sigma.inverse();
 	LLT<MatrixXd, Upper> chol(invSigma.selfadjointView<Upper>()); // compute the Cholesky
 	Eigen::VectorXd muV = Eigen::VectorXd::Map(mu, mat1.rows());
+
 	return std::make_shared<mv_gaussian>(muV, sigma, invSigma, logdet(sigma), chol);
 }
 
 std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
 {
+	CHECK_TIME("niw::create_sufficient_statistics");
 	if (points.cols() == 0)
 	{
 		niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 		return std::make_shared<niw_sufficient_statistics>((int)points.cols(), VectorXd::Zero(pNiw_hyperparams->m.size()), MatrixXd::Zero(pNiw_hyperparams->m.size(), pNiw_hyperparams->m.size()));
 	}
 
-	MatrixXd S = points * points.adjoint();
-	S = 0.5 * (S + S.adjoint());
-
+	MatrixXd S;
+	{
+		CHECK_TIME("niw::create_sufficient_statistics, calc S");
+		S = points * points.adjoint();
+		S = 0.5 * (S + S.adjoint());
+	}
 	return std::make_shared<niw_sufficient_statistics>((int)points.cols(), points.rowwise().sum(), S);
 }
 
 
 double niw::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats)
 {
+	CHECK_TIME("niw::log_marginal_likelihood");
 	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 	niw_hyperparams* pPosterior_hyper = dynamic_cast<niw_hyperparams*>(posterior_hyper.get());
 	long D = (long)suff_stats->points_sum.size();
