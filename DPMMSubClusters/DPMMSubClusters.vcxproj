@@ -58,7 +58,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy;MIToolbox/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -89,6 +89,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <KeepDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CUDA_PATH);$(CUDA_PATH_V11_2)</KeepDir>
       <AdditionalCompilerOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/openmp</AdditionalCompilerOptions>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GenerateRelocatableDeviceCode>
     </CudaCompile>
     <PreLinkEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,6 +117,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <KeepDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(CUDA_PATH);$(CUDA_PATH_V11_2)</KeepDir>
       <AdditionalCompilerOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/openmp</AdditionalCompilerOptions>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</GenerateRelocatableDeviceCode>
     </CudaCompile>
     <PreLinkEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,6 +149,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClInclude Include="local_clusters_actions.h" />
     <ClInclude Include="distributions\mv_gaussian.h" />
     <ClInclude Include="distributions\multinomial_dist.h" />
+    <ClInclude Include="MIToolbox\include\MIToolbox\MutualInformation.h" />
     <ClInclude Include="moduleTypes.h" />
     <ClInclude Include="module_tests.h" />
     <ClInclude Include="priors\multinomial_hyper.h" />
@@ -220,6 +223,10 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClCompile Include="local_clusters_actions.cpp" />
     <ClCompile Include="distributions\mv_gaussian.cpp" />
     <ClCompile Include="distributions\multinomial_dist.cpp" />
+    <ClCompile Include="MIToolbox\src\ArrayOperations.c" />
+    <ClCompile Include="MIToolbox\src\CalculateProbability.c" />
+    <ClCompile Include="MIToolbox\src\Entropy.c" />
+    <ClCompile Include="MIToolbox\src\MutualInformation.c" />
     <ClCompile Include="module_tests.cpp" />
     <ClCompile Include="priors\multinomial_hyper.cpp" />
     <ClCompile Include="priors\multinomial_prior.cpp" />

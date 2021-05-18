@@ -60,9 +60,9 @@ public:
 		cudaMemcpy(data.data(), d_data, sizeof(double) * data.size(), cudaMemcpyDeviceToHost);
 	}
 
-	void my_naive_matrix_multiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
+	void my_matrixMultiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
 	{
-		naive_matrix_multiply(A, B, C, m, n, k, stream);
+		matrixMultiply(A, B, C, m, n, k, stream);
 	}
 
 	void release_in_device(double* d_data)
@@ -99,9 +99,9 @@ public:
 		divide_points_by_mu_all(dim, dist, d_z, stream, deviceId);
 	}
 
-	void my_naive_matrix_multiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
+	void my_matrixMultiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
 	{
-		naive_matrix_multiply(A, B, C, m, n, k, stream);
+		matrixMultiply(A, B, C, m, n, k, stream);
 	}
 
 	void my_dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream)
@@ -119,6 +119,11 @@ public:
 		sum_rowwise(d_A, d_B, rows, cols, stream);
 	}
 
+	void my_multiplie_matrix_for_inverseWishart(const MatrixXd& A, const MatrixXd& B, MatrixXd& C)
+	{
+		multiplie_matrix_for_inverseWishart(A, B, C);
+	}
+	
 	void allocate_in_device(const MatrixXd& data, double*& d_data)
 	{
 		runCuda(cudaMalloc((void**)&d_data, sizeof(double) * data.size()));

@@ -59,21 +59,26 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
-	int D = 1000;
-	int numClusters = 3;
+	int D = 200;
+	int numClusters = 10;
 	int numIters = 200;
 	int foundClusters = 0;
-	std::string fileName = "RandomMessHighDim";
+	std::string fileName = "RandomMessHighDim_" + std::to_string(N) + "_" + std::to_string(D) + "_" + std::to_string(numClusters);
 
 	struct stat buffer;
+	fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
 	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
-		CHECK_TIME("module_tests::load_data");
+		//CHECK_TIME("module_tests::load_data");
 		utils::load_data(fileName, x);
+		if (stat((fileName + ".labels").c_str(), &buffer) == 0)
+		{
+			utils::load_data(fileName, labels);
+		}
 	}
 	else
 	{
-		CHECK_TIME("module_tests::generate_data");
+		//CHECK_TIME("module_tests::generate_data");
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 		for (DimensionsType i = 0; i < D; i++)
 		{
@@ -83,15 +88,20 @@ ClusterIndexType module_tests::RandomMessHighDim()
 		{
 			delete[] tcov[i];
 		}
-		utils::save_data(fileName, x);
+	//	utils::save_data(fileName, x);
 	}
 	
+	std::vector<int> count(numClusters);
+	for (size_t i = 0; i < N; i++)
+	{
+		count[labels[i] - 1] += 1;
+	}
 
 	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), D, MatrixXd::Identity(D, D));
 
 	dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15);
+	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15, labels);
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 	std::cout << str << std::endl;

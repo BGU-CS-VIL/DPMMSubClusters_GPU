@@ -16,7 +16,7 @@ struct ModelInfo
 	//`iter_count` Timing for each iteration
 	std::vector<double> iter_count;
 	//	- `nmi_score_history` NMI score per iteration(if gt suppled)
-	std::vector<std::string> nmi_score_history;
+	std::vector<double> nmi_score_history;
 	//	- `likelihood_history` Log likelihood per iteration.
 	std::vector<double> likelihood_history;
 
@@ -39,6 +39,7 @@ public:
 		bool draw_labels = false,
 		bool save_model = false,
 		int burnout = 15,
+		LabelsType& gt = LabelsType(),
 		double max_clusters = DBL_MAX,
 		double outlier_weight = 0,
 		std::shared_ptr<hyperparams> outlier_params = nullptr);

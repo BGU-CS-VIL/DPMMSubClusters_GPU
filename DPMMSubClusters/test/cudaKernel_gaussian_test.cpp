@@ -661,7 +661,7 @@ namespace DPMMSubClustersTest
 		delete object;
 	}
 
-	TEST(cudaKernel_gaussian_test, naive_matrix_multiply)
+	TEST(cudaKernel_gaussian_test, matrixMultiply)
 	{
 		int numLabels = 10;
 		MatrixXd points(2, numLabels);
@@ -684,7 +684,7 @@ namespace DPMMSubClustersTest
 		object.allocate_in_device(m * k, d_C);
 		object.create_stream(stream);
 
-		object.my_naive_matrix_multiply(d_A, d_B, d_C, m, n, k, stream);
+		object.my_matrixMultiply(d_A, d_B, d_C, m, n, k, stream);
 		object.release_stream(stream);
 		MatrixXd C;
 		object.copy_from_device(d_C, m, k, C);
@@ -725,7 +725,7 @@ namespace DPMMSubClustersTest
 		object.allocate_in_device(m * k, d_C);
 		object.create_stream(stream);
 
-		object.my_naive_matrix_multiply(d_A, d_B, d_C, m, n, k, stream);
+		object.my_matrixMultiply(d_A, d_B, d_C, m, n, k, stream);
 		object.release_stream(stream);
 		MatrixXd C;
 		object.copy_from_device(d_C, m, k, C);
@@ -962,6 +962,47 @@ namespace DPMMSubClustersTest
 		}
 	}
 
+	TEST(cudaKernel_gaussian_test, dcolwise_dot_all_labels_high_dim)
+	{
+		myCudaKernel_gaussian cuda;
+		MatrixXd x(2, 10);
+		MatrixXd A = MatrixXd::Random(50, 50);
+		MatrixXd B = MatrixXd::Random(50, 50);
+		VectorXd C1;
+
+		cuda.init(0, x, NULL);
+		cudaStream_t stream;
+		int deviceId = cuda.peak_first_device();
+		double* d_A;
+		cuda.allocate_in_device(A, d_A);
+		double* d_B;
+		cuda.allocate_in_device(B, d_B);
+		double* d_C;
+		cuda.allocate_in_device((int)(A.rows() * B.cols()), d_C);
+
+		cuda.create_stream(stream);
+		double scalar = 0.2;
+		double weight = 0.4;
+
+		cuda.my_dcolwise_dot_all_labels((int)(A.rows() * B.cols()), (int)A.rows(), d_A, d_B, scalar, d_C, weight, stream);
+
+		cuda.release_stream(stream);
+
+		cuda.copy_from_device(d_C, (int)A.rows(), C1);
+		cuda.release_in_device(d_A);
+		cuda.release_in_device(d_B);
+		cuda.release_in_device(d_C);
+
+		VectorXd C2 = (A.cwiseProduct(B)).colwise().sum();
+		C2 = scalar * VectorXd::Ones(C2.size()) - C2 / 2;
+		C2 += log(weight) * VectorXd::Ones(C2.rows());
+
+		for (int i = 0; i < C2.rows(); i++)
+		{
+			EXPECT_NEAR(C2(i), C1(i), 0.0001);
+		}
+	}
+
 	TEST(cudaKernel_gaussian_test, mul_scalar_sum_A_AT)
 	{
 		myCudaKernel_gaussian cuda;
@@ -1052,7 +1093,7 @@ namespace DPMMSubClustersTest
 
 		cuda.create_stream(stream);
 
-		cuda.multiplie_matrix_by_transpose(d_A, d_B, rows, cols);
+		cuda.multiplie_matrix_by_transpose(d_A, d_B, rows, cols, stream);
 
 		cuda.release_stream(stream);
 
@@ -1063,6 +1104,32 @@ namespace DPMMSubClustersTest
 		for (int i = 0; i < B2.rows(); i++)
 		{
 			ASSERT_NEAR(B2(i), B1(i), 0.0001);
+		}
+	}
+
+	TEST(cudaKernel_gaussian_test, multiplie_matrix_for_inverseWishart)
+	{
+		int numLabels = (int)pow(10, 1);
+		MatrixXd points(2, numLabels);
+		myCudaKernel_gaussian object;
+		object.init(numLabels, points, NULL);
+		int m = 3;
+		int n = 2;
+		int k = 4;
+		MatrixXd A = MatrixXd::Random(m, n);
+		MatrixXd B = MatrixXd::Random(n, k);
+		MatrixXd C;
+
+		object.my_multiplie_matrix_for_inverseWishart(A, B, C);
+
+		MatrixXd C_cpu = A * B * (A * B).transpose();
+
+		for (int i = 0; i < C_cpu.rows(); i++)
+		{
+			for (int j = 0; j < C_cpu.cols(); j++)
+			{
+				EXPECT_NEAR(C_cpu(i, j), C(i, j), 0.0001);
+			}
 		}
 	}
 }

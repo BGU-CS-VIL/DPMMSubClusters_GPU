@@ -27,7 +27,7 @@ protected:
 	void do_create_sufficient_statistics(
 		double* d_pts,
 		int rows,
-		int cols,
+		int* d_cols,
 		const std::shared_ptr<hyperparams>& hyperParams,
 		const std::shared_ptr<hyperparams>& posterior,
 		cudaStream_t& stream,

@@ -72,4 +72,6 @@ public:
 	std::unique_ptr<cudaKernel> cuda;
 	int numLabels;
 	MatrixXd points;
+
+	LabelsType* ground_truth = NULL;
 };

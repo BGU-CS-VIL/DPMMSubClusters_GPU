@@ -21,6 +21,8 @@ struct gpuCapability
 	curandState* devState;
 	int pointsRows;
 	int pointsCols;
+	int* d_j1;
+	int* d_j2;
 };
 
 //extern "C"
@@ -55,6 +57,7 @@ public:
 	void sample_sub_labels();
 	void sample_labels(int initial_clusters, double outlier_mod);
 	void get_sub_labels(LabelsType& labels);
+	void get_sub_labels_count(int& l, int& r);
 	void get_labels(LabelsType& labels);
 	void update_labels(int* updateLabels, int numLabels, int deviceId);
 	void update_labels_by_max_index(double* parr, int dim, cudaStream_t& stream, int deviceId);
@@ -62,7 +65,6 @@ public:
 	void split_cluster_local_worker(LabelType index, LabelType newIndex);
 	void merge_clusters_worker(LabelType index, LabelType newIndex);
 	void reset_bad_clusters_worker(LabelType index);
-	void get_sub_labels_count(int& l, int& r);
 
 	void create_sufficient_statistics(
 		LabelType label,
@@ -73,12 +75,13 @@ public:
 	virtual void do_create_sufficient_statistics(
 		double* d_pts,
 		int rows,
-		int cols,
+		int *d_cols,
 		const std::shared_ptr<hyperparams>& hyperParams,
 		const std::shared_ptr<hyperparams>& posterior,
 		cudaStream_t& stream,
 		std::shared_ptr<sufficient_statistics>& ss) = 0;
-	void multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M);
+	void multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M, cudaStream_t& stream);
+	void multiplie_matrix_for_inverseWishart(const MatrixXd& A, const MatrixXd& B, MatrixXd& C);
 
 	virtual void create_suff_stats_dict_worker(
 		LabelType label,
@@ -89,6 +92,7 @@ public:
 
 	void create_subclusters_labels(int numClusters, std::vector<std::shared_ptr<thin_cluster_params>>& cluster_params, int dim);
 	void create_clusters_labels(int numClusters, std::vector<std::shared_ptr<thin_cluster_params>>& cluster_params, std::vector<double>& weights, bool bFinal);
+	void inverse_matrix(const MatrixXd& A, MatrixXd& B);
 
 protected:
 	dim3 threads;
@@ -97,8 +101,7 @@ protected:
 	std::map<int, gpuCapability> gpuCapabilities;
 	int lastDevice;
 
-	void naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
-	void naive_matrix_multiply(double* d_A, double* d_B, double* d_C, int m, int n, int k);
+	void matrixMultiply(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
 	void dcolwise_dot_all_sub_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int r_offset, cudaStream_t& stream);
 	void dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream);
 

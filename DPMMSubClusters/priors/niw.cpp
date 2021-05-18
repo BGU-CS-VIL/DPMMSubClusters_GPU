@@ -56,13 +56,50 @@ MatrixXd niw::inverseWishart(const MatrixXd& sigma, double v)
 	return stats::rinvwish(sigma, v);
 }
 
+MatrixXd niw::wishart(const MatrixXd& sigma, double v)
+{
+	CHECK_TIME("niw::wishart");
+	return stats::rwish(sigma, v);
+}
+
+void niw::inverseWishartNoInverse(const MatrixXd& sigma, double v, std::unique_ptr < cudaKernel >& cuda, MatrixXd& matOut)
+{
+	CHECK_TIME("niw::inverseWishartNoInverse");
+	if (cuda == NULL)
+	{
+		matOut = stats::rinvwish(sigma, v, false, false);
+	}
+	else
+	{
+		MatrixXd B;// = sigma.inverse();
+		cuda->inverse_matrix(sigma, B);
+
+		B = B.llt().matrixL();
+		cuda->multiplie_matrix_for_inverseWishart(B, stats::rinvwish2(B, v), matOut);
+		/*B = B * stats::rinvwish2(v);
+
+		return B * mat_ops::trans(B);*/
+
+
+	}
+	//else
+	//{
+	//	MatrixXd B;// = sigma.inverse();
+	//	cuda->inverse_matrix(sigma, B);
+
+	//	B = B.llt().matrixL();
+	//	return stats::rinvwish(B, v, true, false);
+
+	//}
+}
+
 double* niw::multinormal_sample(int n, double mu[], double r[])
 {
 	CHECK_TIME("niw::multinormal_sample");
 	return r8vec_multinormal_sample(n, mu, r);
 }
 
-std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen)
+std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen, std::unique_ptr < cudaKernel >& cuda)
 {
 	CHECK_TIME("niw::sample_distribution");
 	niw_hyperparams* pNiw_hyperparams;
@@ -77,16 +114,21 @@ std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_
 	}
 
 	MatrixXd niwSigma = pNiw_hyperparams->v * pNiw_hyperparams->psi;
-	MatrixXd sigma = inverseWishart(niwSigma, pNiw_hyperparams->v);
+	//MatrixXd sigma = inverseWishart(niwSigma, pNiw_hyperparams->v);
+	//MatrixXd invSigma = sigma.inverse();
+	MatrixXd invSigma;
+	inverseWishartNoInverse(niwSigma, pNiw_hyperparams->v, cuda, invSigma);
+	MatrixXd sigma;// = invSigma.inverse();
+	cuda->inverse_matrix(invSigma, sigma);
 	MatrixXd mat1 = (sigma / pNiw_hyperparams->k);
 	LLT<MatrixXd> cholmat1(mat1);
 	MatrixXd L = cholmat1.matrixL();
 	double* mu = multinormal_sample((int)mat1.rows(), pNiw_hyperparams->m.data(), L.data());
-	MatrixXd invSigma = sigma.inverse();
-	LLT<MatrixXd, Upper> chol(invSigma.selfadjointView<Upper>()); // compute the Cholesky
+//	LLT<MatrixXd, Upper> chol(invSigma.selfadjointView<Upper>()); // compute the Cholesky
+	LLT<MatrixXd, Upper> chol;
 	Eigen::VectorXd muV = Eigen::VectorXd::Map(mu, mat1.rows());
 
-	return std::make_shared<mv_gaussian>(muV, sigma, invSigma, logdet(sigma), chol);
+	return std::make_shared<mv_gaussian>(muV, sigma, invSigma, logdet(sigma, true), chol);
 }
 
 std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
@@ -113,13 +155,26 @@ double niw::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperPar
 	CHECK_TIME("niw::log_marginal_likelihood");
 	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 	niw_hyperparams* pPosterior_hyper = dynamic_cast<niw_hyperparams*>(posterior_hyper.get());
-	long D = (long)suff_stats->points_sum.size();
+	int D = (int)suff_stats->points_sum.size();
 	double logpi = log(EIGEN_PI);
+
+	double logdet_niw;
+	{
+		CHECK_TIME("niw::log_marginal_likelihood logdet_niw");
+
+		logdet_niw = logdet(pNiw_hyperparams->psi, true);
+	}
+	double logdet_posterior;
+	{
+		CHECK_TIME("niw::log_marginal_likelihood logdet_posterior");
+		logdet_posterior = logdet(pPosterior_hyper->psi, true);
+	}
+
 	return -suff_stats->N * D * 0.5 * logpi +
 		utils::log_multivariate_gamma(pPosterior_hyper->v / 2.0, D) -
 		utils::log_multivariate_gamma(pNiw_hyperparams->v / 2.0, D) +
-		(pNiw_hyperparams->v / 2.0) * (D * log(pNiw_hyperparams->v) + logdet(pNiw_hyperparams->psi)) -
-		(pPosterior_hyper->v / 2.0) * (D * log(pPosterior_hyper->v) + logdet(pPosterior_hyper->psi)) +
+		(pNiw_hyperparams->v / 2.0) * (D * log(pNiw_hyperparams->v) + logdet_niw) -
+		(pPosterior_hyper->v / 2.0) * (D * log(pPosterior_hyper->v) + logdet_posterior) +
 		(D / 2.0) * (log(pNiw_hyperparams->k / pPosterior_hyper->k));
 }
 

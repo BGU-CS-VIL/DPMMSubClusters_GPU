@@ -38,6 +38,11 @@ namespace DPMMSubClustersTest
 			dirichlet_distribution_values = values;
 		}
 
+		void set_uniform_real_distribution(double value)
+		{
+			uniform_real_distribution = value;
+		}
+
 	protected:
 		virtual std::vector<double> get_dirichlet_distribution(std::vector<double>& points_count)
 		{
@@ -58,9 +63,15 @@ namespace DPMMSubClustersTest
 			}
 		}
 
+		virtual double get_uniform_real_distribution()
+		{
+			return uniform_real_distribution;
+		}
+
 	private:
 		int dirichletIter;
 		std::vector<std::vector<double>> dirichlet_distribution_values;
+		double uniform_real_distribution;
 	};
 
 
@@ -404,5 +415,5 @@ namespace DPMMSubClustersTest
 		EXPECT_NEAR(-103.156006f, cluster_params->logsublikelihood_hist[1].second, 0.0001f);
 		EXPECT_NEAR(-92.4774f, cluster_params->logsublikelihood_hist[2].second, 0.0001f);
 		EXPECT_NEAR(-82.60051f, cluster_params->logsublikelihood_hist[3].second, 0.0001f);
-	}
+	}	
 }

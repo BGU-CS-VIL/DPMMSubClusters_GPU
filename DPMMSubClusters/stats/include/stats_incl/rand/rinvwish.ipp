@@ -32,19 +32,52 @@
  * @return a pseudo-random draw from the Inverse-Wishart distribution.
  */
 
+#include "check_time.h"
+
 template<typename mT, typename pT, typename not_arma_mat<mT>::type*>
 statslib_inline
 mT
-rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol)
+rinvwish2(const mT& Psi_par, const pT nu_par)
 {
+    CHECK_TIME("rinvwish2");
     typedef return_t<pT> eT;
     const ullint_t K = mat_ops::n_rows(Psi_par);
-    
+
+    rand_engine_t engine(std::random_device{}());
+
+    mT A;
+    mat_ops::zeros(A, K, K);
+
+    for (ullint_t i = 1U; i < K; i++) {
+        for (ullint_t j = 0U; j < i; j++) {
+            A(i, j) = rnorm<eT>(eT(0), eT(1), engine);
+        }
+    }
+
+    for (ullint_t i = 0U; i < K; i++) {
+        A(i, i) = std::sqrt(rchisq<eT>(eT(nu_par - i), engine));
+    }
+    return A;
+}
+
+template<typename mT, typename pT, typename not_arma_mat<mT>::type*>
+statslib_inline
+mT
+rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol, const bool inv_result)
+{
+    CHECK_TIME("rinvwish");
+    typedef return_t<pT> eT;
+    const ullint_t K = mat_ops::n_rows(Psi_par);
+
     mT chol_Psi_inv;
-    if (pre_inv_chol) {
-        chol_Psi_inv = Psi_par; // should be lower triangular
-    } else {
-        chol_Psi_inv = mat_ops::chol(mat_ops::inv(Psi_par)); // will be lower triangular
+    {
+        CHECK_TIME("rinvwish 1");
+        if (pre_inv_chol) {
+            chol_Psi_inv = Psi_par; // should be lower triangular
+        }
+        else {
+            chol_Psi_inv = mat_ops::chol(mat_ops::inv(Psi_par)); // will be lower triangular
+        }
     }
 
     //
@@ -52,25 +85,40 @@ rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol)
     rand_engine_t engine(std::random_device{}());
 
     mT A;
-    mat_ops::zeros(A,K,K);
+    mat_ops::zeros(A, K, K);
 
-    for (ullint_t i=1U; i < K; i++) {
-        for (ullint_t j=0U; j < i; j++) {
-            A(i,j) = rnorm<eT>(eT(0),eT(1),engine);
+    {
+        CHECK_TIME("rinvwish 2");
+
+        for (ullint_t i = 1U; i < K; i++) {
+            for (ullint_t j = 0U; j < i; j++) {
+                A(i, j) = rnorm<eT>(eT(0), eT(1), engine);
+            }
         }
     }
-    
-    for (ullint_t i=0U; i < K; i++) {
-        A(i,i) = std::sqrt(rchisq<eT>(eT(nu_par-i),engine));
+
+    {
+        CHECK_TIME("rinvwish 3");
+        for (ullint_t i = 0U; i < K; i++) {
+            A(i, i) = std::sqrt(rchisq<eT>(eT(nu_par - i), engine));
+        }
     }
 
-    chol_Psi_inv = chol_Psi_inv*A;
-
+    {
+        CHECK_TIME("rinvwish 4");
+        chol_Psi_inv = chol_Psi_inv * A;
+    }
     //
 
-    mT mat_out_inv = chol_Psi_inv * mat_ops::trans(chol_Psi_inv); // avoid Glue issues
-    
-    return mat_ops::inv( mat_out_inv );
+    if (inv_result)
+    {
+        mT mat_out_inv = chol_Psi_inv * mat_ops::trans(chol_Psi_inv); // avoid Glue issues
+        return  mat_ops::inv(mat_out_inv);
+    }
+    else
+    {
+        return chol_Psi_inv * mat_ops::trans(chol_Psi_inv);
+    }
 }
 
 #ifdef STATS_ENABLE_ARMA_WRAPPERS

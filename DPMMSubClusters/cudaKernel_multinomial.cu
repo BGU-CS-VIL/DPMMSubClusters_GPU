@@ -79,12 +79,15 @@ void cudaKernel_multinomial::log_likelihood_labels(
 void cudaKernel_multinomial::do_create_sufficient_statistics(
 	double* d_pts,
 	int rows,
-	int cols,
+	int* d_cols,
 	const std::shared_ptr<hyperparams>& hyperParams,
 	const std::shared_ptr<hyperparams>& posterior,
 	cudaStream_t& stream,
 	std::shared_ptr<sufficient_statistics>& ss)
 {
+	int cols;
+	runCuda(cudaMemcpyAsync(&cols, d_cols, sizeof(int), cudaMemcpyDeviceToHost, stream));
+
 	ss = std::make_shared<multinomial_sufficient_statistics>();
 	double* d_sum_rowwise;
 	runCuda(cudaMallocAsync(&d_sum_rowwise, rows * sizeof(double), stream));

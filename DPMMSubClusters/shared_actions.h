@@ -18,6 +18,7 @@ public:
 
 protected:
 	virtual std::vector<double> get_dirichlet_distribution(std::vector<double>& points_count);
+	virtual double get_uniform_real_distribution();
 
 private:
 	std::shared_ptr<global_params> globalParams;

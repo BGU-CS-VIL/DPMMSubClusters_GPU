@@ -45,7 +45,7 @@ namespace DPMMSubClustersTest
 		alpha << 23601.0, 904.0;
 		std::shared_ptr<multinomial_hyper> prior = std::make_shared<multinomial_hyper>(alpha);
 
-		std::shared_ptr<distribution_sample> distribution_sampleBase = object.sample_distribution(prior, gp->gen);
+		std::shared_ptr<distribution_sample> distribution_sampleBase = object.sample_distribution(prior, gp->gen, gp->cuda);
 		multinomial_dist* distribution_sample = dynamic_cast<multinomial_dist*>(distribution_sampleBase.get());
 
 		ASSERT_NEAR(-0.03687498683001788, distribution_sample->alpha[0], 0.1);

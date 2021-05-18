@@ -29,7 +29,11 @@
 
 template<typename mT, typename pT, typename not_arma_mat<mT>::type* = nullptr>
 statslib_inline
-mT rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_chol = false);
+mT rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_chol = false, const bool inv_result = true);
+
+template<typename mT, typename pT, typename not_arma_mat<mT>::type* = nullptr>
+statslib_inline
+mT rinvwish2(const mT& Psi_par, const pT nu_par);
 
 // specializations
 #ifdef STATS_ENABLE_ARMA_WRAPPERS

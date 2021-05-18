@@ -12,9 +12,9 @@ void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_pa
 	CHECK_TIME("shared_actions::sample_cluster_params");
 	std::vector<double> points_count;
 
-	params->cluster_params->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params->posterior_hyperparams, globalParams->gen);
-	params->cluster_params_l->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_l->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params_l->posterior_hyperparams, globalParams->gen);
-	params->cluster_params_r->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_r->prior_hyperparams, globalParams->gen) : globalParams->pPrior->sample_distribution(params->cluster_params_r->posterior_hyperparams, globalParams->gen);
+	params->cluster_params->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params->prior_hyperparams, globalParams->gen, globalParams->cuda) : globalParams->pPrior->sample_distribution(params->cluster_params->posterior_hyperparams, globalParams->gen, globalParams->cuda);
+	params->cluster_params_l->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_l->prior_hyperparams, globalParams->gen, globalParams->cuda) : globalParams->pPrior->sample_distribution(params->cluster_params_l->posterior_hyperparams, globalParams->gen, globalParams->cuda);
+	params->cluster_params_r->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params_r->prior_hyperparams, globalParams->gen, globalParams->cuda) : globalParams->pPrior->sample_distribution(params->cluster_params_r->posterior_hyperparams, globalParams->gen, globalParams->cuda);
 
 	points_count.push_back(params->cluster_params_l->suff_statistics->N);
 	points_count.push_back(params->cluster_params_r->suff_statistics->N);
@@ -59,9 +59,9 @@ void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_pa
 void shared_actions::create_splittable_from_params(std::shared_ptr<cluster_parameters>& params, double alpha, std::shared_ptr<splittable_cluster_params>& scpOut)
 {
 	scpOut->cluster_params_l = params->clone();
-	scpOut->cluster_params_l->distribution = globalParams->pPrior->sample_distribution(params->posterior_hyperparams, globalParams->gen);
+	scpOut->cluster_params_l->distribution = globalParams->pPrior->sample_distribution(params->posterior_hyperparams, globalParams->gen, globalParams->cuda);
 	scpOut->cluster_params_r = params->clone();
-	scpOut->cluster_params_r->distribution = globalParams->pPrior->sample_distribution(params->posterior_hyperparams, globalParams->gen);
+	scpOut->cluster_params_r->distribution = globalParams->pPrior->sample_distribution(params->posterior_hyperparams, globalParams->gen, globalParams->cuda);
 
 	std::vector<double> alphas = std::vector<double>(2, alpha / 2);
 	dirichlet_distribution<std::mt19937> d(alphas);
@@ -103,8 +103,7 @@ void shared_actions::should_merge(bool& should_merge, std::shared_ptr<cluster_pa
 		r8_gamma_log(cpl->suff_statistics->N + 0.5 * alpha) - r8_gamma_log(cpl->suff_statistics->N) - r8_gamma_log(cpr->suff_statistics->N) +
 		r8_gamma_log(cpr->suff_statistics->N + 0.5 * alpha) + log_likihood - log_likihood_l - log_likihood_r);
 
-	std::uniform_real_distribution<double> dist(0, 1);
-	double a_random_double = dist(*globalParams->gen);
+	double a_random_double = get_uniform_real_distribution();
 
 	if ((log_HR > log(a_random_double)) || (bFinal && log_HR > log(0.1)))
 	{
@@ -114,6 +113,12 @@ void shared_actions::should_merge(bool& should_merge, std::shared_ptr<cluster_pa
 	{
 		should_merge = false;
 	}
+}
+
+double shared_actions::get_uniform_real_distribution()
+{
+	std::uniform_real_distribution<double> dist(0, 1);
+	return dist(*globalParams->gen);
 }
 
 std::vector<double> shared_actions::get_dirichlet_distribution(std::vector<double> &points_count)

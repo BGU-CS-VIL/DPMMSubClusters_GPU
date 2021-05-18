@@ -40,6 +40,14 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\MIToolbox\src\ArrayOperations.c" />
+    <ClCompile Include="..\MIToolbox\src\CalculateProbability.c" />
+    <ClCompile Include="..\MIToolbox\src\Entropy.c" />
+    <ClCompile Include="..\MIToolbox\src\MutualInformation.c" />
+    <ClCompile Include="..\MIToolbox\src\RenyiEntropy.c" />
+    <ClCompile Include="..\MIToolbox\src\RenyiMutualInformation.c" />
+    <ClCompile Include="..\MIToolbox\src\WeightedEntropy.c" />
+    <ClCompile Include="..\MIToolbox\src\WeightedMutualInformation.c" />
     <ClCompile Include="cudaKernel_gaussian_test.cpp" />
     <ClCompile Include="cudaKernel_multinomial_test.cpp" />
     <ClCompile Include="data_generators_test.cpp" />
@@ -101,7 +109,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include;..\MIToolbox\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -140,7 +148,7 @@ xcopy /y "$(ProjectDir)ModuleTestFile*.json" "$(TargetDir)"</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;..\eigen-3.3.9;..\stats\include;$(CUDA_PATH)\include;$(CUDA_PATH_V11_2)\include;%(AdditionalIncludeDirectories);..\gcem\include;..\MIToolbox\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>

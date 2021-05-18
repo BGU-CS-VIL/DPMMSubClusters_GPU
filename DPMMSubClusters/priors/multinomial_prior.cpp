@@ -21,7 +21,7 @@ std::shared_ptr<hyperparams> multinomial_prior::calc_posterior(const std::shared
 	return hyper_params;
 }
 
-std::shared_ptr<distribution_sample> multinomial_prior::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937> &gen)
+std::shared_ptr<distribution_sample> multinomial_prior::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937> &gen, std::unique_ptr<cudaKernel>& cuda)
 {
 	multinomial_hyper* pHyperParams;
 
