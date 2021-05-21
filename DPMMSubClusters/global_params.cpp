@@ -1,4 +1,4 @@
-#include <json/json.h>
+#include "json/json.h"
 #include <fstream>
 #include "global_params.h"
 #include "multinomial_prior.h"

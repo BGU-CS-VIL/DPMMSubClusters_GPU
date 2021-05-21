@@ -58,7 +58,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy;MIToolbox/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy;MIToolbox/include;jsoncpp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -167,6 +167,9 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <CudaCompile Include="cudaKernel_multinomial.cu" />
     <ClCompile Include="check_time.cpp" />
     <ClCompile Include="cnpy\cnpy.cpp" />
+    <ClCompile Include="jsoncpp\src\lib_json\json_reader.cpp" />
+    <ClCompile Include="jsoncpp\src\lib_json\json_value.cpp" />
+    <ClCompile Include="jsoncpp\src\lib_json\json_writer.cpp" />
     <ClCompile Include="main.cpp">
       <FileType>Document</FileType>
     </ClCompile>
@@ -247,12 +250,5 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(CUDAPropsPath)\CUDA 11.2.targets" />
-    <Import Project="..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets" Condition="Exists('..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\jsoncpp-vc140-static-64.1.8.0\build\native\jsoncpp-vc140-static-64.targets'))" />
-  </Target>
 </Project>
