@@ -152,7 +152,7 @@ public:
 class thin_cluster_params
 {
 public:
-	thin_cluster_params(std::shared_ptr<distribution_sample>& cluster_dist, std::shared_ptr<distribution_sample>& l_dist, std::shared_ptr<distribution_sample>& r_dist, const std::vector<double> &lr_weights):cluster_dist(cluster_dist), l_dist(l_dist), r_dist(r_dist), lr_weights(lr_weights)
+	thin_cluster_params(std::shared_ptr<distribution_sample> cluster_dist, std::shared_ptr<distribution_sample> l_dist, std::shared_ptr<distribution_sample> r_dist, const std::vector<double> &lr_weights):cluster_dist(cluster_dist), l_dist(l_dist), r_dist(r_dist), lr_weights(lr_weights)
 	{
 	}
 	~thin_cluster_params()

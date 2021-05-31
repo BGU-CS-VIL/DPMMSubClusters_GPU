@@ -99,7 +99,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	bool draw_labels,
 	bool save_model,
 	int burnout,
-	LabelsType &gt,
+	std::shared_ptr<LabelsType> gt,
 	double max_clusters,
 	double outlier_weight,
 	std::shared_ptr<hyperparams> outlier_params)
@@ -116,7 +116,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	globalParams->outlier_mod = outlier_weight;
 	globalParams->outlier_hyper_params = outlier_params;
 	globalParams->outlier_hyper_params = outlier_params;
-	globalParams->ground_truth = &gt;
+	globalParams->ground_truth = gt;
 
 	return init_and_run_model(globalParams->points);
 }
@@ -175,23 +175,23 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 			modelInfo.likelihood_history.push_back(calculate_posterior(modelInfo.dp_model));
 			if (globalParams->ground_truth != NULL && globalParams->ground_truth->size() > 0)
 			{
-				LabelsType labels;
+				std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 				globalParams->cuda->get_labels(labels);
 				unsigned int* ground_truth_uint = reinterpret_cast<unsigned int*>(const_cast<int*>(globalParams->ground_truth->data()));
-				unsigned int* labels_uint = reinterpret_cast<unsigned int*>(const_cast<int*>(labels.data()));
+				unsigned int* labels_uint = reinterpret_cast<unsigned int*>(const_cast<int*>(labels->data()));
 
 				//I(X;Y)
-				double I_X_Y = calcMutualInformation(ground_truth_uint, labels_uint, (int)labels.size());
+				double I_X_Y = calcMutualInformation(ground_truth_uint, labels_uint, (int)labels->size());
 				//H(X)
-				double H_X = calcEntropy(ground_truth_uint, (int)labels.size());
+				double H_X = calcEntropy(ground_truth_uint, (int)labels->size());
 				//H(Y)
-				double H_Y = calcEntropy(labels_uint, (int)labels.size());
+				double H_Y = calcEntropy(labels_uint, (int)labels->size());
 
 				//NMI = -2 * I(X;Y)/(H(X)+H(Y))
 				modelInfo.nmi_score_history.push_back(2 * I_X_Y / (H_X + H_Y));
 			}
 //			printf("Iteration: %ld || Clusters count: %ld\n", i, modelInfo.cluster_count_history.back());
-			printf("Iteration: %ld || Clusters count: %ld || Log posterior: %f || NMI score: %f || Iter Time: %f  || Total time: %f\n",
+			printf("Iteration: %d || Clusters count: %d || Log posterior: %f || NMI score: %f || Iter Time: %f  || Total time: %f\n",
 				i,
 				modelInfo.cluster_count_history.back(),
 				modelInfo.likelihood_history.back(),

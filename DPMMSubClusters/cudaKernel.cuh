@@ -56,9 +56,9 @@ public:
 	void sample_sub_clusters_worker(LabelType label, int* d_indices, int& indicesSize, cudaStream_t& stream, int deviceId);
 	void sample_sub_labels();
 	void sample_labels(int initial_clusters, double outlier_mod);
-	void get_sub_labels(LabelsType& labels);
+	void get_sub_labels(std::shared_ptr<LabelsType>& labels);
 	void get_sub_labels_count(int& l, int& r);
-	void get_labels(LabelsType& labels);
+	void get_labels(std::shared_ptr<LabelsType>& labels);
 	void update_labels(int* updateLabels, int numLabels, int deviceId);
 	void update_labels_by_max_index(double* parr, int dim, cudaStream_t& stream, int deviceId);
 	void remove_empty_clusters_worker(int limit);

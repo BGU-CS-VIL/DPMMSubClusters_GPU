@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    printf("Eigen uses %ld threads\n", Eigen::nbThreads());
+    printf("Eigen uses %d threads\n", Eigen::nbThreads());
 
     module_tests mt;
     mt.RandomMessHighDim();

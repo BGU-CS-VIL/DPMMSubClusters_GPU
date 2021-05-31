@@ -1,4 +1,3 @@
-#include "json/json.h"
 #include <fstream>
 #include "global_params.h"
 #include "multinomial_prior.h"
@@ -78,9 +77,7 @@ void global_params::init_prior(prior_type priorType)
 void global_params::init_random(unsigned long long randomSeed)
 {
 	random_seed = randomSeed;//When nothing, a random seed will be used.
-	rd = std::make_unique<std::random_device>(std::to_string(random_seed));
-	std::random_device(std::to_string(random_seed));
-	gen = std::make_unique<std::mt19937>((*rd)());
+	gen = std::make_unique<std::mt19937>(random_seed);
 }
 
 global_params::~global_params()

@@ -4,14 +4,17 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-11.2/bin")
-    set(CMAKE_CUBLAS_DIR "/usr/local/cuda-11.2/lib/x64")
+    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-11/bin/nvcc")
+    set(CMAKE_CUBLAS_DIR "/usr/local/cuda-11.3/lib64")
 endif (UNIX)
 
 #set(CMAKE_PROJECT_VERSION 1)
 #set(CMAKE_PROJECT_VERSION_MAJOR 0)
 #set(CMAKE_PROJECT_VERSION_MINOR 0)
-project(DPMMSubClusters LANGUAGES CXX CUDA C)
+set(PROJECT_NAME "DPMMSubClusters")
+set(CMAKE_PROJECT_NAME ${PROJECT_NAME})
+cmake_policy(SET CMP0048 NEW)
+project(${CMAKE_PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX CUDA C)
 
 cmake_minimum_required(VERSION 3.8)
 
@@ -27,96 +30,84 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
 
-set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.2/bin)
-#set(PATH ${PATH} ${CUDA_TOOLKIT_ROOT_DIR})
 LIST(APPEND CMAKE_PROGRAM_PATH  ${CUDA_TOOLKIT_ROOT_DIR})
 
+set(EIGEN_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/eigen-3.3.9)
+add_subdirectory("${CMAKE_SOURCE_DIR}/eigen-3.3.9")
 
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
-#set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/opencv)
-#include_directories(${OpenCV_DIR})
-#set(${OpenCV_LIBS}  "/home/s/opencv_4_install/lib/")
-#find_package(OpenCV)
+# set(OpenCV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/opencv)
 
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
-set(OpenCV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/opencv)
-#include_directories(${OpenCV_INCLUDE_DIRS})
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${EIGEN_INCLUDE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/eigen-3.3.9)
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-set(STATS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/stats/include")
+set(STATS_DIR "${CMAKE_SOURCE_DIR}/stats/include")
 include_directories(${STATS_DIR})
 
-set(GCEM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gcem/include")
+set(GCEM_DIR "${CMAKE_SOURCE_DIR}/gcem/include")
 include_directories(${GCEM_DIR})
 
-#set(OpenCV_DIR "${PROJECT_SOURCE_DIR}/opencv")
-#include_directories(${OpenCV_DIR})
+# include_directories(${OpenCV_INCLUDE_DIRS})
 
-#set(OPENCV_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/opencv/include")
-#include_directories(${OPENCV_INCLUDE_DIR})
-
-#set(OpenCV_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/opencv/include)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-set(DISTRIBUTIONS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/distributions")
-include_directories(${DISTRIBUTIONS_DIR})
-
-set(DISTRIBUTIONS_UTIL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/distributions_util)
-include_directories(${DISTRIBUTIONS_UTIL_DIR})
-
-set(PRIORS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/priors")
-include_directories(${PRIORS_DIR})
-
-set(JSON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp")
+set(JSON_DIR "${CMAKE_SOURCE_DIR}/jsoncpp")
 include_directories(${JSON_DIR}/include)
 
-set(MITOOLBOX_DIR "${CMAKE_CURRENT_SOURCE_DIR}/MIToolbox")
+set(MITOOLBOX_DIR "${CMAKE_SOURCE_DIR}/MIToolbox")
 include_directories(${MITOOLBOX_DIR}/include)
 
-set(CNPY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cnpy")
+set(CNPY_DIR "${CMAKE_SOURCE_DIR}/cnpy")
 include_directories(${CNPY_DIR})
 
-set(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/zlib")
+set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/zlib")
 include_directories(${ZLIB_INCLUDE_DIR})
 
+set(DISTRIBUTIONS_DIR "${CMAKE_SOURCE_DIR}/distributions")
+include_directories(${DISTRIBUTIONS_DIR})
+
+set(DISTRIBUTIONS_UTIL_DIR ${CMAKE_SOURCE_DIR}/distributions_util)
+include_directories(${DISTRIBUTIONS_UTIL_DIR})
+
+set(PRIORS_DIR "${CMAKE_SOURCE_DIR}/priors")
+include_directories(${PRIORS_DIR})
+
+include_directories(${CMAKE_SOURCE_DIR})
+
+find_package(OpenCV REQUIRED)
+
 add_executable(DPMMSubClusters
-  ${CMAKE_CURRENT_SOURCE_DIR}/check_time.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/check_time.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel.cu
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel.cuh
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel_gaussian.cu
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel_gaussian.cuh
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel_multinomial.cu
-  ${CMAKE_CURRENT_SOURCE_DIR}/cudaKernel_multinomial.cuh
-  ${CMAKE_CURRENT_SOURCE_DIR}/data_generators.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/data_generators.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/distribution_sample.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/distribution_sample.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/dp_parallel_sampling.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/dp_parallel_sampling.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/draw.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/draw.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ds.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/global_params.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/global_params.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/hyperparams.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/hyperparams.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_clusters_actions.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_clusters_actions.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/module_tests.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/module_tests.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/moduleTypes.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/shared_actions.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/shared_actions.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/sufficient_statistics.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/sufficient_statistics.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+  ${CMAKE_SOURCE_DIR}/check_time.cpp
+  ${CMAKE_SOURCE_DIR}/check_time.h
+  ${CMAKE_SOURCE_DIR}/cudaKernel.cu
+  ${CMAKE_SOURCE_DIR}/cudaKernel.cuh
+  ${CMAKE_SOURCE_DIR}/cudaKernel_gaussian.cu
+  ${CMAKE_SOURCE_DIR}/cudaKernel_gaussian.cuh
+  ${CMAKE_SOURCE_DIR}/cudaKernel_multinomial.cu
+  ${CMAKE_SOURCE_DIR}/cudaKernel_multinomial.cuh
+  ${CMAKE_SOURCE_DIR}/data_generators.cpp
+  ${CMAKE_SOURCE_DIR}/data_generators.h
+  ${CMAKE_SOURCE_DIR}/distribution_sample.cpp
+  ${CMAKE_SOURCE_DIR}/distribution_sample.h
+  ${CMAKE_SOURCE_DIR}/dp_parallel_sampling.cpp
+  ${CMAKE_SOURCE_DIR}/dp_parallel_sampling.h
+  ${CMAKE_SOURCE_DIR}/draw.cpp
+  ${CMAKE_SOURCE_DIR}/draw.h
+  ${CMAKE_SOURCE_DIR}/ds.h
+  ${CMAKE_SOURCE_DIR}/global_params.h
+  ${CMAKE_SOURCE_DIR}/global_params.cpp
+  ${CMAKE_SOURCE_DIR}/hyperparams.h
+  ${CMAKE_SOURCE_DIR}/hyperparams.cpp
+  ${CMAKE_SOURCE_DIR}/local_clusters_actions.cpp
+  ${CMAKE_SOURCE_DIR}/local_clusters_actions.h
+  ${CMAKE_SOURCE_DIR}/main.cpp
+  ${CMAKE_SOURCE_DIR}/module_tests.cpp
+  ${CMAKE_SOURCE_DIR}/module_tests.h
+  ${CMAKE_SOURCE_DIR}/moduleTypes.h
+  ${CMAKE_SOURCE_DIR}/shared_actions.cpp
+  ${CMAKE_SOURCE_DIR}/shared_actions.h
+  ${CMAKE_SOURCE_DIR}/sufficient_statistics.cpp
+  ${CMAKE_SOURCE_DIR}/sufficient_statistics.h
+  ${CMAKE_SOURCE_DIR}/utils.cpp
+  ${CMAKE_SOURCE_DIR}/utils.h
   ${PRIORS_DIR}/multinomial_prior.cpp
   ${PRIORS_DIR}/multinomial_prior.h
   ${PRIORS_DIR}/multinomial_hyper.cpp
@@ -160,7 +151,7 @@ add_subdirectory(zlib)
 #install(TARGETS "cnpy" LIBRARY DESTINATION lib PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 
-if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h)
+if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h AND EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h.included)
     message(STATUS "Renaming")
     message(STATUS "    ${ZLIB_INCLUDE_DIR}/zconf.h")
     message(STATUS "to 'zconf.h.included' because this file is included with zlib")
@@ -169,9 +160,16 @@ if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h)
 endif()
 
 #add_subdirectory(cnpy)
-target_link_libraries(DPMMSubClusters "${CMAKE_CURRENT_SOURCE_DIR}/zlib/out/build/x64-Release/zlib.lib")
+if (WIN32)
+    target_link_libraries(DPMMSubClusters "${CMAKE_SOURCE_DIR}/zlib/out/build/x64-Release/zlib.lib")
+endif(WIN32)
 
-#add_subdirectory(eigen-3.3.9)
+if (UNIX)
+    target_link_libraries(DPMMSubClusters libz.a)
+endif(UNIX)
+
+
+#add_subdirectory("${CMAKE_SOURCE_DIR}/eigen-3.3.9")
 
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to 
@@ -190,22 +188,37 @@ set_target_properties( DPMMSubClusters
 #             PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 #target_link_libraries(particle_test PRIVATE particles)
 
-target_link_libraries(DPMMSubClusters Eigen3::Eigen)
-target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/cublas.lib)
+if (WIN32)
+    target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/cublas.lib)
+endif(WIN32)
 
-#target_link_libraries(DPMMSubClusters opencv_world343)
+if (UNIX)
+    target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/libcublas.so.11)
+    set(DBLAS_LIBDIR "${CMAKE_CUBLAS_DIR}")
+endif(UNIX)
 
 target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS}/opencv2)
 
-target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
+# target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
 
-add_custom_command(TARGET DPMMSubClusters POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${OpenCV_INCLUDE_DIRS}/opencv_world343.dll"
-        $<TARGET_FILE_DIR:DPMMSubClusters>)
+# target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
+
+# add_custom_command(TARGET DPMMSubClusters POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         "${OpenCV_INCLUDE_DIRS}/opencv_world343.dll"
+#         $<TARGET_FILE_DIR:DPMMSubClusters>)
 
 set_property(TARGET DPMMSubClusters PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
+SET(GCC_OPEN_MP_FLAGS  "-fopenmp")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_OPEN_MP_FLAGS}")
+# SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
+install(TARGETS ${PROJECT_NAME}
+        CONFIGURATIONS Release
+        RUNTIME DESTINATION Release/bin)
 
-#add_subdirectory(test)
+# add_subdirectory(test)

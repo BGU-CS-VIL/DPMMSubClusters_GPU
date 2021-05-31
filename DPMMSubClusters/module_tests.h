@@ -7,7 +7,7 @@ class module_tests
 public:
 	ClusterIndexType RandomMess();
 	ClusterIndexType RandomMessHighDim();
-	void TestingData(LabelsType&labels);
+	void TestingData(std::shared_ptr<LabelsType>&labels);
 	void CheckMemoryLeak();
 
 };

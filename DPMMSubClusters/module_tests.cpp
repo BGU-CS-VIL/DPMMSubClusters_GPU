@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <string>
+#include <sys/stat.h>
 #include "draw.h"
 #include "moduleTypes.h"
 #include "utils.h"
@@ -22,7 +23,7 @@ ClusterIndexType module_tests::RandomMess()
 	srand(12345);
 	data_generators data_generators;
 	MatrixXd  x;
-	std::vector<int> labels;
+	std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
@@ -55,7 +56,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	srand(12345);
 	data_generators data_generators;
 	MatrixXd  x;
-	LabelsType labels;
+	std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
@@ -66,7 +67,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	std::string fileName = "RandomMessHighDim_" + std::to_string(N) + "_" + std::to_string(D) + "_" + std::to_string(numClusters);
 
 	struct stat buffer;
-	fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
+	// fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
 	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
 		//CHECK_TIME("module_tests::load_data");
@@ -94,7 +95,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	std::vector<int> count(numClusters);
 	for (size_t i = 0; i < N; i++)
 	{
-		count[labels[i] - 1] += 1;
+		count[(*labels)[i] - 1] += 1;
 	}
 
 	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), D, MatrixXd::Identity(D, D));
@@ -111,7 +112,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	return foundClusters;
 }
 
-void module_tests::TestingData(LabelsType &labels)
+void module_tests::TestingData(std::shared_ptr<LabelsType> &labels)
 {
 	printf("Testing data");
 	srand(12345);
@@ -139,7 +140,7 @@ void module_tests::CheckMemoryLeak()
 	srand(12345);
 	data_generators data_generators;
 	MatrixXd  x;
-	LabelsType labels;
+	std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);

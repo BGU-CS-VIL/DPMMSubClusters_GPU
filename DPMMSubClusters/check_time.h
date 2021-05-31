@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <string>
-//#include <chrono>
 #include <ctime>
 
 using namespace std;
@@ -30,4 +29,4 @@ private:
 	clock_t begin;
 };
 
-#define CHECK_TIME(msg) //check_time auto_check_time(msg);
+#define CHECK_TIME(msg) check_time auto_check_time(msg);

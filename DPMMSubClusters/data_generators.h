@@ -1,5 +1,6 @@
 #pragma once
 #include <ctime> 
+#include <memory>
 using namespace std;
 #include "distributions_util/dirichlet.h"
 #include "distributions_util/pdflib.hpp"
@@ -14,11 +15,11 @@ class data_generators
 public:
 	//Generate `N` observations, generated from `K` `D` dimensions Gaussians, with the Gaussian means sampled from a `Normal` distribution with mean `0` and `MixtureVar` variance.
 	void generate_gaussian_data(PointType N, DimensionsType D, BaseType K, double MixtureVar, MatrixXd& x,
-		LabelsType& tz,
+		std::shared_ptr<LabelsType> &tz,
 		double**& tmean,
 		double**& tcov)
 	{
-		printf("\nN=%ld, D=%ld, K=%ld\n", N, D, K);
+		printf("\nN=%d, D=%d, K=%d\n", N, D, K);
 		x.resize(D, N);
 		tmean = new double* [D];
 		for (DimensionsType i = 0; i < D; ++i)
@@ -45,7 +46,7 @@ public:
 
 		int* tzn = i4vec_multinomial_sample((int)N, p, K);
 		delete[]p;
-		tz.resize(N);
+		tz->resize(N);
 
 		int ind = 1;
 		for (int i = 1; i <= K; ++i)
@@ -54,7 +55,7 @@ public:
 			int to = ind + tzn[i - 1] - 1;
 			for (int j = from; j < to; j++)
 			{
-				tz[j] = i;
+				(*tz)[j] = i;
 			}
 			double* mu = new double[D]();
 

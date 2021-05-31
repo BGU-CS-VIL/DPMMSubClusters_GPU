@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <array>
+#include <memory>
 #include "Eigen/Dense"
 #include "moduleTypes.h"
 #include "opencv2/opencv.hpp"
@@ -14,7 +15,7 @@ using namespace Eigen;
 class draw
 {
 public:	
-	static void draw_labels(const char* window, MatrixXd &x, LabelsType& labels)
+	static void draw_labels(const char* window, MatrixXd &x, std::shared_ptr<LabelsType> &labels)
 	{
 		const int width = 800;
 		const int height = 800;
@@ -25,8 +26,7 @@ public:
 		double minY = x.row(1).minCoeff();
 		double maxY = x.row(1).maxCoeff();
 
-		cv::Mat* pIimageMat = new cv::Mat(width, height, CV_8UC3, cvScalar(255, 255, 255));
-		IplImage image = IplImage(*pIimageMat);
+		cv::Mat image = cv::Mat(width, height, CV_8UC3, cv::Scalar(255, 255, 255));
 
 		typedef std::pair<std::vector<double>, std::vector<double>> Pair;
 
@@ -36,26 +36,26 @@ public:
 		std::mt19937 rng(rd());
 		std::uniform_int_distribution<int> dist(0, 255);
 
-		for (size_t i = 0; i < labels.size(); i++)
+		for (size_t i = 0; i < labels->size(); i++)
 		{
 			cv::Point p;
 			p.x = (int)(((x(0, i) - minX) / (maxX - minX)) * width);
 			p.y = (int)(((x(1, i) - minY) / (maxY - minY)) * height);
 
-			if (labels[i] < 1)
+			if ((*labels)[i] < 1)
 			{
 				throw std::invalid_argument("Invalid label value");
 			}
 
 			int colorIndex;
 
-			while (labels[i] > colors.size())
+			while ((*labels)[i] > colors.size())
 			{
 				colors.push_back(cv::Scalar(dist(rng), dist(rng), dist(rng)));
 			}
-			colorIndex = labels[i] - 1;
+			colorIndex = (*labels)[i] - 1;
 
-			cvCircle(&image, p, 1, colors[colorIndex]);
+			cv::circle(image, p, 1, colors[colorIndex]);
 
 			auto iter = clusters.find(colorIndex);
 			if (iter == clusters.end())
@@ -79,14 +79,13 @@ public:
 			title2 += std::to_string(iter->first) + ":" + std::to_string(iter->second);
 		}
 		title += ": " + title2;
-		CvFont font;
-		cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5);
-		cvPutText(&image, title.c_str(), cvPoint(10, 10), &font, cvScalar(0));
-
-		cvNamedWindow(window, CV_WINDOW_AUTOSIZE);
-		cvShowImage(window, &image);
-		cvWaitKey(1);		
-		delete pIimageMat;
+		int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
+		double fontScale = 1;
+		int thickness = 3;
+		cv::putText(image, title.c_str(), cv::Point(10, 10), fontFace, fontScale, cv::Scalar::all(0));
+		cv::namedWindow(window, cv::WINDOW_AUTOSIZE);
+		cv::imshow(window, image);
+		cv::waitKey(1);		
 	}
 };
 

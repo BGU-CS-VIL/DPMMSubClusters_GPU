@@ -10,7 +10,7 @@
 using namespace std;
 #include "distributions_util/pdflib.hpp"
 #include "draw.h"
-#include <ppl.h>
+// #include <ppl.h>
 #include "check_time.h"
 
 template<typename Func>
@@ -558,11 +558,11 @@ void local_clusters_actions::group_step(local_group &group, bool no_more_splits,
 
 	if (globalParams->draw_labels)
 	{
-		LabelsType subLabels;
+		std::shared_ptr<LabelsType> subLabels = std::make_shared<LabelsType>();
 		globalParams->cuda->get_sub_labels(subLabels);
 		draw::draw_labels("Sub labels", group.points, subLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		globalParams->cuda->get_labels(labels);
 		draw::draw_labels("Labels", group.points, labels);
 	}

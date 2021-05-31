@@ -2,6 +2,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <cfloat>
 #include "Eigen/Dense"
 #include "ds.h"
 #include "cudaKernel.cuh"
@@ -73,5 +74,5 @@ public:
 	int numLabels;
 	MatrixXd points;
 
-	LabelsType* ground_truth = NULL;
+	std::shared_ptr<LabelsType> ground_truth = NULL;
 };

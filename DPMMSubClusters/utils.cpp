@@ -43,14 +43,14 @@ void utils::load_data(std::string fileName, Eigen::MatrixXd& mat_out, bool swapD
 	}
 }
 
-void utils::load_data(std::string fileName, LabelsType& vec_out)
+void utils::load_data(std::string fileName, std::shared_ptr<LabelsType> &vec_out)
 {
 	std::string fullPath = fileName + ".labels";
 	cnpy::NpyArray npy_data = cnpy::npy_load(fullPath);
 
 	const int data_row = (int)npy_data.shape[1];
 
-	vec_out.resize(data_row);
+	vec_out->resize(data_row);
 
 	if (npy_data.word_size == 4)
 	{
@@ -65,7 +65,7 @@ void utils::load_data(std::string fileName, LabelsType& vec_out)
 	else
 	{
 		printf("Error data!!! Actual size=%ld\n", (long)npy_data.word_size);
-		vec_out.resize(0);
+		vec_out->resize(0);
 		return;
 	}
 }
@@ -118,10 +118,10 @@ void utils::mat_to_data(const Eigen::MatrixXd& mat, std::vector<double>& data)
 }
 
 template<typename T>
-void utils::data_to_vec(const T& data, LabelsType& vec)
+void utils::data_to_vec(const T& data, std::shared_ptr<LabelsType> &vec)
 {
-	for (int i = 0; i < vec.size(); i++)
+	for (int i = 0; i < vec->size(); i++)
 	{
-		vec[i] = data[i];
+		(*vec)[i] = data[i];
 	}
 }

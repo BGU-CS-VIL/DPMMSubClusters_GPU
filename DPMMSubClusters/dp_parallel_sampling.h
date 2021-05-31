@@ -1,9 +1,9 @@
 #pragma once
+#include "global_params.h"
 #include <chrono>
 #include <vector>
-#include "Eigen/Dense"
+#include <cfloat>
 #include "ds.h"
-#include "global_params.h"
 
 using namespace Eigen;
 
@@ -39,7 +39,7 @@ public:
 		bool draw_labels = false,
 		bool save_model = false,
 		int burnout = 15,
-		LabelsType& gt = LabelsType(),
+		std::shared_ptr<LabelsType> gt = nullptr,
 		double max_clusters = DBL_MAX,
 		double outlier_weight = 0,
 		std::shared_ptr<hyperparams> outlier_params = nullptr);

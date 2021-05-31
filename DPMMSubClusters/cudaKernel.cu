@@ -1050,33 +1050,33 @@ void cudaKernel::sample_labels(int initial_clusters, double outlier_mod)
 	update_labels_to_all_other_devices(deviceId);
 }
 
-void cudaKernel::get_sub_labels(LabelsType &subLabels)
+void cudaKernel::get_sub_labels(std::shared_ptr<LabelsType> &subLabels)
 {
 	int deviceId = peak_first_device();
 	int *h_subLabels;
 	h_subLabels = (int*)malloc(numLabels * sizeof(int));
 	runCuda(cudaMemcpy(h_subLabels, gpuCapabilities[deviceId].d_sub_labels, numLabels * sizeof(int), cudaMemcpyDeviceToHost));
 
-	subLabels.resize(numLabels);
+	subLabels->resize(numLabels);
 	for (size_t i = 0; i < numLabels; i++)
 	{
-		subLabels[i] = h_subLabels[i];
+		(*subLabels)[i] = h_subLabels[i];
 	}
 
 	free(h_subLabels);
 }
 
-void cudaKernel::get_labels(LabelsType &labels)
+void cudaKernel::get_labels(std::shared_ptr<LabelsType> &labels)
 {
 	int deviceId = peak_first_device();
 	int *h_labels;
 	h_labels = (int*)malloc(numLabels * sizeof(int));
 	runCuda(cudaMemcpy(h_labels, gpuCapabilities[deviceId].d_labels, numLabels * sizeof(int), cudaMemcpyDeviceToHost));
 
-	labels.resize(numLabels);
+	labels->resize(numLabels);
 	for (size_t i = 0; i < numLabels; i++)
 	{
-		labels[i] = h_labels[i];
+		(*labels)[i] = h_labels[i];
 	}
 
 	free(h_labels);

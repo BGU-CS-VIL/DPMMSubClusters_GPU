@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "sufficient_statistics.h"
 
 class niw_sufficient_statistics : public sufficient_statistics
