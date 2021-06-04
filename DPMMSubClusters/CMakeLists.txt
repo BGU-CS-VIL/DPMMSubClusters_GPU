@@ -35,7 +35,12 @@ LIST(APPEND CMAKE_PROGRAM_PATH  ${CUDA_TOOLKIT_ROOT_DIR})
 set(EIGEN_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/eigen-3.3.9)
 add_subdirectory("${CMAKE_SOURCE_DIR}/eigen-3.3.9")
 
-# set(OpenCV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/opencv)
+
+if (WIN32)
+	set(OpenCV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/opencv)
+	include_directories(${OpenCV_INCLUDE_DIRS})
+endif (WIN32)
+
 
 include_directories(${EIGEN_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/eigen-3.3.9)
@@ -72,7 +77,10 @@ include_directories(${PRIORS_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-find_package(OpenCV REQUIRED)
+if (UNIX)
+    find_package(OpenCV REQUIRED)
+endif (UNIX)
+
 
 add_executable(DPMMSubClusters
   ${CMAKE_SOURCE_DIR}/check_time.cpp
@@ -179,9 +187,13 @@ endif(UNIX)
 # We need to explicitly state that we need all CUDA files in the 
 # particle library to be built with -dc as the member functions 
 # could be called by other libraries and executables
-set_target_properties( DPMMSubClusters
-                       PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
+
+set_target_properties( DPMMSubClusters
+                       PROPERTIES 
+                       CUDA_SEPARABLE_COMPILATION ON
+                   )
 #add_executable(particle_test test.cu)
  
 #set_property(TARGET particle_test 
@@ -190,6 +202,13 @@ set_target_properties( DPMMSubClusters
 
 if (WIN32)
     target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/cublas.lib)
+	target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+	target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
+    
+    add_custom_command(TARGET DPMMSubClusters POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${OpenCV_INCLUDE_DIRS}/opencv_world343.dll"
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
 endif(WIN32)
 
 if (UNIX)
@@ -202,14 +221,7 @@ message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS}/opencv2)
 
-# target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
 
-# target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
-
-# add_custom_command(TARGET DPMMSubClusters POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         "${OpenCV_INCLUDE_DIRS}/opencv_world343.dll"
-#         $<TARGET_FILE_DIR:DPMMSubClusters>)
 
 set_property(TARGET DPMMSubClusters PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
@@ -217,8 +229,11 @@ SET(GCC_OPEN_MP_FLAGS  "-fopenmp")
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_OPEN_MP_FLAGS}")
 # SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
-install(TARGETS ${PROJECT_NAME}
-        CONFIGURATIONS Release
-        RUNTIME DESTINATION Release/bin)
+# install(TARGETS ${PROJECT_NAME}
+#         CONFIGURATIONS Release
+#         RUNTIME DESTINATION Release/bin)
+
+message(STATUS "CMAKE_BINARY_DIR  = ${CMAKE_BINARY_DIR}")
+message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY  = ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
 # add_subdirectory(test)

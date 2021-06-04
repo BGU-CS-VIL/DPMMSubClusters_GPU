@@ -60,7 +60,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
-	int D = 500;
+	int D = 2;
 	int numClusters = 10;
 	int numIters = 200;
 	int foundClusters = 0;
