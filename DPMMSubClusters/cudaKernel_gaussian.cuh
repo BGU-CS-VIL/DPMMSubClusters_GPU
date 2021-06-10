@@ -32,7 +32,8 @@ protected:
 		const std::shared_ptr<hyperparams>& hyperParams,
 		const std::shared_ptr<hyperparams>& posterior,
 		cudaStream_t& stream,
-		std::shared_ptr<sufficient_statistics>& ss) override;
+		std::shared_ptr<sufficient_statistics>& ss,
+		int deviceId) override;
 	void mul_scalar_sum_A_AT(double* d_A, double* d_B, int n, double scalar, cudaStream_t& stream);
 	void mul_scalar_sum_A_AT(double* d_A, double* d_B, int n, double scalar);
 

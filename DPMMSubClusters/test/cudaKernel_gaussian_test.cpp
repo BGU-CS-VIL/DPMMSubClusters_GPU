@@ -23,7 +23,7 @@ namespace DPMMSubClustersTest
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
@@ -47,11 +47,11 @@ namespace DPMMSubClustersTest
 
 		for (int i = 0; i < numLabels; i++)
 		{
-			if (labels[i] == 1)
+			if ((*labels)[i] == 1)
 			{
 				countOne++;
 			}
-			else if (labels[i] == 2)
+			else if ((*labels)[i] == 2)
 			{
 				countTwo++;
 			}
@@ -76,7 +76,7 @@ namespace DPMMSubClustersTest
 		int countTwo = 0;
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
@@ -100,11 +100,11 @@ namespace DPMMSubClustersTest
 
 		for (int i = 0; i < numLabels; i++)
 		{
-			if (labels[i] == 1)
+			if ((*labels)[i] == 1)
 			{
 				countOne++;
 			}
-			else if (labels[i] == 2)
+			else if ((*labels)[i] == 2)
 			{
 				countTwo++;
 			}
@@ -133,8 +133,8 @@ namespace DPMMSubClustersTest
 		int countOther2 = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels1;
-		LabelsType labels2;
+		std::shared_ptr<LabelsType> labels1 = std::make_shared<LabelsType>();
+		std::shared_ptr<LabelsType> labels2 = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		for (int i = 0; i < numLabels; i++)
@@ -163,11 +163,11 @@ namespace DPMMSubClustersTest
 
 		for (int i = 0; i < numLabels; i++)
 		{
-			if (labels1[i] == 1)
+			if ((*labels1)[i] == 1)
 			{
 				countOne1++;
 			}
-			else if (labels1[i] == 2)
+			else if ((*labels1)[i] == 2)
 			{
 				countTwo1++;
 			}
@@ -179,11 +179,11 @@ namespace DPMMSubClustersTest
 
 		for (int i = 0; i < numLabels; i++)
 		{
-			if (labels2[i] == 1)
+			if ((*labels2)[i] == 1)
 			{
 				countOne2++;
 			}
-			else if (labels2[i] == 2)
+			else if ((*labels2)[i] == 2)
 			{
 				countTwo2++;
 			}
@@ -214,7 +214,7 @@ namespace DPMMSubClustersTest
 		int countOther = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
@@ -249,11 +249,11 @@ namespace DPMMSubClustersTest
 
 		for (int i = 0; i < numLabels; i++)
 		{
-			if (labels[i] == 1)
+			if ((*labels)[i] == 1)
 			{
 				countOne++;
 			}
-			else if (labels[i] == 2)
+			else if ((*labels)[i] == 2)
 			{
 				countTwo++;
 			}
@@ -282,7 +282,7 @@ namespace DPMMSubClustersTest
 		int countOtherAll = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array_all(numLabels, 2);
 		LabelsType indices;
@@ -341,11 +341,11 @@ namespace DPMMSubClustersTest
 		{
 			if (std::find(indices.begin(), indices.end(), i) != indices.end())
 			{
-				if (labels[i] == 1)
+				if ((*labels)[i] == 1)
 				{
 					countOneIndex++;
 				}
-				else if (labels[i] == 2)
+				else if ((*labels)[i] == 2)
 				{
 					countTwoIndex++;
 				}
@@ -355,11 +355,11 @@ namespace DPMMSubClustersTest
 				}
 			}
 
-			if (labels[i] == 1)
+			if ((*labels)[i] == 1)
 			{
 				countOneAll++;
 			}
-			else if (labels[i] == 2)
+			else if ((*labels)[i] == 2)
 			{
 				countTwoAll++;
 			}
@@ -386,7 +386,7 @@ namespace DPMMSubClustersTest
 	{
 		int numLabels = (int)pow(10, 5);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
@@ -432,11 +432,11 @@ namespace DPMMSubClustersTest
 			int countOther = 0;
 			for (int i = 0; i < numLabels; i++)
 			{
-				if (labels[i] == 1)
+				if ((*labels)[i] == 1)
 				{
 					countOne++;
 				}
-				else if (labels[i] == 2)
+				else if ((*labels)[i] == 2)
 				{
 					countTwo++;
 				}
@@ -473,7 +473,7 @@ namespace DPMMSubClustersTest
 		int countFalseTwo = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
@@ -521,7 +521,7 @@ namespace DPMMSubClustersTest
 		{
 			if (i % 2 == 0)
 			{
-				if (labels[i] == 1)
+				if ((*labels)[i] == 1)
 				{
 					countOne++;
 				}
@@ -532,7 +532,7 @@ namespace DPMMSubClustersTest
 			}
 			else
 			{
-				if (labels[i] == 2)
+				if ((*labels)[i] == 2)
 				{
 					countTwo++;
 				}
@@ -564,7 +564,7 @@ namespace DPMMSubClustersTest
 		int countFalseThree = 0;
 		MatrixXd points(2, numLabels);
 
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		myCudaKernel_gaussian* object = new myCudaKernel_gaussian();
 		Eigen::MatrixXd log_likelihood_array(numLabels, 2);
 		LabelsType indices;
@@ -615,7 +615,7 @@ namespace DPMMSubClustersTest
 		{
 			if (i % 3 == 0)
 			{
-				if (labels[i] == 1)
+				if ((*labels)[i] == 1)
 				{
 					countOne++;
 				}
@@ -626,7 +626,7 @@ namespace DPMMSubClustersTest
 			}
 			else if (i % 3 == 1)
 			{
-				if (labels[i] == 1)
+				if ((*labels)[i] == 1)
 				{
 					countTwo++;
 				}
@@ -637,7 +637,7 @@ namespace DPMMSubClustersTest
 			}
 			else
 			{
-				if (labels[i] == 2)
+				if ((*labels)[i] == 2)
 				{
 					countThree++;
 				}
@@ -1093,7 +1093,7 @@ namespace DPMMSubClustersTest
 
 		cuda.create_stream(stream);
 
-		cuda.multiplie_matrix_by_transpose(d_A, d_B, rows, cols, stream);
+		cuda.multiplie_matrix_by_transpose(d_A, d_B, rows, cols, deviceId, stream);
 
 		cuda.release_stream(stream);
 

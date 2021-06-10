@@ -67,7 +67,7 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	std::string fileName = "RandomMessHighDim_" + std::to_string(N) + "_" + std::to_string(D) + "_" + std::to_string(numClusters);
 
 	struct stat buffer;
-	// fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
+	//fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
 	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
 		//CHECK_TIME("module_tests::load_data");

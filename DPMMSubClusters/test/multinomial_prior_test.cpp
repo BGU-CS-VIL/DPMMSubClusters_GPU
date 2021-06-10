@@ -35,7 +35,7 @@ namespace DPMMSubClustersTest
 
 	TEST(multinomial_prior_test, SampleDistribution)
 	{
-		MatrixXd points;
+		MatrixXd points = MatrixXd::Random(2, 2);
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
 		std::shared_ptr<global_params> gp = std::make_unique<global_params>(); 
 		gp->init(10, points, NULL, prior_type::Multinomial);
@@ -54,7 +54,7 @@ namespace DPMMSubClustersTest
 
 	TEST(multinomial_prior_test, LogMarginalLikelihood)
 	{
-		MatrixXd points;
+		MatrixXd points = MatrixXd::Random(2, 2);
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
 		std::shared_ptr<global_params> gp = std::make_unique<global_params>();
 		gp->init(10, points, NULL, prior_type::Multinomial);
@@ -79,7 +79,7 @@ namespace DPMMSubClustersTest
 
 	TEST(multinomial_prior_test, AggregateSuffStats)
 	{
-		MatrixXd points;
+		MatrixXd points = MatrixXd::Random(2, 2);
 		std::unique_ptr<myCudaKernel_multinomial> myCudaKernelObj = std::make_unique<myCudaKernel_multinomial>();
 		std::shared_ptr<global_params> gp = std::make_unique<global_params>();
 		gp->init(10, points, NULL, prior_type::Multinomial);

@@ -83,7 +83,8 @@ void cudaKernel_multinomial::do_create_sufficient_statistics(
 	const std::shared_ptr<hyperparams>& hyperParams,
 	const std::shared_ptr<hyperparams>& posterior,
 	cudaStream_t& stream,
-	std::shared_ptr<sufficient_statistics>& ss)
+	std::shared_ptr<sufficient_statistics>& ss,
+	int deviceId)
 {
 	int cols;
 	runCuda(cudaMemcpyAsync(&cols, d_cols, sizeof(int), cudaMemcpyDeviceToHost, stream));

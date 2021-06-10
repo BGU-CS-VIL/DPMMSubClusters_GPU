@@ -31,7 +31,8 @@ protected:
 		const std::shared_ptr<hyperparams>& hyperParams,
 		const std::shared_ptr<hyperparams>& posterior,
 		cudaStream_t& stream,
-		std::shared_ptr<sufficient_statistics>& ss) override;
+		std::shared_ptr<sufficient_statistics>& ss,
+		int deviceId) override;
 
 };
 

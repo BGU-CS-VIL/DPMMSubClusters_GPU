@@ -71,7 +71,7 @@ void cudaKernel_gaussian::log_likelihood_sub_labels(
 	runCuda(cudaMallocAsync((void**)&d_b, sizeof(double) * pDistribution_sample->invSigma.size(), stream));
 	runCuda(cudaMemcpyAsync(d_b, pDistribution_sample->invSigma.data(), sizeof(double) * pDistribution_sample->invSigma.size(), cudaMemcpyHostToDevice, stream));
 
-	matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), indicesSize, stream);
+	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), indicesSize, stream);
 	runCuda(cudaFreeAsync(d_b, stream));
 
 	double scalar = -((pDistribution_sample->sigma.size() * log(2 * EIGEN_PI) + pDistribution_sample->logdetSigma) / 2);
@@ -104,7 +104,7 @@ void cudaKernel_gaussian::log_likelihood_labels(
 	runCuda(cudaMemcpyAsync(d_b, pDistribution_sample->invSigma.data(), sizeof(double) * pDistribution_sample->invSigma.size(), cudaMemcpyHostToDevice, stream));
 
 	cudaStreamSynchronize(stream);
-	matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), numLabels, stream);
+	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), numLabels, stream);
 	runCuda(cudaFreeAsync(d_b, stream));
 
 	double scalar = -((pDistribution_sample->sigma.size() * log(2 * EIGEN_PI) + pDistribution_sample->logdetSigma) / 2);
@@ -132,7 +132,8 @@ void cudaKernel_gaussian::do_create_sufficient_statistics(
 	const std::shared_ptr<hyperparams>& hyperParams,
 	const std::shared_ptr<hyperparams>& posterior,
 	cudaStream_t& stream,
-	std::shared_ptr<sufficient_statistics>& ss)
+	std::shared_ptr<sufficient_statistics>& ss,
+	int deviceId)
 {
 	int cols;
 	runCuda(cudaMemcpyAsync(&cols, d_cols, sizeof(int), cudaMemcpyDeviceToHost, stream));
@@ -150,7 +151,7 @@ void cudaKernel_gaussian::do_create_sufficient_statistics(
 		runCuda(cudaMallocAsync(&d_c, rows * rows * sizeof(double), stream));
 		//runCuda(cudaStreamSynchronize(stream));
 
-		multiplie_matrix_by_transpose(d_pts, d_c, rows, cols, stream);
+		multiplie_matrix_by_transpose(d_pts, d_c, rows, cols, deviceId, stream);
 
 		ss = std::make_shared<niw_sufficient_statistics>();
 		niw_sufficient_statistics* niw_ss = dynamic_cast<niw_sufficient_statistics*>(ss.get());

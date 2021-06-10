@@ -18,6 +18,10 @@ project(${CMAKE_PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX CUDA C)
 
 cmake_minimum_required(VERSION 3.8)
 
+# if(NOT CMAKE_BUILD_TYPE)
+#   set(CMAKE_BUILD_TYPE Release)
+# endif()
+
 #if(NOT DEFINED ${CMAKE_CUDA_ARCHITECTURES})
 #    set(CMAKE_CUDA_ARCHITECTURES 75)
 #endif()
@@ -33,12 +37,38 @@ include(GNUInstallDirs)
 LIST(APPEND CMAKE_PROGRAM_PATH  ${CUDA_TOOLKIT_ROOT_DIR})
 
 set(EIGEN_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/eigen-3.3.9)
+
+message(STATUS "Eigen:")
 add_subdirectory("${CMAKE_SOURCE_DIR}/eigen-3.3.9")
 
+message(STATUS "OpenCV:")
 
 if (WIN32)
-	set(OpenCV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/opencv)
-	include_directories(${OpenCV_INCLUDE_DIRS})
+    file (REMOVE "${CMAKE_SOURCE_DIR}/install/opencv//OpenCVConfig.cmake"})
+    LIST(APPEND CMAKE_PREFIX_PATH  "${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/lib")
+    find_package(OpenCV QUIET COMPONENTS core highgui imgproc imgcodecs)
+    if(NOT OpenCV_FOUND)
+        message(FATAL_ERROR "run \"./installOCV.sh\" using Git Bash from ${CMAKE_SOURCE_DIR}")
+    endif()    
+    
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    
+    message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
+
+	# set(OpenCV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/opencv)
+	# include_directories(${OpenCV_INCLUDE_DIRS})
+    # add_compile_definitions(OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT)
+
+    # set(BUILD_LIST "core,imgproc,highgui")
+    # set(OPENCV_EXTRA_MODULES_PATH "${CMAKE_SOURCE_DIR}/opencv/modules")
+
+    # set(CMAKE_SOURCE_DIR_ORG ${CMAKE_SOURCE_DIR})
+    # set(CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/opencv)
+
+    # add_subdirectory(${CMAKE_SOURCE_DIR})
+
+    # set(CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR_ORG})
+
 endif (WIN32)
 
 
@@ -158,6 +188,7 @@ add_subdirectory(zlib)
 #target_link_libraries(cnpy ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 #install(TARGETS "cnpy" LIBRARY DESTINATION lib PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
 
 if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h AND EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h.included)
     message(STATUS "Renaming")
@@ -202,13 +233,18 @@ set_target_properties( DPMMSubClusters
 
 if (WIN32)
     target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/cublas.lib)
-	target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
-	target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
+	# target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+	# target_link_libraries(DPMMSubClusters ${OpenCV_INCLUDE_DIRS}/opencv_world343.lib)
     
     add_custom_command(TARGET DPMMSubClusters POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${OpenCV_INCLUDE_DIRS}/opencv_world343.dll"
+        ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
+
+    add_custom_command(TARGET DPMMSubClusters POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
 endif(WIN32)
 
 if (UNIX)
@@ -216,17 +252,17 @@ if (UNIX)
     set(DBLAS_LIBDIR "${CMAKE_CUBLAS_DIR}")
 endif(UNIX)
 
-target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
-message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
-include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${OpenCV_INCLUDE_DIRS}/opencv2)
+# target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+# include_directories(${OpenCV_INCLUDE_DIRS}/opencv2)
 
 
 
 set_property(TARGET DPMMSubClusters PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
-SET(GCC_OPEN_MP_FLAGS  "-fopenmp")
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_OPEN_MP_FLAGS}")
+if (UNIX)
+    SET(GCC_OPEN_MP_FLAGS  "-fopenmp")
+    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_OPEN_MP_FLAGS}")
+endif(UNIX)
 # SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
 # install(TARGETS ${PROJECT_NAME}

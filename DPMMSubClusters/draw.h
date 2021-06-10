@@ -8,7 +8,9 @@
 #include <memory>
 #include "Eigen/Dense"
 #include "moduleTypes.h"
-#include "opencv2/opencv.hpp"
+#include "opencv2/core.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/highgui.hpp"
 
 using namespace Eigen;
 
@@ -79,10 +81,10 @@ public:
 			title2 += std::to_string(iter->first) + ":" + std::to_string(iter->second);
 		}
 		title += ": " + title2;
-		int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
-		double fontScale = 1;
+		int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+		double fontScale = 0.5;
 		int thickness = 3;
-		cv::putText(image, title.c_str(), cv::Point(10, 10), fontFace, fontScale, cv::Scalar::all(0));
+		cv::putText(image, title.c_str(), cv::Point(10, 15), fontFace, fontScale, cv::Scalar::all(0));
 		cv::namedWindow(window, cv::WINDOW_AUTOSIZE);
 		cv::imshow(window, image);
 		cv::waitKey(1);		

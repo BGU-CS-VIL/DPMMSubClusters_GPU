@@ -28,10 +28,10 @@ namespace DPMMSubClustersTest
 	TEST(module_tests_test, TestingData)
 	{
 		module_tests mt;
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		mt.TestingData(labels);
 
-		EXPECT_EQ((size_t)50000, labels.size());
+		EXPECT_EQ((size_t)50000, labels->size());
 	}
 
 	TEST(module_tests_test, RandomMess10Clusters)
@@ -44,7 +44,7 @@ namespace DPMMSubClustersTest
 			srand(12345);
 			data_generators data_generators;
 			MatrixXd  x;
-			LabelsType labels;
+			std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 			double** tmean;
 			double** tcov;
 			int N = (int)pow(10, 5);
@@ -112,7 +112,7 @@ namespace DPMMSubClustersTest
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		double** tmean;
 		double** tcov;
 		int N = (int)pow(10, 5);
@@ -152,7 +152,7 @@ namespace DPMMSubClustersTest
 		srand(12345);
 		data_generators data_generators;
 		MatrixXd  x;
-		LabelsType labels;
+		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 		double** tmean;
 		double** tcov;
 		int N = (int)pow(10, 5);
@@ -208,7 +208,7 @@ namespace DPMMSubClustersTest
 			srand(12345);
 			data_generators data_generators;
 			MatrixXd  x;
-			LabelsType labels;
+			std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
 			double** tmean;
 			double** tcov;
 			int N = (int)pow(10, 5);

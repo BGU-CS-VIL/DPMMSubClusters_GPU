@@ -77,7 +77,7 @@ namespace DPMMSubClustersTest
 
 	TEST(shared_actions_test, sample_cluster_params)
 	{
-		MatrixXd points;
+		MatrixXd points = MatrixXd::Random(2, 2);
 		std::unique_ptr<myCudaKernel_gaussian> myCudaKernelObj = std::make_unique<myCudaKernel_gaussian>();
 		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
 		gp->init(10, points, NULL, prior_type::Gaussian);

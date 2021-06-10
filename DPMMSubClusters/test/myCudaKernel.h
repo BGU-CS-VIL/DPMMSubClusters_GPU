@@ -62,7 +62,7 @@ public:
 
 	void my_matrixMultiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
 	{
-		matrixMultiply(A, B, C, m, n, k, stream);
+		gpuCapabilities[0].matrixMultiply(A, B, C, m, n, k, stream);
 	}
 
 	void release_in_device(double* d_data)
@@ -101,7 +101,7 @@ public:
 
 	void my_matrixMultiply(double* A, double* B, double* C, int m, int n, int k, cudaStream_t& stream)
 	{
-		matrixMultiply(A, B, C, m, n, k, stream);
+		gpuCapabilities[0].matrixMultiply(A, B, C, m, n, k, stream);
 	}
 
 	void my_dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream)

@@ -176,7 +176,7 @@ namespace DPMMSubClustersTest
 
 	TEST(local_clusters_actions_test, should_split_local)
 	{
-		MatrixXd points;
+		MatrixXd points = MatrixXd::Random(2, 2);
 		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
 		gp->init(10, points, NULL, prior_type::Gaussian);
 		gp->gen = std::make_unique<myGen>();

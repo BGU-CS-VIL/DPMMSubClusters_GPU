@@ -58,11 +58,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;opencv;cnpy;MIToolbox/include;jsoncpp/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;install/opencv/include;cnpy;MIToolbox/include;jsoncpp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart_static.lib;cublas.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_world343.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform);$(CUDA_PATH_V11_2)\lib\$(Platform);$(MSBuildProjectDirectory)\opencv;$(MSBuildProjectDirectory)\zlib\out\build\x64-Release</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)/DPMMSubClusters.exe</OutputFile>
     </Link>
@@ -83,6 +82,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <AdditionalDependencies>cudart_static.lib;cublas.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;zlib.lib;install\opencv\x64\vc16\lib\opencv_world452d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
       <Runtime>MTd</Runtime>
@@ -96,7 +96,7 @@
       </Command>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy /y "$(ProjectDir)install/opencv/x64/vc16/bin\*.dll" "$(TargetDir)"
 xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -111,6 +111,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>cudart_static.lib;cublas.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;zlib.lib;install\opencv\x64\vc16\lib\opencv_world452.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
       <Runtime>MT</Runtime>
@@ -124,7 +125,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
       </Command>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /y "$(ProjectDir)opencv\*.dll" "$(TargetDir)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy /y "$(ProjectDir)install/opencv/x64/vc16/bin\*.dll" "$(TargetDir)"
 xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
     <Bscmake>
@@ -244,7 +245,6 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
   </ItemGroup>
   <ItemGroup>
     <None Include="..\DPMMSubClustersTest\mnm_data.npy" />
-    <None Include="opencv\opencv_world343.dll" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
