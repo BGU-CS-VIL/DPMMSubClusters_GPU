@@ -239,12 +239,12 @@ if (WIN32)
     add_custom_command(TARGET DPMMSubClusters POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
+        ${CMAKE_BINARY_DIR}/Release)
 
     add_custom_command(TARGET DPMMSubClusters POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
+        ${CMAKE_BINARY_DIR}/Debug)
 endif(WIN32)
 
 if (UNIX)

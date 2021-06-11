@@ -5,7 +5,7 @@ CMAKE_GENERATOR_OPTIONS=-G"Visual Studio 16 2019"
 #CMAKE_GENERATOR_OPTIONS=(-G"Visual Studio 16 2019" -A x64)  # CMake 3.14+ is required
 if [  ! -d "$myRepo/opencv"  ]; then
     echo "cloning opencv"
-    git clone https://github.com/opencv/opencv.git
+	git clone --single-branch --branch 4.5.2 https://github.com/opencv/opencv.git
 else
     cd opencv
     git checkout -- CMakeLists.txt
@@ -14,7 +14,8 @@ else
 fi
 if [  ! -d "$myRepo/opencv_contrib"  ]; then
     echo "cloning opencv_contrib"
-    git clone https://github.com/opencv/opencv_contrib.git
+	git clone --single-branch --branch 4.5.2 https://github.com/opencv/opencv_contrib.git
+
 else
     cd opencv_contrib
     git pull --rebase
