@@ -27,7 +27,6 @@ ClusterIndexType module_tests::RandomMess()
 	double** tmean;
 	double** tcov;
 	int N = (int)pow(10, 5);
-	//int N =2;
 	int D = 2;
 	int numClusters = 2;
 	int numIters = 100;
@@ -38,7 +37,7 @@ ClusterIndexType module_tests::RandomMess()
 	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
 	dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
-	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15);
+	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15, labels);
 
 	for (DimensionsType i = 0; i < D; i++)
 	{
@@ -71,10 +70,10 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
 		//CHECK_TIME("module_tests::load_data");
-		utils::load_data(fileName, x);
+		utils::load_data_model(fileName, x);
 		if (stat((fileName + ".labels").c_str(), &buffer) == 0)
 		{
-			utils::load_data(fileName, labels);
+			utils::load_data_labels(fileName, labels);
 		}
 	}
 	else
@@ -172,4 +171,37 @@ void module_tests::CheckMemoryLeak()
 		std::cout << str << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
 	}
+}
+
+ClusterIndexType module_tests::RandomMessAllParams()
+{
+	printf("Testing Module (Random mess all params)");
+	srand(12345);
+	data_generators data_generators;
+	MatrixXd  x;
+	std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
+	double** tmean;
+	double** tcov;
+	int N = 10000;
+	int D = 2;
+	int numClusters = 2;
+	int numIters = 100;
+
+	data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
+	draw::draw_labels("Expected", x, labels);
+
+	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
+
+	dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
+	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15, nullptr, 10, 0.05, std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(2), 5, MatrixXd::Identity(2, 2)));
+
+	for (DimensionsType i = 0; i < D; i++)
+	{
+		delete[] tmean[i];
+	}
+	for (DimensionsType i = 0; i < D; i++)
+	{
+		delete[] tcov[i];
+	}
+	return (ClusterIndexType)(dp.dp_model->group.local_clusters.size());
 }

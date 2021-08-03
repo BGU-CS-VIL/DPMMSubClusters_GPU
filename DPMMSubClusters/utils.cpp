@@ -10,9 +10,13 @@ using namespace std;
 #include "check_time.h"
 
 // We expects the data to be in npy format, return a dict of{ group: items }, each file is a different group
-void utils::load_data(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension)
+void utils::load_data_model(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension)
 {
-	std::string fullPath = fileName + ".npy";
+	std::string fullPath = fileName;
+	if (fullPath.find(".npy") == std::string::npos)
+	{
+		fullPath += ".npy";
+	}
 	cnpy::NpyArray npy_data = cnpy::npy_load(fullPath);
 
 	const int data_row = (int)npy_data.shape[0];
@@ -43,7 +47,7 @@ void utils::load_data(std::string fileName, Eigen::MatrixXd& mat_out, bool swapD
 	}
 }
 
-void utils::load_data(std::string fileName, std::shared_ptr<LabelsType> &vec_out)
+void utils::load_data_labels(std::string fileName, std::shared_ptr<LabelsType> &vec_out)
 {
 	std::string fullPath = fileName + ".labels";
 	cnpy::NpyArray npy_data = cnpy::npy_load(fullPath);
@@ -94,9 +98,9 @@ template<typename T>
 void utils::data_to_mat(const T& data, Eigen::MatrixXd& mat)
 {
 	int l = 0;
-	for (int j = 0; j < mat.cols(); j++)
+	for (int i = 0; i < mat.rows(); i++)
 	{
-		for (int i = 0; i < mat.rows(); i++)
+		for (int j = 0; j < mat.cols(); j++)
 		{
 			mat(i, j) = data[l];
 			l++;
@@ -106,10 +110,10 @@ void utils::data_to_mat(const T& data, Eigen::MatrixXd& mat)
 
 void utils::mat_to_data(const Eigen::MatrixXd& mat, std::vector<double>& data)
 {
-	int l = 0; 
-	for (int i = 0; i < mat.rows(); i++)
+	int l = 0;
+	for (int j = 0; j < mat.cols(); j++)
 	{
-		for (int j = 0; j < mat.cols(); j++)
+		for (int i = 0; i < mat.rows(); i++)
 		{
 			data[l] = mat(i, j);
 			l++;

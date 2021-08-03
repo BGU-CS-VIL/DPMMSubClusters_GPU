@@ -9,10 +9,24 @@
 
 using namespace Eigen;
 
-struct model_hyper_params
+struct model_hyper_params : public IJsonSerializable
 {
 	model_hyper_params() {}
 	model_hyper_params(hyperparams* distribution_hyper_params, double alpha, DimensionsType total_dim) : distribution_hyper_params(distribution_hyper_params), alpha(alpha), total_dim(total_dim) {}
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value distribution_hyper_params_val;
+		distribution_hyper_params->serialize(distribution_hyper_params_val);
+		root["distribution_hyper_params"] = distribution_hyper_params_val;
+
+		root["alpha"] = alpha;
+		root["total_dim"] = total_dim;
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+	
 	std::shared_ptr<hyperparams> distribution_hyper_params;
 	double alpha;
 	DimensionsType total_dim;
@@ -26,7 +40,7 @@ struct model_hyper_params
 	}
 };
 
-class cluster_parameters
+class cluster_parameters : public IJsonSerializable
 {
 public:
 	cluster_parameters() : prior_hyperparams(NULL), distribution(NULL), suff_statistics(NULL), posterior_hyperparams(NULL) {}
@@ -82,6 +96,29 @@ public:
 		}
 	}
 
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value prior_hyperparams_val;
+		prior_hyperparams->serialize(prior_hyperparams_val);
+		root["prior_hyperparams"] = prior_hyperparams_val;
+
+		Json::Value distribution_val;
+		distribution->serialize(distribution_val);
+		root["distribution"] = distribution_val;
+
+		Json::Value suff_statistics_val;
+		suff_statistics->serialize(suff_statistics_val);
+		root["suff_statistics"] = suff_statistics_val;
+
+		Json::Value posterior_hyperparams_val;
+		posterior_hyperparams->serialize(posterior_hyperparams_val);
+		root["posterior_hyperparams"] = posterior_hyperparams_val;
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+
 	std::shared_ptr<hyperparams> prior_hyperparams;
 	std::shared_ptr<distribution_sample> distribution;
 	std::shared_ptr<sufficient_statistics> suff_statistics;
@@ -90,7 +127,7 @@ public:
 
 typedef std::vector<std::pair<bool, double>> Logsublikelihood_hist;
 
-class splittable_cluster_params
+class splittable_cluster_params : public IJsonSerializable
 {
 public:
 	splittable_cluster_params() : cluster_params(NULL), cluster_params_l(NULL), cluster_params_r(NULL), splittable(false) {}
@@ -141,6 +178,43 @@ public:
 		logsublikelihood_hist = scp.logsublikelihood_hist;
 	}
 
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value cluster_params_val;
+		cluster_params->serialize(cluster_params_val);
+		root["cluster_params"] = cluster_params_val;
+
+		Json::Value cluster_params_l_val;
+		cluster_params_l->serialize(cluster_params_l_val);
+		root["cluster_params_l"] = cluster_params_l_val;
+
+		Json::Value cluster_params_r_val;
+		cluster_params_r->serialize(cluster_params_r_val);
+		root["cluster_params_r"] = cluster_params_r_val;
+
+		int size = lr_weights.size();
+		for (int i = 0; i < size; i++)
+		{
+			root["lr_weights"].append(lr_weights[i]);
+		}
+
+		root["splittable"] = splittable;
+
+		size = logsublikelihood_hist.size();
+		for (int i = 0; i < size; i++)
+		{
+			Json::Value pair;
+			pair.append(logsublikelihood_hist[i].first);
+			pair.append(logsublikelihood_hist[i].second);
+			root["logsublikelihood_hist"].append(pair);
+		}
+
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+
 	std::shared_ptr<cluster_parameters> cluster_params;
 	std::shared_ptr<cluster_parameters> cluster_params_l;
 	std::shared_ptr<cluster_parameters> cluster_params_r;
@@ -171,7 +245,7 @@ struct thin_suff_stats
 	std::shared_ptr<sufficient_statistics> r_suff;
 };
 
-struct local_cluster
+struct local_cluster : public IJsonSerializable
 {
 	local_cluster() : cluster_params(NULL), total_dim(0), points_count(0), l_count(0), r_count(0) {}
 
@@ -213,6 +287,22 @@ struct local_cluster
 		l_count = lc.l_count;
 		r_count = lc.r_count;
 	}
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value cluster_params_val;
+		cluster_params->serialize(cluster_params_val);
+		root["cluster_params"] = cluster_params_val;
+
+		root["total_dim"] = total_dim;
+		root["points_count"] = points_count;
+		root["l_count"] = l_count;
+		root["r_count"] = r_count;
+
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
 
 	std::shared_ptr<splittable_cluster_params> cluster_params;
 	DimensionsType total_dim;
@@ -221,12 +311,43 @@ struct local_cluster
 	LabelType r_count;
 };
 
-struct local_group
+struct local_group : public IJsonSerializable
 {
 	local_group() {}
 	local_group(model_hyper_params model_hyperparams, MatrixXd points, LabelsType &labels_subcluster, std::vector<std::shared_ptr<local_cluster>>& local_clusters, std::vector<double> weights) :
 		model_hyperparams(model_hyperparams), points(points), local_clusters(local_clusters), weights(weights) {}
-	
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value model_hyperparams_val;
+		model_hyperparams.serialize(model_hyperparams_val);
+		root["model_hyperparams"] = model_hyperparams_val;
+
+		int size = points.size();
+		double* data = points.data();
+		for (int i = 0; i < size; i++)
+		{
+			root["points"].append(data[i]);
+		}
+
+		size = local_clusters.size();
+		for (int i = 0; i < size; i++)
+		{
+			Json::Value local_cluster_val;
+			local_clusters[i]->serialize(local_cluster_val);
+			root["local_clusters"].append(local_cluster_val);
+		}
+
+		size = weights.size();
+		for (int i = 0; i < size; i++)
+		{
+			root["weights"].append(weights[i]);
+		}
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+
 	LabelType num_labels()
 	{
 		return (LabelType)points.cols();
@@ -260,11 +381,25 @@ public:
 	}
 };
 
-struct dp_parallel_sampling
+struct dp_parallel_sampling : public IJsonSerializable
 {
 	dp_parallel_sampling() {}
 	dp_parallel_sampling(model_hyper_params model_hyperparams, local_group &group) :model_hyperparams(model_hyperparams), group(group) {}
+	virtual void serialize(Json::Value& root)
+	{
+		Json::Value model_hyperparams_val;
+		model_hyperparams.serialize(model_hyperparams_val);
+		root["model_hyperparams"] = model_hyperparams_val;
 
+		Json::Value group_val;
+		group.serialize(group_val);
+		root["group"] = group_val;
+	}
+	virtual void deserialize(Json::Value& root) 
+	{
+		//TODO
+	}
+	
 	model_hyper_params model_hyperparams;
 	local_group group;
 };

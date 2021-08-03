@@ -3,4 +3,12 @@
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>--params_path="E:\VIL\dpmmpython\dpmmpython\modelParams.json" --model_path="E:\VIL\dpmmpython\dpmmpython\modelData.npy" --result_path="result.json"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>--params_path="E:\VIL\dpmmpython\dpmmpython\modelParams.json" --model_path="E:\VIL\dpmmpython\dpmmpython\modelData.npy"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

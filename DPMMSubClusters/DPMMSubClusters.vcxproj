@@ -147,10 +147,13 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClInclude Include="draw.h" />
     <ClInclude Include="global_params.h" />
     <ClInclude Include="hyperparams.h" />
+    <ClInclude Include="IJsonSerializable.h" />
+    <ClInclude Include="jsonSerializer.h" />
     <ClInclude Include="local_clusters_actions.h" />
     <ClInclude Include="distributions\mv_gaussian.h" />
     <ClInclude Include="distributions\multinomial_dist.h" />
     <ClInclude Include="MIToolbox\include\MIToolbox\MutualInformation.h" />
+    <ClInclude Include="modelInfo.h" />
     <ClInclude Include="moduleTypes.h" />
     <ClInclude Include="module_tests.h" />
     <ClInclude Include="priors\multinomial_hyper.h" />
@@ -168,9 +171,11 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <CudaCompile Include="cudaKernel_multinomial.cu" />
     <ClCompile Include="check_time.cpp" />
     <ClCompile Include="cnpy\cnpy.cpp" />
+    <ClCompile Include="IJsonSerializable.cpp" />
     <ClCompile Include="jsoncpp\src\lib_json\json_reader.cpp" />
     <ClCompile Include="jsoncpp\src\lib_json\json_value.cpp" />
     <ClCompile Include="jsoncpp\src\lib_json\json_writer.cpp" />
+    <ClCompile Include="jsonSerializer.cpp" />
     <ClCompile Include="main.cpp">
       <FileType>Document</FileType>
     </ClCompile>
@@ -231,6 +236,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <ClCompile Include="MIToolbox\src\CalculateProbability.c" />
     <ClCompile Include="MIToolbox\src\Entropy.c" />
     <ClCompile Include="MIToolbox\src\MutualInformation.c" />
+    <ClCompile Include="modelInfo.cpp" />
     <ClCompile Include="module_tests.cpp" />
     <ClCompile Include="priors\multinomial_hyper.cpp" />
     <ClCompile Include="priors\multinomial_prior.cpp" />

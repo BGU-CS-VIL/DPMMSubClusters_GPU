@@ -34,6 +34,17 @@ namespace DPMMSubClustersTest
 		EXPECT_EQ((size_t)50000, labels->size());
 	}
 
+	TEST(module_tests_test, RandomMessAllParams)
+	{
+		module_tests mt;
+		ClusterIndexType numClusters = mt.RandomMessAllParams();
+
+		EXPECT_TRUE(numClusters > 1);
+
+		std::string str = "Found: " + std::to_string(numClusters) + " clusters";
+		std::cout << str << std::endl;
+	}
+
 	TEST(module_tests_test, RandomMess10Clusters)
 	{
 		int actualNumClusters = 0;
@@ -164,7 +175,7 @@ namespace DPMMSubClustersTest
 		struct stat buffer;
 		if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 		{
-			utils::load_data(fileName, x);
+			utils::load_data_model(fileName, x);
 		}
 		else
 		{

@@ -23,6 +23,36 @@ public:
 		pmv_gaussian->invChol = invChol;
 		return pmv_gaussian;
 	}
+	virtual void serialize(Json::Value& root)
+	{
+		int size = mu.size();
+		double* data = mu.data();
+		for (int i = 0; i < size; i++)
+		{
+			root["mu"].append(data[i]);
+		}
+
+		size = sigma.size();
+		data = sigma.data();
+		for (int i = 0; i < size; i++)
+		{
+			root["sigma"].append(data[i]);
+		}
+
+		size = invSigma.size();
+		data = invSigma.data();
+		for (int i = 0; i < size; i++)
+		{
+			root["invSigma"].append(data[i]);
+		}
+
+		root["logdetSigma"] = logdetSigma;
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+
 	VectorXd mu;
 	MatrixXd sigma;
 	MatrixXd invSigma;

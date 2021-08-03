@@ -95,3 +95,10 @@ std::shared_ptr<hyperparams> multinomial_prior::create_hyperparams(Json::Value& 
 
 	return result;
 }
+
+std::shared_ptr<hyperparams> multinomial_prior::create_hyperparams()
+{
+	VectorXd alpha_vec(2);
+	alpha_vec << 0.0, 0.0;
+	return std::make_shared<multinomial_hyper>(alpha_vec);
+}

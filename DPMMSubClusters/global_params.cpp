@@ -3,6 +3,8 @@
 #include "multinomial_prior.h"
 #include "niw.h"
 #include "check_time.h"
+#include "niw_hyperparams.h"
+#include "multinomial_hyper.h"
 
 void global_params::init(std::string modelParamsFileName, prior_type priorType)
 {
@@ -21,29 +23,47 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 
 	init_prior(priorType);
 
+	alpha = root.get("alpha", alpha).asDouble();
 	Json::Value hyper_params_value = root["hyper_params"];
-	if (hyper_params_value != NULL)
+	if (!hyper_params_value.isNull())
 	{
 		hyper_params = pPrior->create_hyperparams(hyper_params_value);
 	}
+	else
+	{
+		hyper_params = pPrior->create_hyperparams();
+	}
 
-	iterations = root["iterations"].asInt();
-	initial_clusters = root["initial_clusters"].asInt();
-	alpha = root["alpha"].asDouble();
-	use_verbose = root["use_verbose"].asBool();
-	draw_labels = root["draw_labels"].asBool();
-	should_save_model = root["should_save_model"].asBool();
-	burnout_period = root["burnout_period"].asInt();
-	max_num_of_clusters = root["max_num_of_clusters"].asDouble();
-	outlier_mod = root["outlier_mod"].asDouble();
+	iterations = root.get("iterations", iterations).asInt();
+	initial_clusters = root.get("initial_clusters", initial_clusters).asInt();
+	use_verbose = root.get("use_verbose", use_verbose).asBool();
+	draw_labels = root.get("draw_labels", draw_labels).asBool();
+	should_save_model = root.get("should_save_model", should_save_model).asBool();
+	burnout_period = root.get("burnout_period", burnout_period).asInt();
+	max_num_of_clusters = root.get("max_num_of_clusters", max_num_of_clusters).asDouble();
+	outlier_mod = root.get("outlier_mod", outlier_mod).asDouble();
 	Json::Value outlier_hyper_params_value = root["outlier_hyper_params"];
-	if (outlier_hyper_params_value != NULL)
+	if (!outlier_hyper_params_value.isNull())
 	{
 		outlier_hyper_params = pPrior->create_hyperparams(outlier_hyper_params_value);
 	}
-	unsigned long long randomSeed = root["randomSeed"].asUInt64();
-
+	else
+	{
+		outlier_hyper_params = pPrior->create_hyperparams();
+	}
+	unsigned long long randomSeed = root.get("randomSeed", 0).asUInt64();
 	init_random(randomSeed);
+
+	Json::Value gt_value = root["gt"];
+	if (!gt_value.isNull())
+	{
+		ground_truth = std::make_shared<LabelsType>();
+		for (Json::Value::iterator iter = gt_value.begin(); iter != gt_value.end(); iter++)
+		{
+			ground_truth->push_back(iter->asInt());
+		}
+	}
+
 	cuda = pPrior->get_cuda();
 	numLabels = points.cols();
 	cuda->init(numLabels, points, random_seed);
@@ -54,6 +74,8 @@ void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long r
 	CHECK_TIME("global_params::init");
 	init_prior(priorType);
 	init_random(randomSeed);
+	hyper_params = pPrior->create_hyperparams();
+	outlier_hyper_params = pPrior->create_hyperparams();
 
 	cuda = pPrior->get_cuda();
 	cuda->init(numLabels, all_data, random_seed);

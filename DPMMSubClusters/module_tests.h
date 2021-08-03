@@ -9,6 +9,8 @@ public:
 	ClusterIndexType RandomMessHighDim();
 	void TestingData(std::shared_ptr<LabelsType>&labels);
 	void CheckMemoryLeak();
+	ClusterIndexType RandomMessAllParams();
+
 
 };
 

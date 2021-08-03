@@ -15,6 +15,19 @@ public:
 		return pmultinomial_dist;
 	}
 
+	virtual void serialize(Json::Value& root)
+	{
+		int size = alpha.size();
+		for (int i = 0; i < size; i++)
+		{
+			root["alpha"].append(alpha[i]);
+		}
+	}
+	virtual void deserialize(Json::Value& root)
+	{
+		//TODO
+	}
+
 	std::vector<double> alpha;
 };
 

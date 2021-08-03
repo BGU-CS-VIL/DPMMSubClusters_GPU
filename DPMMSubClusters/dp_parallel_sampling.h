@@ -4,25 +4,10 @@
 #include <vector>
 #include <cfloat>
 #include "ds.h"
+#include "modelInfo.h"
 
 using namespace Eigen;
 
-struct ModelInfo
-{
-	ModelInfo() : dp_model(nullptr) {}
-
-	//	- `dp_model` The DPMM model inferred
-	std::shared_ptr<dp_parallel_sampling> dp_model;
-	//`iter_count` Timing for each iteration
-	std::vector<double> iter_count;
-	//	- `nmi_score_history` NMI score per iteration(if gt suppled)
-	std::vector<double> nmi_score_history;
-	//	- `likelihood_history` Log likelihood per iteration.
-	std::vector<double> likelihood_history;
-
-	//	- `cluster_count_history` Cluster counts per iteration.
-	std::vector<ClusterIndexType> cluster_count_history;
-};
 
 class dp_parallel_sampling_class
 {

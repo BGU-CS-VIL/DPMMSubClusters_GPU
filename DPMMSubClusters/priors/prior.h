@@ -28,6 +28,7 @@ public:
 	virtual prior* do_clone() = 0;
 	virtual std::unique_ptr<cudaKernel> get_cuda() = 0;
 	virtual std::shared_ptr<hyperparams> create_hyperparams(Json::Value& hyper_params_value) = 0;
+	virtual std::shared_ptr<hyperparams> create_hyperparams() = 0;
 
 };
 

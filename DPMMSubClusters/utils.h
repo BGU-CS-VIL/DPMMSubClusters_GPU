@@ -9,8 +9,8 @@
 class utils
 {
 public:
-	static void load_data(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension = true);
-	static void load_data(std::string fileName, std::shared_ptr<LabelsType> &vec_out);
+	static void load_data_model(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension = true);
+	static void load_data_labels(std::string fileName, std::shared_ptr<LabelsType> &vec_out);
 	static void save_data(std::string fileName, const Eigen::MatrixXd& mat);
 	static double log_multivariate_gamma(double x, long D);
 

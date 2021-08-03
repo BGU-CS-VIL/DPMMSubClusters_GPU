@@ -637,6 +637,8 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 	printf("\nNumber of GPUs that will be used: %i\n\n", (int)gpuCapabilities.size());
 
 	numLabels = numLabelsIn;
+	printf("Number of Labels: %i\n", numLabels);
+
 	threads = dim3(512);
 	blocks = dim3(numLabels / threads.x + 1);
 

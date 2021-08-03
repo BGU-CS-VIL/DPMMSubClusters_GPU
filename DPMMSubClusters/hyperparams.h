@@ -1,10 +1,12 @@
 #pragma once
 #include <memory>
+#include "IJsonSerializable.h"
 
-class hyperparams
+class hyperparams : public IJsonSerializable
 {
 public:
 	virtual std::shared_ptr<hyperparams> clone() = 0;
 	virtual ~hyperparams() {}
-
+	virtual void serialize(Json::Value& root) = 0;
+	virtual void deserialize(Json::Value& root) = 0;
 };

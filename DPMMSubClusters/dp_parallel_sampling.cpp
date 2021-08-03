@@ -27,7 +27,7 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 {
 	globalParams = std::make_shared<global_params>();
 
-	utils::load_data(modelDataFileName, globalParams->points);
+	utils::load_data_model(modelDataFileName, globalParams->points);
 	globalParams->init(modelParamsFileName, priorType);
 }
 
@@ -114,7 +114,6 @@ ModelInfo dp_parallel_sampling_class::dp_parallel(
 	globalParams->burnout_period = burnout;
 	globalParams->max_num_of_clusters = max_clusters;
 	globalParams->outlier_mod = outlier_weight;
-	globalParams->outlier_hyper_params = outlier_params;
 	globalParams->outlier_hyper_params = outlier_params;
 	globalParams->ground_truth = gt;
 
@@ -226,6 +225,8 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 	}
 
 //	globalParams->clusterInfos.print();
+	
+	globalParams->cuda->get_labels(modelInfo.labels);
 
 	return modelInfo;
 }

@@ -7,6 +7,7 @@
   "should_save_mode": false,
   "burnout_period": 20,
   "max_num_of_clusters": 1000000000,
+  "outlier_mod": 0,
   "hyper_params": {
     //Example for Multinomial
     //List of dimension 100

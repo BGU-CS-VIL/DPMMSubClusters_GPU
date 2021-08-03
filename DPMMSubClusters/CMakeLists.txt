@@ -146,6 +146,12 @@ add_executable(DPMMSubClusters
   ${CMAKE_SOURCE_DIR}/sufficient_statistics.h
   ${CMAKE_SOURCE_DIR}/utils.cpp
   ${CMAKE_SOURCE_DIR}/utils.h
+  ${CMAKE_SOURCE_DIR}/IJsonSerializable.cpp
+  ${CMAKE_SOURCE_DIR}/IJsonSerializable.h
+  ${CMAKE_SOURCE_DIR}/jsonSerializer.cpp
+  ${CMAKE_SOURCE_DIR}/jsonSerializer.h
+  ${CMAKE_SOURCE_DIR}/modelInfo.cpp
+  ${CMAKE_SOURCE_DIR}/modelInfo.h
   ${PRIORS_DIR}/multinomial_prior.cpp
   ${PRIORS_DIR}/multinomial_prior.h
   ${PRIORS_DIR}/multinomial_hyper.cpp
