@@ -4,7 +4,8 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-11/bin/nvcc")
+    # set(CMAKE_CUDA_COMPILER "/usr/lib/nvidia-cuda-toolkit/bin/nvcc")
+    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-11.3/bin/nvcc")
     set(CMAKE_CUBLAS_DIR "/usr/local/cuda-11.3/lib64")
 endif (UNIX)
 
@@ -108,7 +109,7 @@ include_directories(${PRIORS_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 
 if (UNIX)
-    find_package(OpenCV REQUIRED)
+    # find_package(OpenCV REQUIRED)
 endif (UNIX)
 
 
@@ -194,7 +195,9 @@ add_subdirectory(zlib)
 #target_link_libraries(cnpy ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 #install(TARGETS "cnpy" LIBRARY DESTINATION lib PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+if (WIN32)
+	target_link_libraries(DPMMSubClusters ${OpenCV_LIBS})
+endif(WIN32)
 
 if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h AND EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h.included)
     message(STATUS "Renaming")

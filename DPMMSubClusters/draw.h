@@ -8,10 +8,11 @@
 #include <memory>
 #include "Eigen/Dense"
 #include "moduleTypes.h"
+#ifdef WIN32
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
-
+#endif //WIN32
 using namespace Eigen;
 
 class draw
@@ -19,6 +20,7 @@ class draw
 public:	
 	static void draw_labels(const char* window, MatrixXd &x, std::shared_ptr<LabelsType> &labels)
 	{
+#ifdef WIN32
 		const int width = 800;
 		const int height = 800;
 
@@ -88,6 +90,7 @@ public:
 		cv::namedWindow(window, cv::WINDOW_AUTOSIZE);
 		cv::imshow(window, image);
 		cv::waitKey(1);		
+#endif //WIN32
 	}
 };
 
