@@ -587,20 +587,27 @@ __global__ void transposeGPUcoalescing(double* matIn, int n, int m, double* matT
 //	printf("done\n");
 //}
 
-void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed)
+void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool use_verbose)
 {
-	printf("Init cuda\n");
+	if (use_verbose)
+	{
+		printf("Init cuda\n");
+	}
 
 	int numGPU;
 	int driverVersion = 0, runtimeVersion = 0;
 
 	lastDevice = 0;
+	use_verbose = use_verbose;
 
 	runCuda(cudaGetDeviceCount(&numGPU));
 	numGPU = 1;
 
-	printf("Number of GPUs: %i\n", numGPU);
-	printf("number of host CPUs:\t%d\n", omp_get_num_procs());
+	if (use_verbose)
+	{
+		printf("Number of GPUs: %i\n", numGPU);
+		printf("number of host CPUs:\t%d\n", omp_get_num_procs());
+	}
 
 	for (int i = 0; i < numGPU; i++)
 	{
@@ -611,9 +618,12 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		cudaDriverGetVersion(&driverVersion);
 		cudaRuntimeGetVersion(&runtimeVersion);
 
-		printf("\nDevice %d: \"%s\"\n", i, deviceProp.name);
-		printf("CUDA Driver Version / Runtime Version          %d.%d / %d.%d\n", driverVersion / 1000, (driverVersion % 100) / 10, runtimeVersion / 1000, (runtimeVersion % 100) / 10);
-		printf("CUDA Capability Major/Minor version number:    %d.%d\n", deviceProp.major, deviceProp.minor);
+		if (use_verbose)
+		{
+			printf("\nDevice %d: \"%s\"\n", i, deviceProp.name);
+			printf("CUDA Driver Version / Runtime Version          %d.%d / %d.%d\n", driverVersion / 1000, (driverVersion % 100) / 10, runtimeVersion / 1000, (runtimeVersion % 100) / 10);
+			printf("CUDA Capability Major/Minor version number:    %d.%d\n", deviceProp.major, deviceProp.minor);
+		}
 
 		int* dummy;
 		cudaStream_t stream;
@@ -634,10 +644,16 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		cudaStreamDestroy(stream);
 	}
 		
-	printf("\nNumber of GPUs that will be used: %i\n\n", (int)gpuCapabilities.size());
+	if (use_verbose)
+	{
+		printf("\nNumber of GPUs that will be used: %i\n\n", (int)gpuCapabilities.size());
+	}
 
 	numLabels = numLabelsIn;
-	printf("Number of Labels: %i\n", numLabels);
+	if (use_verbose)
+	{
+		printf("Number of Labels: %i\n", numLabels);
+	}
 
 	threads = dim3(512);
 	blocks = dim3(numLabels / threads.x + 1);
@@ -684,26 +700,26 @@ void cudaKernel::optimize_kernels(gpuCapability& gpu)
 	runCuda(cudaStreamCreate(&stream));
 
 	gpu.matrixMultiply = &do_matrixMultiply1;
-	do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream);
+	do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
 	runCuda(cudaStreamSynchronize(stream));
 
 	clock_t begin = clock();
 	for (int i = 0; i < numIter; i++)
 	{
-		do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream);
+		do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
 	}
 	runCuda(cudaStreamSynchronize(stream));
 	clock_t end = clock();
 	double took1 = double(end - begin);
 
 	gpu.matrixMultiply = &do_matrixMultiply2;
-	do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream);
+	do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
 	runCuda(cudaStreamSynchronize(stream));
 
 	begin = clock();
 	for (int i = 0; i < numIter; i++)
 	{
-		do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream);
+		do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
 	}
 	runCuda(cudaStreamSynchronize(stream));
 	end = clock();
@@ -713,27 +729,39 @@ void cudaKernel::optimize_kernels(gpuCapability& gpu)
 	runCuda(cudaFree(d_B));
 	runCuda(cudaStreamDestroy(stream));
 
-	printf("multiplie_matrix_by_transpose kernel:\n");
-	printf("  Kernel 1 took: %f\n", took1);
-	printf("  Kernel 2 took: %f\n", took2);
-	printf("  Using kernel: #");
+	if (use_verbose)
+	{
+		printf("multiplie_matrix_by_transpose kernel:\n");
+		printf("  Kernel 1 took: %f\n", took1);
+		printf("  Kernel 2 took: %f\n", took2);
+		printf("  Using kernel: #");
+	}
 	if (took1 < took2)
 	{
 		gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose1;
 		gpu.matrixMultiply = &do_matrixMultiply1;
-		printf("1\n");
+		if (use_verbose)
+		{
+			printf("1\n");
+		}
 	}
 	else
 	{
 		gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose2;
 		gpu.matrixMultiply = &do_matrixMultiply2;
-		printf("2\n");
+		if (use_verbose)
+		{
+			printf("2\n");
+		}
 	}
 }
 
 void cudaKernel::release()
 {
-	printf("Release cuda\n");
+	if (use_verbose)
+	{
+		printf("Release cuda\n");
+	}
 
 	for (std::map<int, gpuCapability>::iterator iter = gpuCapabilities.begin(); iter != gpuCapabilities.end(); iter++)
 	{
@@ -807,7 +835,7 @@ void cudaKernel::sample_log_cat_array_sub_cluster(
 	cudaStream_t& stream,
 	int deviceId)
 {
-	CHECK_TIME("cudaKernel::sample_log_cat_array_sub_cluster");
+	CHECK_TIME("cudaKernel::sample_log_cat_array_sub_cluster", use_verbose);
 	double* d_y;
 	int* d_a;
 	int* d_b;
@@ -858,7 +886,7 @@ void cudaKernel::sample_log_cat_array(
 
 void cudaKernel::sample_sub_clusters_worker(LabelType label, int* d_indices, int &indicesSize, cudaStream_t& stream, int deviceId)
 {
-	CHECK_TIME("cudaKernel::sample_sub_clusters_worker");
+	CHECK_TIME("cudaKernel::sample_sub_clusters_worker", use_verbose);
 	int* d_indicesSize;
 	runCuda(cudaMallocAsync(&d_indicesSize, sizeof(int), stream));
 	runCuda(cudaMemsetAsync(d_indicesSize, 0, sizeof(int), stream));
@@ -876,7 +904,7 @@ void cudaKernel::create_sufficient_statistics(
 	const std::shared_ptr<hyperparams>& posterior,
 	std::shared_ptr<thin_suff_stats>& tss)
 {
-	CHECK_TIME("cudaKernel::create_sufficient_statistics");
+	CHECK_TIME("cudaKernel::create_sufficient_statistics", use_verbose);
 
 	int deviceId = peak_first_device();
 	cudaStream_t stream;
@@ -954,14 +982,14 @@ void cudaKernel::create_sufficient_statistics(
 //Call to the best kernel best of the dimensions that are needed in this run
 void cudaKernel::multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M, int deviceId, cudaStream_t& stream)
 {
-	gpuCapabilities[deviceId].do_multiplie_matrix_by_transpose(d_A, d_B, N, M, gpuCapabilities[deviceId], stream);
+	gpuCapabilities[deviceId].do_multiplie_matrix_by_transpose(d_A, d_B, N, M, gpuCapabilities[deviceId], stream, use_verbose);
 }
 
 // A -> (N x M) 
 //This method is good from low dimensions
-void cudaKernel::do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int N, int M, gpuCapability &gpu, cudaStream_t& stream)
+void cudaKernel::do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int N, int M, gpuCapability &gpu, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose1");
+	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose1", use_verbose);
 	dim3 blocks_size = dim3(N / TILE_DIM + 1, M / TILE_DIM + 1);
 	dim3 threads = dim3(TILE_DIM, BLOCK_ROWS);
 
@@ -969,15 +997,15 @@ void cudaKernel::do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int
 	runCuda(cudaMallocAsync(&d_A_T, sizeof(double) * N * M, stream));
 	transposeGPUcoalescing << <blocks_size, threads, 0, stream >> > (d_A, N, M, d_A_T);
 	runCuda(cudaPeekAtLastError());
-	gpu.matrixMultiply(d_A, d_A_T, d_B, N, M, N, stream);
+	gpu.matrixMultiply(d_A, d_A_T, d_B, N, M, N, stream, use_verbose);
 	runCuda(cudaFreeAsync(d_A_T, stream));
 }
 
 // A -> (N x M) 
 //This method is good from high dimensions
-void cudaKernel::do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t &stream)
+void cudaKernel::do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t &stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose2");
+	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose2", use_verbose);
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	runCuda(cublasSetStream(handle, stream));
@@ -991,7 +1019,7 @@ void cudaKernel::do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int
 //C = A*B * (A* B)T
 void cudaKernel::multiplie_matrix_for_inverseWishart(const MatrixXd& A, const MatrixXd& B, MatrixXd& C)
 {
-	CHECK_TIME("cudaKernel::multiplie_matrix_for_inverseWishart");
+	CHECK_TIME("cudaKernel::multiplie_matrix_for_inverseWishart", use_verbose);
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	double alpha = 1.0;
@@ -1035,7 +1063,7 @@ void cudaKernel::create_suff_stats_dict_worker(
 	Eigen::MatrixXd& pts1,
 	Eigen::MatrixXd& pts2)
 {
-	CHECK_TIME("cudaKernel::create_suff_stats_dict_worker");
+	CHECK_TIME("cudaKernel::create_suff_stats_dict_worker", use_verbose);
 	int deviceId = peak_first_device();
 	int pointsRows = gpuCapabilities[deviceId].pointsRows;
 	int* d_indices;
@@ -1270,9 +1298,9 @@ void cudaKernel::get_sub_labels_count(int &l, int &r)
 }
 
 // C(m,k) = A(m,n) * B(n,k)
-void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream)
+void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_matrixMultiply1");
+	CHECK_TIME("cudaKernel::do_matrixMultiply1", use_verbose);
 	const int BlockSize = 16;
 
 	unsigned int grid_rows = (m + BlockSize - 1) / BlockSize;
@@ -1288,9 +1316,9 @@ void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m
 }
 
 // C(m,k) = A(m,n) * B(n,k)
-void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream)
+void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_matrixMultiply2");
+	CHECK_TIME("cudaKernel::do_matrixMultiply2", use_verbose);
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	runCuda(cublasSetStream(handle, stream));
@@ -1320,7 +1348,7 @@ void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m
 
 void cudaKernel::dcolwise_dot_all_sub_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int r_offset, cudaStream_t& stream)
 {
-	CHECK_TIME("cudaKernel::dcolwise_dot_all_sub_labels");
+	CHECK_TIME("cudaKernel::dcolwise_dot_all_sub_labels", use_verbose);
 	dcolwise_dot_all_kernel << <blocks, threads, 0, stream >> > (maxIdx, rows, d_a, d_b, scalar, d_r, r_offset);
 }
 
@@ -1343,7 +1371,7 @@ typedef struct
 
 void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::shared_ptr<thin_cluster_params>>& cluster_params, int dim)
 {
-	CHECK_TIME("cudaKernel::create_subclusters_labels");
+	CHECK_TIME("cudaKernel::create_subclusters_labels", use_verbose);
 //	omp_set_num_threads(20);
 //	#pragma omp parallel
 	{
@@ -1358,7 +1386,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 1");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 1", use_verbose);
 		for (int i = 0; i < numClusters; i++)
 	{
 		//		unsigned int i = omp_get_thread_num();
@@ -1375,7 +1403,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 2");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 2", use_verbose);
 		for (int i = 0; i < numClusters; i++)
 		{
 			//		unsigned int i = omp_get_thread_num();
@@ -1395,12 +1423,12 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	}
 
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 3");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 3", use_verbose);
 		//omp_set_num_threads(numClusters);
 		//#pragma omp parallel for
 		for (int i = 0; i < numClusters; i++)
 		{
-			CHECK_TIME("cudaKernel::create_subclusters_labels 3.5");
+			CHECK_TIME("cudaKernel::create_subclusters_labels 3.5", use_verbose);
 	//		cudaSetDevice(plan[i].deviceId);
 			runCuda(cudaStreamSynchronize(plan[i].stream));
 		}}
@@ -1408,7 +1436,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 4");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 4", use_verbose);
 		for (int i = 0; i < numClusters; i++)
 		{
 			//run on one GPU (plan[0].deviceId) - maybe could be optimized
@@ -1446,7 +1474,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 5");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 5", use_verbose);
 		for (int i = 0; i < numClusters; i++)
 		{
 			cudaSetDevice(plan[i].deviceId);
@@ -1456,7 +1484,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 6");
+		CHECK_TIME("cudaKernel::create_subclusters_labels 6", use_verbose);
 		for (int i = 0; i < numClusters; i++)
 		{
 			cudaSetDevice(plan[i].deviceId);
@@ -1640,7 +1668,7 @@ void cudaKernel::sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaS
 
 void cudaKernel::inverse_matrix(const MatrixXd &A, MatrixXd& B)
 {
-	CHECK_TIME("cudaKernel::inverse_matrix");
+	CHECK_TIME("cudaKernel::inverse_matrix", use_verbose);
 	int blocksize = 8;
 	int n = A.rows();
 	int ddsize = n * n * sizeof(double);

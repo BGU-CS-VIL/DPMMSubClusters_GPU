@@ -32,7 +32,7 @@ namespace DPMMSubClustersTest
 			log_likelihood_array(i, 1) = 0.6;
 		}
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
@@ -85,7 +85,7 @@ namespace DPMMSubClustersTest
 			log_likelihood_array(i, 1) = 0.4;
 		}
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
@@ -143,7 +143,7 @@ namespace DPMMSubClustersTest
 			log_likelihood_array(i, 1) = 0.6;
 		}
 
-		object->init(numLabels, points, 12345);
+		object->init(numLabels, points, 12345, true);
 		int deviceId = object->peak_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
@@ -227,7 +227,7 @@ namespace DPMMSubClustersTest
 		Eigen::VectorXd lr_weights(2);
 		lr_weights << 0.5, 0.5;
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		cudaStream_t stream;
 
@@ -303,7 +303,7 @@ namespace DPMMSubClustersTest
 		Eigen::VectorXd lr_weights(2);
 		lr_weights << 0.5, 0.5;
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 
 		//First set values for sub labels
 		int deviceId = object->peak_first_device();
@@ -394,7 +394,7 @@ namespace DPMMSubClustersTest
 		lr_weights << 0.5, 0.5;
 		MatrixXd points(2, numLabels);
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		double leftProb = 0.5;
 		for (int i = 0; i < numLabels; i++)
@@ -497,7 +497,7 @@ namespace DPMMSubClustersTest
 			indices.push_back(i);
 		}
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		cudaStream_t stream;
 		object->create_stream(stream);
@@ -591,7 +591,7 @@ namespace DPMMSubClustersTest
 			indices.push_back(i);
 		}
 
-		object->init(numLabels, points, NULL);
+		object->init(numLabels, points, NULL, true);
 		int deviceId = object->peak_first_device();
 		cudaStream_t stream;
 		object->create_stream(stream);
@@ -667,7 +667,7 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 		cudaStream_t stream;
 		myCudaKernel_gaussian object;
-		object.init(numLabels, points, NULL);
+		object.init(numLabels, points, NULL, true);
 		int m = 3;
 		int n = 2;
 		int k = 3;
@@ -710,7 +710,7 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 		cudaStream_t stream;
 		myCudaKernel_gaussian object;
-		object.init(numLabels, points, NULL);
+		object.init(numLabels, points, NULL, true);
 		int m = 3;
 		int n = 2;
 		int k = numLabels;
@@ -751,7 +751,7 @@ namespace DPMMSubClustersTest
 		MatrixXd x(2, 10);
 		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
 		myCudaKernel_gaussian cuda;
-		cuda.init(10, x, 12345);
+		cuda.init(10, x, 12345, true);
 		VectorXd r(10);
 		VectorXd mu(2);
 		mu << -8.180686, -2.1489322;
@@ -793,7 +793,7 @@ namespace DPMMSubClustersTest
 		MatrixXd x(2, 10);
 		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
 		myCudaKernel_gaussian cuda;
-		cuda.init(10, x, 12345);
+		cuda.init(10, x, 12345, true);
 		VectorXd r(10);
 		VectorXd mu(2);
 		mu << -8.180686, -2.1489322;
@@ -836,7 +836,7 @@ namespace DPMMSubClustersTest
 		MatrixXd x(2, 10);
 		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
 		myCudaKernel_gaussian cuda;
-		cuda.init(10, x, 12345);
+		cuda.init(10, x, 12345, true);
 		mv_gaussian object;
 		VectorXd r1(10);
 		VectorXd r2(10);
@@ -879,7 +879,7 @@ namespace DPMMSubClustersTest
 		MatrixXd x(2, 10);
 		x << 7.111513, 6.5072656, 7.656911, 7.021403, 6.395694, -14.513991, -16.44812, -15.126435, 11.43946, 5.0940423, 2.884489, 3.4449763, 2.4345767, 1.152309, 3.076971, -5.085796, -5.293715, -5.330345, 9.191501, -5.4205728;
 		myCudaKernel_gaussian cuda;
-		cuda.init(10, x, 12345);
+		cuda.init(10, x, 12345, true);
 		VectorXd r(10);
 		VectorXd mu(2);
 		mu << -8.180686, -2.1489322;
@@ -929,7 +929,7 @@ namespace DPMMSubClustersTest
 		B << 0.5, 0.6, 0.7, 0.8, 0.9, 0.10, 0.11, 0.12, 0.13;
 		VectorXd C1;
 
-		cuda.init(0, x, NULL);
+		cuda.init(0, x, NULL, true);
 		cudaStream_t stream;
 		int deviceId = cuda.peak_first_device();
 		double* d_A;
@@ -970,7 +970,7 @@ namespace DPMMSubClustersTest
 		MatrixXd B = MatrixXd::Random(50, 50);
 		VectorXd C1;
 
-		cuda.init(0, x, NULL);
+		cuda.init(0, x, NULL, true);
 		cudaStream_t stream;
 		int deviceId = cuda.peak_first_device();
 		double* d_A;
@@ -1012,7 +1012,7 @@ namespace DPMMSubClustersTest
 		MatrixXd B2 = scalar * (A + A.transpose());
 		MatrixXd x(5, 10);
 
-		cuda.init(0, x, NULL);
+		cuda.init(0, x, NULL, true);
 		cudaStream_t stream;
 		int deviceId = cuda.peak_first_device();
 		double* d_A;
@@ -1049,7 +1049,7 @@ namespace DPMMSubClustersTest
 		VectorXd B2 = A.rowwise().sum();
 		MatrixXd x(rows, cols);
 
-		cuda.init(0, x, NULL);
+		cuda.init(0, x, NULL, true);
 		cudaStream_t stream;
 		int deviceId = cuda.peak_first_device();
 		double* d_A;
@@ -1083,7 +1083,7 @@ namespace DPMMSubClustersTest
 		MatrixXd B2 = A * A.transpose();
 		MatrixXd x(rows, cols);
 
-		cuda.init(0, x, NULL);
+		cuda.init(0, x, NULL, true);
 		cudaStream_t stream;
 		int deviceId = cuda.peak_first_device();
 		double* d_A;
@@ -1112,7 +1112,7 @@ namespace DPMMSubClustersTest
 		int numLabels = (int)pow(10, 1);
 		MatrixXd points(2, numLabels);
 		myCudaKernel_gaussian object;
-		object.init(numLabels, points, NULL);
+		object.init(numLabels, points, NULL, true);
 		int m = 3;
 		int n = 2;
 		int k = 4;

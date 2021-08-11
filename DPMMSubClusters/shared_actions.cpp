@@ -9,7 +9,7 @@ using namespace std;
 
 void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_params>& params, double alpha, bool first)
 {
-	CHECK_TIME("shared_actions::sample_cluster_params");
+	CHECK_TIME("shared_actions::sample_cluster_params", globalParams->use_verbose);
 	std::vector<double> points_count;
 
 	params->cluster_params->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params->prior_hyperparams, globalParams->gen, globalParams->cuda) : globalParams->pPrior->sample_distribution(params->cluster_params->posterior_hyperparams, globalParams->gen, globalParams->cuda);

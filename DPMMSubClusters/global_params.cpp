@@ -66,19 +66,19 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 
 	cuda = pPrior->get_cuda();
 	numLabels = points.cols();
-	cuda->init(numLabels, points, random_seed);
+	cuda->init(numLabels, points, random_seed, use_verbose);
 }
 
 void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
 {
-	CHECK_TIME("global_params::init");
+	CHECK_TIME("global_params::init", use_verbose);
 	init_prior(priorType);
 	init_random(randomSeed);
 	hyper_params = pPrior->create_hyperparams();
 	outlier_hyper_params = pPrior->create_hyperparams();
 
 	cuda = pPrior->get_cuda();
-	cuda->init(numLabels, all_data, random_seed);
+	cuda->init(numLabels, all_data, random_seed, use_verbose);
 	numLabels = numLabels;
 	points = all_data;
 }

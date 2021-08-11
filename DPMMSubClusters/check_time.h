@@ -8,25 +8,33 @@ using namespace std;
 class check_time
 {
 public:
-	check_time(std::string msg)
+	check_time(std::string msg, bool use_verbose)
 	{
-		message = msg;
-		begin = clock();
+		verbose = use_verbose;
+		if (verbose)
+		{
+			message = msg;
+			begin = clock();
+		}
 	}
 
 	~check_time()
 	{
-		clock_t end = clock();
-		double took = double(end - begin) / CLOCKS_PER_SEC;
-		if (took > 0.1)
+		if (verbose)
 		{
-			std::cout << message << " took:" << took << "[seconds]" << std::endl;
+			clock_t end = clock();
+			double took = double(end - begin) / CLOCKS_PER_SEC;
+			if (took > 0.1)
+			{
+				std::cout << message << " took:" << took << "[seconds]" << std::endl;
+			}
 		}
 	}
 
 private:
 	std::string message;
 	clock_t begin;
+	bool verbose;
 };
 
-#define CHECK_TIME(msg) check_time auto_check_time(msg);
+#define CHECK_TIME(msg, use_verbose) check_time auto_check_time(msg, use_verbose);

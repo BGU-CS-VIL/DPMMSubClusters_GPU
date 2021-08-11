@@ -23,7 +23,7 @@ using namespace std;
 //[Normal Inverse Wishart](https://en.wikipedia.org/wiki/Normal-inverse-Wishart_distribution)
 std::shared_ptr<hyperparams> niw::calc_posterior(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<sufficient_statistics>& suff_statistics)
 {
-	CHECK_TIME("niw::calc_posterior");
+	//CHECK_TIME("niw::calc_posterior");
 	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 
 	if (suff_statistics->N == 0)
@@ -52,19 +52,19 @@ std::shared_ptr<hyperparams> niw::calc_posterior(const std::shared_ptr<hyperpara
 
 MatrixXd niw::inverseWishart(const MatrixXd& sigma, double v)
 {
-	CHECK_TIME("niw::inverseWishart");
+	//CHECK_TIME("niw::inverseWishart");
 	return stats::rinvwish(sigma, v);
 }
 
 MatrixXd niw::wishart(const MatrixXd& sigma, double v)
 {
-	CHECK_TIME("niw::wishart");
+	//CHECK_TIME("niw::wishart");
 	return stats::rwish(sigma, v);
 }
 
 void niw::inverseWishartNoInverse(const MatrixXd& sigma, double v, std::unique_ptr < cudaKernel >& cuda, MatrixXd& matOut)
 {
-	CHECK_TIME("niw::inverseWishartNoInverse");
+	//CHECK_TIME("niw::inverseWishartNoInverse");
 	if (cuda == NULL)
 	{
 		matOut = stats::rinvwish(sigma, v, false, false);
@@ -95,13 +95,13 @@ void niw::inverseWishartNoInverse(const MatrixXd& sigma, double v, std::unique_p
 
 double* niw::multinormal_sample(int n, double mu[], double r[])
 {
-	CHECK_TIME("niw::multinormal_sample");
+	//CHECK_TIME("niw::multinormal_sample");
 	return r8vec_multinormal_sample(n, mu, r);
 }
 
 std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_ptr<hyperparams>& pHyperparams, std::unique_ptr<std::mt19937>& gen, std::unique_ptr < cudaKernel >& cuda)
 {
-	CHECK_TIME("niw::sample_distribution");
+	//CHECK_TIME("niw::sample_distribution");
 	niw_hyperparams* pNiw_hyperparams;
 
 	if (pHyperparams == NULL)
@@ -133,7 +133,7 @@ std::shared_ptr<distribution_sample> niw::sample_distribution(const std::shared_
 
 std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
 {
-	CHECK_TIME("niw::create_sufficient_statistics");
+	//CHECK_TIME("niw::create_sufficient_statistics");
 	if (points.cols() == 0)
 	{
 		niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
@@ -142,7 +142,7 @@ std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const s
 
 	MatrixXd S;
 	{
-		CHECK_TIME("niw::create_sufficient_statistics, calc S");
+		//CHECK_TIME("niw::create_sufficient_statistics, calc S");
 		S = points * points.adjoint();
 		S = 0.5 * (S + S.adjoint());
 	}
@@ -152,7 +152,7 @@ std::shared_ptr<sufficient_statistics> niw::create_sufficient_statistics(const s
 
 double niw::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior_hyper, const std::shared_ptr<sufficient_statistics>& suff_stats)
 {
-	CHECK_TIME("niw::log_marginal_likelihood");
+	//CHECK_TIME("niw::log_marginal_likelihood");
 	niw_hyperparams* pNiw_hyperparams = dynamic_cast<niw_hyperparams*>(hyperParams.get());
 	niw_hyperparams* pPosterior_hyper = dynamic_cast<niw_hyperparams*>(posterior_hyper.get());
 	int D = (int)suff_stats->points_sum.size();
@@ -160,13 +160,13 @@ double niw::log_marginal_likelihood(const std::shared_ptr<hyperparams>& hyperPar
 
 	double logdet_niw;
 	{
-		CHECK_TIME("niw::log_marginal_likelihood logdet_niw");
+		//CHECK_TIME("niw::log_marginal_likelihood logdet_niw");
 
 		logdet_niw = logdet(pNiw_hyperparams->psi, true);
 	}
 	double logdet_posterior;
 	{
-		CHECK_TIME("niw::log_marginal_likelihood logdet_posterior");
+		//CHECK_TIME("niw::log_marginal_likelihood logdet_posterior");
 		logdet_posterior = logdet(pPosterior_hyper->psi, true);
 	}
 

@@ -91,6 +91,13 @@ int main(int argc, char** argv)
 			}
 		}
 
+		size = dp.nmi_score_history.size();
+		data = dp.nmi_score_history.data();
+		for (int i = 0; i < size; i++)
+		{
+			root["nmi_score_history"].append(data[i]);
+		}
+
 		Json::StyledWriter writer;
 		output = writer.write(root);
 		out << output;

@@ -24,8 +24,8 @@ struct gpuCapability
 	int* d_j1;
 	int* d_j2;
 
-	void (*do_multiplie_matrix_by_transpose)(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream);
-	void (*matrixMultiply)(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
+	void (*do_multiplie_matrix_by_transpose)(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream, bool use_verbose);
+	void (*matrixMultiply)(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose);
 
 };
 
@@ -34,7 +34,7 @@ class cudaKernel
 {
 public:
 	virtual ~cudaKernel() {}
-	void init(int numLabels, MatrixXd& points, unsigned long long seed);
+	void init(int numLabels, MatrixXd& points, unsigned long long seed, bool use_verbose);
 	void optimize_kernels(gpuCapability& gpu);
 	void release();
 	int peak_first_device();
@@ -87,8 +87,8 @@ public:
 		std::shared_ptr<sufficient_statistics>& ss,
 		int deviceId) = 0;
 	void multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, int M, int deviceId, cudaStream_t& stream);
-	static void do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream);
-	static void do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream);
+	static void do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream, bool use_verbose);
+	static void do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream, bool use_verbose);
 	void multiplie_matrix_for_inverseWishart(const MatrixXd& A, const MatrixXd& B, MatrixXd& C);
 
 	virtual void create_suff_stats_dict_worker(
@@ -108,9 +108,10 @@ protected:
 	int numLabels;
 	std::map<int, gpuCapability> gpuCapabilities;
 	int lastDevice;
+	bool use_verbose;
 
-	static void do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
-	static void do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream);
+	static void do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose);
+	static void do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose);
 	void dcolwise_dot_all_sub_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int r_offset, cudaStream_t& stream);
 	void dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, double weight, cudaStream_t& stream);
 

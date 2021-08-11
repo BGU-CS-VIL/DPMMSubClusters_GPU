@@ -31,7 +31,7 @@ namespace DPMMSubClustersTest
 		cudaStream_t stream;
 
 		double* d_r;
-		cuda.init(10, x, NULL);
+		cuda.init(10, x, NULL, true);
 		int deviceId = cuda.peak_first_device();
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);

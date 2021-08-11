@@ -51,7 +51,7 @@ void cudaKernel_gaussian::log_likelihood_sub_labels(
 	cudaStream_t& stream,
 	int deviceId)
 {
-	CHECK_TIME("cudaKernel_gaussian::log_likelihood_sub_labels");
+	CHECK_TIME("cudaKernel_gaussian::log_likelihood_sub_labels", use_verbose);
 	mv_gaussian* pDistribution_sample = dynamic_cast<mv_gaussian*>(distribution_sample.get());
 
 	double* d_b;
@@ -145,7 +145,7 @@ void cudaKernel_gaussian::do_create_sufficient_statistics(
 	}
 	else
 	{
-		CHECK_TIME("cudaKernel_gaussian::do_create_sufficient_statistics");
+		CHECK_TIME("cudaKernel_gaussian::do_create_sufficient_statistics", use_verbose);
 
 		double* d_c;
 		runCuda(cudaMallocAsync(&d_c, rows * rows * sizeof(double), stream));

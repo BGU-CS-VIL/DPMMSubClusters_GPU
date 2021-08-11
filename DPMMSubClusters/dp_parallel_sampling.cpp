@@ -48,7 +48,7 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 //Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
 std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(MatrixXd& all_data)
 {
-	CHECK_TIME("dp_parallel_sampling_class::init_model");
+	CHECK_TIME("dp_parallel_sampling_class::init_model", globalParams->use_verbose);
 	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
 
 	dps->group.points = all_data;
@@ -127,7 +127,7 @@ ModelInfo dp_parallel_sampling_class::dp_parallel_from_file()
 
 ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 {
-	CHECK_TIME("dp_parallel_sampling_class::init_and_run_model");
+	CHECK_TIME("dp_parallel_sampling_class::init_and_run_model", globalParams->use_verbose);
 	std::shared_ptr<dp_parallel_sampling> dp_model = init_model(all_data);
 
 	init_first_clusters(dp_model, globalParams->initial_clusters);
@@ -136,7 +136,7 @@ ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 
 ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)
 {
-	CHECK_TIME("dp_parallel_sampling_class::run_model");
+	CHECK_TIME("dp_parallel_sampling_class::run_model", globalParams->use_verbose);
 	ModelInfo	modelInfo;
 	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 	modelInfo.dp_model = dp_model;
@@ -147,7 +147,7 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 
 	for (int i = first_iter; i <= globalParams->iterations; ++i)
 	{
-		CHECK_TIME("Iteration #" + std::to_string(i));
+		CHECK_TIME("Iteration #" + std::to_string(i), globalParams->use_verbose);
 
 		bool final = false;
 		bool no_more_splits = false;

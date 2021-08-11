@@ -39,7 +39,7 @@ statslib_inline
 mT
 rinvwish2(const mT& Psi_par, const pT nu_par)
 {
-    CHECK_TIME("rinvwish2");
+    CHECK_TIME("rinvwish2", false);
     typedef return_t<pT> eT;
     const ullint_t K = mat_ops::n_rows(Psi_par);
 
@@ -65,13 +65,13 @@ statslib_inline
 mT
 rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol, const bool inv_result)
 {
-    CHECK_TIME("rinvwish");
+    CHECK_TIME("rinvwish", false);
     typedef return_t<pT> eT;
     const ullint_t K = mat_ops::n_rows(Psi_par);
 
     mT chol_Psi_inv;
     {
-        CHECK_TIME("rinvwish 1");
+        CHECK_TIME("rinvwish 1", false);
         if (pre_inv_chol) {
             chol_Psi_inv = Psi_par; // should be lower triangular
         }
@@ -88,7 +88,7 @@ rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol, const bool
     mat_ops::zeros(A, K, K);
 
     {
-        CHECK_TIME("rinvwish 2");
+        CHECK_TIME("rinvwish 2", false);
 
         for (ullint_t i = 1U; i < K; i++) {
             for (ullint_t j = 0U; j < i; j++) {
@@ -98,14 +98,14 @@ rinvwish(const mT& Psi_par, const pT nu_par, const bool pre_inv_chol, const bool
     }
 
     {
-        CHECK_TIME("rinvwish 3");
+        CHECK_TIME("rinvwish 3", false);
         for (ullint_t i = 0U; i < K; i++) {
             A(i, i) = std::sqrt(rchisq<eT>(eT(nu_par - i), engine));
         }
     }
 
     {
-        CHECK_TIME("rinvwish 4");
+        CHECK_TIME("rinvwish 4", false);
         chol_Psi_inv = chol_Psi_inv * A;
     }
     //

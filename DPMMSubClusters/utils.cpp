@@ -84,7 +84,7 @@ void utils::save_data(std::string fileName, const Eigen::MatrixXd& mat)
 
 double utils::log_multivariate_gamma(double x, long D)
 {
-	CHECK_TIME("utils::log_multivariate_gamma");
+	CHECK_TIME("utils::log_multivariate_gamma", false);
 	double res = D * (D - 1) / 4.0 * log(EIGEN_PI);
 	for (long d = 1; d <= D; ++d)
 	{
