@@ -234,7 +234,7 @@ std::shared_ptr<hyperparams> niw::create_hyperparams(Json::Value& hyper_params_v
 	return result;
 }
 
-std::shared_ptr<hyperparams> niw::create_hyperparams()
+std::shared_ptr<hyperparams> niw::create_hyperparams(DimensionsType d)
 {
-	return std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(2), 5, MatrixXd::Identity(2, 2));
+	return std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(d), 5, MatrixXd::Identity(d, d));
 }

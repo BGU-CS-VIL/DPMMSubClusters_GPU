@@ -19,7 +19,7 @@ namespace DPMMSubClustersTest
 		std::shared_ptr<global_params> gp = std::make_shared<global_params>();
 		gp->init(10, points, NULL, prior_type::Gaussian);
 		gp->cuda = std::make_unique<myCudaKernel_gaussian>();
-		gp->cuda->init(10, points, NULL, true);
+		gp->cuda->init(10, points, NULL, true, 0);
 		local_clusters_actions object(gp);
 		VectorXd m(2);
 		m << 0.0, 0.0;
@@ -290,7 +290,7 @@ namespace DPMMSubClustersTest
 		gp->init(10, group_pts, NULL, prior_type::Gaussian);
 		gp->gen = std::make_unique<myGen>();
 		gp->cuda = std::make_unique<myCudaKernel_gaussian>();
-		gp->cuda->init(10, group_pts, NULL, true);
+		gp->cuda->init(10, group_pts, NULL, true, 0);
 		myCudaKernel_gaussian* myCudaKernelObj = dynamic_cast<myCudaKernel_gaussian*>(gp->cuda.get());
 		local_clusters_actions object(gp);
 		LabelsType indices;

@@ -24,7 +24,17 @@ void utils::load_data_model(std::string fileName, Eigen::MatrixXd& mat_out, bool
 
 	mat_out.resize(data_row, data_col);
 
-	if (npy_data.word_size == 4)
+	if (npy_data.word_size == 1)
+	{
+		unsigned char* loaded_data = npy_data.data<unsigned char>();
+		data_to_mat(loaded_data, mat_out);
+	}
+	else if (npy_data.word_size == 2)
+	{
+		short* loaded_data = npy_data.data<short>();
+		data_to_mat(loaded_data, mat_out);
+	}
+	else if (npy_data.word_size == 4)
 	{
 		float* loaded_data = npy_data.data<float>();
 		data_to_mat(loaded_data, mat_out);

@@ -28,7 +28,7 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 	globalParams = std::make_shared<global_params>();
 
 	utils::load_data_model(modelDataFileName, globalParams->points);
-	globalParams->init(modelParamsFileName, priorType);
+	globalParams->init(modelParamsFileName, globalParams->points.rows(), priorType);
 }
 
 //
@@ -54,7 +54,7 @@ std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(Mat
 	dps->group.points = all_data;
 	dps->model_hyperparams.distribution_hyper_params = globalParams->hyper_params;
 	dps->model_hyperparams.alpha = globalParams->alpha;
-	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.cols();
+	dps->model_hyperparams.total_dim = (DimensionsType)dps->group.points.rows();
 	dps->group.model_hyperparams = dps->model_hyperparams;
 
 	globalParams->cuda->sample_labels(globalParams->initial_clusters, globalParams->outlier_mod);

@@ -6,7 +6,7 @@
 #include "niw_hyperparams.h"
 #include "multinomial_hyper.h"
 
-void global_params::init(std::string modelParamsFileName, prior_type priorType)
+void global_params::init(std::string modelParamsFileName, DimensionsType d, prior_type priorType)
 {
 	Json::Value root;
 	std::ifstream ifs;
@@ -31,7 +31,7 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 	}
 	else
 	{
-		hyper_params = pPrior->create_hyperparams();
+		hyper_params = pPrior->create_hyperparams(d);
 	}
 
 	iterations = root.get("iterations", iterations).asInt();
@@ -49,7 +49,7 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 	}
 	else
 	{
-		outlier_hyper_params = pPrior->create_hyperparams();
+		outlier_hyper_params = pPrior->create_hyperparams(d);
 	}
 	unsigned long long randomSeed = root.get("randomSeed", 0).asUInt64();
 	init_random(randomSeed);
@@ -63,10 +63,11 @@ void global_params::init(std::string modelParamsFileName, prior_type priorType)
 			ground_truth->push_back(iter->asInt());
 		}
 	}
+	force_kernel = root.get("force_kernel", force_kernel).asInt();
 
 	cuda = pPrior->get_cuda();
 	numLabels = points.cols();
-	cuda->init(numLabels, points, random_seed, use_verbose);
+	cuda->init(numLabels, points, random_seed, use_verbose, force_kernel);
 }
 
 void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
@@ -74,11 +75,11 @@ void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long r
 	CHECK_TIME("global_params::init", use_verbose);
 	init_prior(priorType);
 	init_random(randomSeed);
-	hyper_params = pPrior->create_hyperparams();
-	outlier_hyper_params = pPrior->create_hyperparams();
+	hyper_params = pPrior->create_hyperparams(all_data.rows());
+	outlier_hyper_params = pPrior->create_hyperparams(all_data.rows());
 
 	cuda = pPrior->get_cuda();
-	cuda->init(numLabels, all_data, random_seed, use_verbose);
+	cuda->init(numLabels, all_data, random_seed, use_verbose, force_kernel);
 	numLabels = numLabels;
 	points = all_data;
 }

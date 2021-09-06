@@ -11,8 +11,8 @@ int main(int argc, char** argv)
 	const std::string PriorType = "--prior_type=";
 	const std::string ResultPath = "--result_path=";
 
-    printf("main was run with %d arguments\n", argc-1);
-    printf("Eigen uses %d threads\n", Eigen::nbThreads());
+	printf("main was run with %d arguments\n", argc - 1);
+	printf("Eigen uses %d threads\n", Eigen::nbThreads());
 	std::string params_path;
 	std::string model_path;
 	std::string labels_path;
@@ -56,54 +56,74 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		prior_type pt = priortype.rfind("Multinomial", 0) == 0 ? prior_type::Multinomial : prior_type::Gaussian;
-		dp_parallel_sampling_class dps(model_path, params_path, pt);
-		ModelInfo dp = dps.dp_parallel_from_file();
 		std::ofstream out(result_path);
-		std::string output;
-		int size = dp.labels->size();
 		Json::Value root;
-		for (int i = 0; i < size; i++)
-		{
-			root["labels"].append((*dp.labels)[i]);
-		}
-		size = dp.dp_model->group.weights.size();
-		for (int i = 0; i < size; i++)
-		{
-			root["weights"].append(dp.dp_model->group.weights[i]);
-		}
-
-		size = dp.dp_model->group.points.size();
-		double* data = dp.dp_model->group.points.data();
-		for (int i = 0; i < size; i++)
-		{
-			root["points"].append(data[i]);
-		}
-
-		const int rows = dp.dp_model->group.points.rows();
-		const int cols = dp.dp_model->group.points.cols();
-		for (int i = 0; i < rows; i++)
-		{
-			std::string str = "points"+ std::to_string(i);
-			for (int j = 0; j < cols; j++)
-			{
-				root[str.c_str()].append(dp.dp_model->group.points(i,j));
-			}
-		}
-
-		size = dp.nmi_score_history.size();
-		data = dp.nmi_score_history.data();
-		for (int i = 0; i < size; i++)
-		{
-			root["nmi_score_history"].append(data[i]);
-		}
-
 		Json::StyledWriter writer;
-		output = writer.write(root);
-		out << output;
-		out.close();
-		
-	}
+		//try
+		{
+			prior_type pt = priortype.rfind("Multinomial", 0) == 0 ? prior_type::Multinomial : prior_type::Gaussian;
+			dp_parallel_sampling_class dps(model_path, params_path, pt);
+			ModelInfo dp = dps.dp_parallel_from_file();
+			int size = dp.labels->size();
+			double* data = NULL;
 
+			size = dp.nmi_score_history.size();
+			data = dp.nmi_score_history.data();
+			for (int i = 0; i < size; i++)
+			{
+				root["nmi_score_history"].append(data[i]);
+			}
+
+			size = dp.iter_count.size();
+			data = dp.iter_count.data();
+			for (int i = 0; i < size; i++)
+			{
+				root["iter_count"].append(data[i]);
+			}
+
+			//Below can be enabled if needed. But it might take time to save it to the file.
+			//for (int i = 0; i < size; i++)
+			//{
+			//	root["labels"].append((*dp.labels)[i]);
+			//}
+			//size = dp.dp_model->group.weights.size();
+			//for (int i = 0; i < size; i++)
+			//{
+			//	root["weights"].append(dp.dp_model->group.weights[i]);
+			//}
+
+			//size = dp.dp_model->group.points.size();
+			//data = dp.dp_model->group.points.data();
+			//for (int i = 0; i < size; i++)
+			//{
+			//	root["points"].append(data[i]);
+			//}
+
+			//const int rows = dp.dp_model->group.points.rows();
+			//const int cols = dp.dp_model->group.points.cols();
+			//for (int i = 0; i < rows; i++)
+			//{
+			//	std::string str = "points" + std::to_string(i);
+			//	for (int j = 0; j < cols; j++)
+			//	{
+			//		root[str.c_str()].append(dp.dp_model->group.points(i, j));
+			//	}
+			//}
+
+			
+
+			out << writer.write(root);;
+			out.close();
+		}
+		/*catch (const std::exception& e)
+		{
+			printf("exception:%s\n", e.what());
+			root["error"].append(e.what());
+			out << writer.write(root);
+			out.close();
+
+			return EXIT_FAILURE;
+		}*/
+	}
 	return EXIT_SUCCESS;
 }

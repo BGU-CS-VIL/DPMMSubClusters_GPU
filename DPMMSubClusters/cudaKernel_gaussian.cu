@@ -71,7 +71,7 @@ void cudaKernel_gaussian::log_likelihood_sub_labels(
 	runCuda(cudaMallocAsync((void**)&d_b, sizeof(double) * pDistribution_sample->invSigma.size(), stream));
 	runCuda(cudaMemcpyAsync(d_b, pDistribution_sample->invSigma.data(), sizeof(double) * pDistribution_sample->invSigma.size(), cudaMemcpyHostToDevice, stream));
 
-	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), indicesSize, stream);
+	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), indicesSize, stream, use_verbose);
 	runCuda(cudaFreeAsync(d_b, stream));
 
 	double scalar = -((pDistribution_sample->sigma.size() * log(2 * EIGEN_PI) + pDistribution_sample->logdetSigma) / 2);
@@ -104,7 +104,7 @@ void cudaKernel_gaussian::log_likelihood_labels(
 	runCuda(cudaMemcpyAsync(d_b, pDistribution_sample->invSigma.data(), sizeof(double) * pDistribution_sample->invSigma.size(), cudaMemcpyHostToDevice, stream));
 
 	cudaStreamSynchronize(stream);
-	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), numLabels, stream);
+	gpuCapabilities[deviceId].matrixMultiply(d_b, d_z, d_c, (int)pDistribution_sample->invSigma.rows(), (int)pDistribution_sample->invSigma.cols(), numLabels, stream, use_verbose);
 	runCuda(cudaFreeAsync(d_b, stream));
 
 	double scalar = -((pDistribution_sample->sigma.size() * log(2 * EIGEN_PI) + pDistribution_sample->logdetSigma) / 2);

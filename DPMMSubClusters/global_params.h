@@ -22,7 +22,7 @@ class global_params
 public:
 	~global_params();
 
-	void init(std::string modelParamsFileName, prior_type priorType);
+	void init(std::string modelParamsFileName, DimensionsType d, prior_type priorType);
 	void init(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType);
 	void init_prior(prior_type priorType);
 	void init_random(unsigned long long randomSeed);
@@ -61,8 +61,8 @@ public:
 	bool overwrite_prec = false;
 	std::string save_file_prefix = "checkpoint_";
 
-	bool use_verbose;
-	bool draw_labels;
+	bool use_verbose = false;
+	bool draw_labels = false;
 	bool should_save_model;
 	double max_num_of_clusters = DBL_MAX;
 	MatrixXd glob_parr;
@@ -75,4 +75,6 @@ public:
 	MatrixXd points;
 
 	std::shared_ptr<LabelsType> ground_truth = NULL;
+
+	int force_kernel = 0;
 };

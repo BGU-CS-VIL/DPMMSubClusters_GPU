@@ -587,7 +587,7 @@ __global__ void transposeGPUcoalescing(double* matIn, int n, int m, double* matT
 //	printf("done\n");
 //}
 
-void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool use_verbose)
+void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool use_verbose, int forceKernel)
 {
 	if (use_verbose)
 	{
@@ -675,7 +675,7 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		iter->second.pointsCols = (int)points.cols();
 		runCuda(cudaMalloc((void**)&(iter->second.d_j1), sizeof(int)));
 		runCuda(cudaMalloc((void**)&(iter->second.d_j2), sizeof(int)));
-		optimize_kernels(iter->second);
+		optimize_kernels(iter->second, forceKernel);
 	}
 
 	if (gpuCapabilities.size() > 0)
@@ -686,72 +686,85 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 
 void boo(double* d_A, double* d_B, int N, int M, cudaStream_t& stream) {}
 
-void cudaKernel::optimize_kernels(gpuCapability& gpu)
+void cudaKernel::optimize_kernels(gpuCapability& gpu, int forceKernel)
 {
-	int numIter = 5;
-	MatrixXd A = MatrixXd::Random(gpu.pointsRows, numLabels / 2);
-
-	double* d_A;
-	double* d_B;
-	runCuda(cudaMalloc((void**)&(d_A), A.size() * sizeof(double)));
-	runCuda(cudaMemcpy(d_A, A.data(), sizeof(double) * A.size(), cudaMemcpyHostToDevice));
-	runCuda(cudaMalloc((void**)&(d_B), A.rows() * A.rows() * sizeof(double)));
-	cudaStream_t stream;
-	runCuda(cudaStreamCreate(&stream));
-
-	gpu.matrixMultiply = &do_matrixMultiply1;
-	do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
-	runCuda(cudaStreamSynchronize(stream));
-
-	clock_t begin = clock();
-	for (int i = 0; i < numIter; i++)
-	{
-		do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
-	}
-	runCuda(cudaStreamSynchronize(stream));
-	clock_t end = clock();
-	double took1 = double(end - begin);
-
-	gpu.matrixMultiply = &do_matrixMultiply2;
-	do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
-	runCuda(cudaStreamSynchronize(stream));
-
-	begin = clock();
-	for (int i = 0; i < numIter; i++)
-	{
-		do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
-	}
-	runCuda(cudaStreamSynchronize(stream));
-	end = clock();
-	double took2 = double(end - begin);
-
-	runCuda(cudaFree(d_A));
-	runCuda(cudaFree(d_B));
-	runCuda(cudaStreamDestroy(stream));
-
-	if (use_verbose)
-	{
-		printf("multiplie_matrix_by_transpose kernel:\n");
-		printf("  Kernel 1 took: %f\n", took1);
-		printf("  Kernel 2 took: %f\n", took2);
-		printf("  Using kernel: #");
-	}
-	if (took1 < took2)
+	if (forceKernel == 1)
 	{
 		gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose1;
 		gpu.matrixMultiply = &do_matrixMultiply1;
-		if (use_verbose)
-		{
-			printf("1\n");
-		}
 	}
-	else
+	else if (forceKernel == 2)
 	{
 		gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose2;
 		gpu.matrixMultiply = &do_matrixMultiply2;
+	}
+	else
+	{
+		int numIter = 5;
+		MatrixXd A = MatrixXd::Random(gpu.pointsRows, numLabels / 2);
+
+		double* d_A;
+		double* d_B;
+		runCuda(cudaMalloc((void**)&(d_A), A.size() * sizeof(double)));
+		runCuda(cudaMemcpy(d_A, A.data(), sizeof(double) * A.size(), cudaMemcpyHostToDevice));
+		runCuda(cudaMalloc((void**)&(d_B), A.rows() * A.rows() * sizeof(double)));
+		cudaStream_t stream;
+		runCuda(cudaStreamCreate(&stream));
+
+		gpu.matrixMultiply = &do_matrixMultiply1;
+		do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		runCuda(cudaStreamSynchronize(stream));
+
+		clock_t begin = clock();
+		for (int i = 0; i < numIter; i++)
+		{
+			do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		}
+		runCuda(cudaStreamSynchronize(stream));
+		clock_t end = clock();
+		double took1 = double(end - begin);
+
+		gpu.matrixMultiply = &do_matrixMultiply2;
+		do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		runCuda(cudaStreamSynchronize(stream));
+
+		begin = clock();
+		for (int i = 0; i < numIter; i++)
+		{
+			do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		}
+		runCuda(cudaStreamSynchronize(stream));
+		end = clock();
+		double took2 = double(end - begin);
+
+		runCuda(cudaFree(d_A));
+		runCuda(cudaFree(d_B));
+		runCuda(cudaStreamDestroy(stream));
+
 		if (use_verbose)
 		{
-			printf("2\n");
+			printf("multiplie_matrix_by_transpose kernel:\n");
+			printf("  Kernel 1 took: %f\n", took1);
+			printf("  Kernel 2 took: %f\n", took2);
+			printf("  Using kernel: #");
+		}
+		if (took1 < took2)
+		{
+			gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose1;
+			gpu.matrixMultiply = &do_matrixMultiply1;
+			if (use_verbose)
+			{
+				printf("1\n");
+			}
+		}
+		else
+		{
+			gpu.do_multiplie_matrix_by_transpose = &do_multiplie_matrix_by_transpose2;
+			gpu.matrixMultiply = &do_matrixMultiply2;
+			if (use_verbose)
+			{
+				printf("2\n");
+			}
 		}
 	}
 }
