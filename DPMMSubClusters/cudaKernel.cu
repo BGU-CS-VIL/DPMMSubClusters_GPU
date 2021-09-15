@@ -44,9 +44,6 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 	}
 	b[(n + 1) * rows + idx] = n + 1;
 
-	//  Copy Y from X.
-	//  Scale the probability vector and set sentinel values at the ends.
-
 	y[idx] = 0.0;
 	for (i = 1; i <= n; i++)
 	{
@@ -59,14 +56,10 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 	for (; ; )
 	{
 
-		//  Find i so Y[B[i]] needs more.
-
 		do
 		{
 			i++;
 		} while (y[b[i * rows + idx] * rows + idx] < 1.0);
-
-		//	  Find j so Y[B[j]] wants less.
 
 		do
 		{
@@ -77,8 +70,6 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 		{
 			break;
 		}
-
-		// Swap B[i] and B[j].
 
 		k = b[i * rows + idx];
 		b[i * rows + idx] = b[j * rows + idx];
@@ -91,26 +82,18 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 	while (0 < i)
 	{
 
-		//  Find J such that Y[B[j]] needs more.
-
 		while (y[b[j * rows + idx] * rows + idx] <= 1.0)
 		{
 			j++;
 		}
-
-		//  Meanwhile, Y[B[i]] wants less.
 
 		if (n < j)
 		{
 			break;
 		}
 
-		//  B[i] will donate to B[j] to fix up.
-
 		y[b[j * rows + idx] * rows + idx] = y[b[j * rows + idx] * rows + idx] - (1.0 - y[b[i * rows + idx] * rows + idx]);
 		a[b[i * rows + idx] * rows + idx] = b[j * rows + idx];
-
-		// Y[B[j]] now wants less so readjust ordering.
 
 		if (y[b[j * rows + idx] * rows + idx] < 1.0)
 		{
@@ -126,8 +109,6 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 	}
 
 	double r;
-
-	//  Let i = random uniform integer from {1,2,...N};
 
 	i = (int)(curand_uniform(state) * (n - 1 + 0.999999) + 1);
 	r = curand_uniform(state);
@@ -587,8 +568,10 @@ __global__ void transposeGPUcoalescing(double* matIn, int n, int m, double* matT
 //	printf("done\n");
 //}
 
-void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool use_verbose, int forceKernel)
+void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool verbose, int forceKernel)
 {
+	use_verbose = verbose;
+
 	if (use_verbose)
 	{
 		printf("Init cuda\n");
@@ -598,7 +581,6 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 	int driverVersion = 0, runtimeVersion = 0;
 
 	lastDevice = 0;
-	use_verbose = use_verbose;
 
 	runCuda(cudaGetDeviceCount(&numGPU));
 	numGPU = 1;
@@ -675,6 +657,7 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		iter->second.pointsCols = (int)points.cols();
 		runCuda(cudaMalloc((void**)&(iter->second.d_j1), sizeof(int)));
 		runCuda(cudaMalloc((void**)&(iter->second.d_j2), sizeof(int)));
+
 		optimize_kernels(iter->second, forceKernel);
 	}
 
@@ -983,6 +966,7 @@ void cudaKernel::create_sufficient_statistics(
 	runCuda(cudaStreamDestroy(stream2));
 	runCuda(cudaStreamDestroy(stream3));
 
+	runCuda(cudaFreeAsync(d_indices, stream));
 	runCuda(cudaFreeAsync(d_indicesSize, stream));
 	runCuda(cudaFreeAsync(d_pts, stream));
 	runCuda(cudaFreeAsync(d_pts1, stream));
@@ -1138,6 +1122,7 @@ void cudaKernel::create_suff_stats_dict_worker(
 
 	runCuda(cudaFree(d_j1));
 	runCuda(cudaFree(d_j2));
+	runCuda(cudaFree(d_indices));
 	runCuda(cudaFree(d_indicesSize));
 	runCuda(cudaFree(d_pts));
 	runCuda(cudaFree(d_pts1));
@@ -1332,6 +1317,7 @@ void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m
 void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose)
 {
 	CHECK_TIME("cudaKernel::do_matrixMultiply2", use_verbose);
+
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	runCuda(cublasSetStream(handle, stream));

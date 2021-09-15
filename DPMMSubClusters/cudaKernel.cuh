@@ -34,7 +34,7 @@ class cudaKernel
 {
 public:
 	virtual ~cudaKernel() {}
-	void init(int numLabels, MatrixXd& points, unsigned long long seed, bool use_verbose, int forceKernel);
+	void init(int numLabels, MatrixXd& points, unsigned long long seed, bool verbose, int forceKernel);
 	void optimize_kernels(gpuCapability& gpu, int forceKernel);
 	void release();
 	int peak_first_device();

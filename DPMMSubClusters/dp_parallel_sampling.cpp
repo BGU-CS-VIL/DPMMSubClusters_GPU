@@ -141,9 +141,6 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 	modelInfo.dp_model = dp_model;
 	std::vector<std::string> v_score_history;
-	int cur_parr_count = 10;
-
-	set_parr_worker(modelInfo.dp_model->group.num_labels(), cur_parr_count);
 
 	for (int i = first_iter; i <= globalParams->iterations; ++i)
 	{
@@ -198,18 +195,6 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 				iter_time,
 				std::accumulate(modelInfo.iter_count.begin(), modelInfo.iter_count.end(),
 					decltype(modelInfo.iter_count)::value_type(0)));
-
-			//printf("Iteration: %ld || Clusters count: %ld || Log posterior: %f || Vi score: %s || NMI score: %s || Iter Time: %f  || Total time: %f\n",
-			//	i,
-			//	modelInfo.cluster_count_history.back(),
-			//	modelInfo.likelihood_history.back(),
-			////	v_score_history.back().c_str(),
-			//	"TBD",
-			//	//modelInfo.nmi_score_history.back().c_str(),
-			//	"TBD",
-			//	iter_time,
-			//	std::accumulate(modelInfo.iter_count.begin(), modelInfo.iter_count.end(),
-			//		decltype(modelInfo.iter_count)::value_type(0)));
 		}
 		else
 		{
@@ -261,10 +246,4 @@ double dp_parallel_sampling_class::calculate_posterior(std::shared_ptr<dp_parall
 		log_posterior += log(model->model_hyperparams.alpha) + r8_gamma_log(cluster->cluster_params->cluster_params->suff_statistics->N);
 	}
 	return log_posterior;
-}
-
-	
-void dp_parallel_sampling_class::set_parr_worker(LabelType numLabels, int cluster_count)
-{
-	globalParams->glob_parr = MatrixXd(numLabels, cluster_count);
 }

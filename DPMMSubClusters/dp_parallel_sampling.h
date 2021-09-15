@@ -35,7 +35,6 @@ public:
 
 	std::shared_ptr<dp_parallel_sampling> init_model(MatrixXd& all_data);
 	void init_first_clusters(std::shared_ptr<dp_parallel_sampling>& dp_model, ClusterIndexType initial_cluster_count);
-	void set_parr_worker(LabelType numLabels, int cluster_count);
 	ModelInfo run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params = NULL, std::chrono::steady_clock::time_point prev_time = std::chrono::steady_clock::now());
 	double calculate_posterior(std::shared_ptr<dp_parallel_sampling>& model);
 	void save_model(std::shared_ptr<dp_parallel_sampling>& model, std::string path, std::string filename, long  iter, long long total_time, const char* global_params);

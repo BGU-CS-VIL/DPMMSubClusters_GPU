@@ -65,7 +65,6 @@ public:
 	bool draw_labels = false;
 	bool should_save_model;
 	double max_num_of_clusters = DBL_MAX;
-	MatrixXd glob_parr;
 
 	std::vector<std::shared_ptr<thin_cluster_params>> clusters_vector;
 	std::vector<double> clusters_weights;

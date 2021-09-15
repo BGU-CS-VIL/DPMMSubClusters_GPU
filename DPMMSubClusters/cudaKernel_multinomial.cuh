@@ -6,6 +6,8 @@
 
 class cudaKernel_multinomial : public cudaKernel
 {
+public:
+	virtual ~cudaKernel_multinomial() {}
 protected:
 	virtual void log_likelihood_sub_labels(
 		double* d_r,

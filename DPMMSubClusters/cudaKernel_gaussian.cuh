@@ -6,6 +6,8 @@
 
 class cudaKernel_gaussian : public cudaKernel
 {
+public:
+	virtual ~cudaKernel_gaussian() {}
 protected:
 	virtual void log_likelihood_sub_labels(
 		double* d_r,
