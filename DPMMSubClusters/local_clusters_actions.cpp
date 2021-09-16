@@ -119,40 +119,8 @@ void local_clusters_actions::update_splittable_cluster_params(std::shared_ptr<sp
 std::map<LabelType, std::shared_ptr<thin_suff_stats>> local_clusters_actions::create_suff_stats_dict_worker(MatrixXd& group_pts, std::shared_ptr<hyperparams>& hyper_params, LabelsType& indices)
 {
 	CHECK_TIME("local_clusters_actions::create_suff_stats_dict_worker", globalParams->use_verbose);
-	std::map<LabelType, std::shared_ptr<thin_suff_stats>> suff_stats_dict;
 
-	for (LabelType index = 0; index < indices.size(); index++)
-	{
-		LabelType indicesLabelsSize = 0;
-
-		////////////////
-
-		//std::shared_ptr<thin_suff_stats> tss2 = std::make_shared<thin_suff_stats>();
-		//{
-		//	MatrixXd pts;
-		//	MatrixXd pts1;
-		//	MatrixXd pts2;
-
-		//	globalParams->cuda->create_suff_stats_dict_worker(indices[index] + 1,
-		//		indicesLabelsSize,
-		//		pts,
-		//		pts1,
-		//		pts2);
-
-		//	tss2->l_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts1);
-		//	tss2->r_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts2);
-		//	tss2->cluster_suff = globalParams->pPrior->create_sufficient_statistics(hyper_params, hyper_params, pts);
-		//	//		suff_stats_dict[index] = tss;
-		//}
-
-		////////////////////
-
-		std::shared_ptr<thin_suff_stats> tss = std::make_shared<thin_suff_stats>();
-		globalParams->cuda->create_sufficient_statistics(indices[index] + 1, indicesLabelsSize, hyper_params, hyper_params, tss);
-		suff_stats_dict[indices[index]] = tss;
-	}
-
-	return suff_stats_dict;
+	return globalParams->cuda->create_sufficient_statistics(indices, hyper_params, hyper_params);
 }
 
 void local_clusters_actions::update_suff_stats_posterior(local_group &group)

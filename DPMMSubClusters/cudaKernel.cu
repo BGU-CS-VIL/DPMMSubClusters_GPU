@@ -620,6 +620,7 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		}
 		else
 		{
+			cudaFreeAsync(dummy, stream);
 			gpuCapabilities[i] = gpuCapability();
 		}
 		cudaStreamSynchronize(stream);
@@ -655,8 +656,6 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 		runCuda(cudaMemcpy(iter->second.d_points, points.data(), points.size() * sizeof(double), cudaMemcpyHostToDevice));
 		iter->second.pointsRows = (int)points.rows();
 		iter->second.pointsCols = (int)points.cols();
-		runCuda(cudaMalloc((void**)&(iter->second.d_j1), sizeof(int)));
-		runCuda(cudaMalloc((void**)&(iter->second.d_j2), sizeof(int)));
 
 		optimize_kernels(iter->second, forceKernel);
 	}
@@ -780,10 +779,6 @@ void cudaKernel::release()
 		{
 			runCuda(cudaFree(iter->second.d_points));
 		}
-
-		runCuda(cudaFree(iter->second.d_j1));
-		runCuda(cudaFree(iter->second.d_j2));
-
 	}
 }
 
@@ -889,90 +884,127 @@ void cudaKernel::sample_sub_clusters_worker(LabelType label, int* d_indices, int
 
 	find_indices << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].d_labels, numLabels, label, d_indices, d_indicesSize);
 	runCuda(cudaMemcpyAsync(&indicesSize, d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost, stream));
+	runCuda(cudaFreeAsync(d_indicesSize, stream));
 
 	runCuda(cudaPeekAtLastError());
 }
 
-void cudaKernel::create_sufficient_statistics(
-	LabelType label,
-	LabelType& indicesSize,
+typedef struct
+{
+	//Stream for asynchronous command execution
+	cudaStream_t stream;
+	cudaStream_t stream1;
+	cudaStream_t stream2;
+	cudaStream_t stream3;
+	std::shared_ptr<thin_suff_stats> tss;
+	double* d_pts;
+	double* d_pts1;
+	double* d_pts2;
+	int* d_indicesSize;
+	LabelType indicesSize;
+	int deviceId;
+	int* d_j1;
+	int* d_j2;
+} sufficient_statistics_plan;
+
+std::map<LabelType, std::shared_ptr<thin_suff_stats>> cudaKernel::create_sufficient_statistics(
+	LabelsType& indices,
 	const std::shared_ptr<hyperparams>& hyperParams,
-	const std::shared_ptr<hyperparams>& posterior,
-	std::shared_ptr<thin_suff_stats>& tss)
+	const std::shared_ptr<hyperparams>& posterior)
 {
 	CHECK_TIME("cudaKernel::create_sufficient_statistics", use_verbose);
 
-	int deviceId = peak_first_device();
-	cudaStream_t stream;
-	runCuda(cudaStreamCreate(&stream));
-	int pointsRows = gpuCapabilities[deviceId].pointsRows;
-	int* d_indices;
-	runCuda(cudaMallocAsync((void**)&d_indices, sizeof(int) * numLabels, stream));
+	std::map<LabelType, std::shared_ptr<thin_suff_stats>> suff_stats_dict;
+	sufficient_statistics_plan* plan = new sufficient_statistics_plan[indices.size()];
 
-	int* d_indicesSize;
-	runCuda(cudaMallocAsync(&d_indicesSize, sizeof(int), stream));
-	runCuda(cudaMemsetAsync(d_indicesSize, 0, sizeof(int), stream));
+	for (LabelType index = 0; index < indices.size(); index++)
+	{
+		LabelType label = indices[index] + 1;
 
-	find_indices << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].d_labels, numLabels, label, d_indices, d_indicesSize);
-	runCuda(cudaPeekAtLastError());
-	runCuda(cudaMemcpyAsync(&indicesSize, d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost));
+		plan[index].deviceId = peak_any_device();
+		runCuda(cudaStreamCreate(&(plan[index].stream)));
 
-	double* d_pts;
-	runCuda(cudaMallocAsync((void**)&d_pts, sizeof(double) * pointsRows * indicesSize, stream));
+		int pointsRows = gpuCapabilities[plan[index].deviceId].pointsRows;
+		int* d_indices;
+		runCuda(cudaMallocAsync((void**)&d_indices, sizeof(int) * numLabels, plan[index].stream));
 
-	double* d_pts1;
-	runCuda(cudaMallocAsync((void**)&d_pts1, sizeof(double) * pointsRows * indicesSize, stream));
+		runCuda(cudaMallocAsync(&(plan[index].d_indicesSize), sizeof(int), plan[index].stream));
+		runCuda(cudaMemsetAsync(plan[index].d_indicesSize, 0, sizeof(int), plan[index].stream));
 
-	double* d_pts2;
-	runCuda(cudaMallocAsync((void**)&d_pts2, sizeof(double) * pointsRows * indicesSize, stream));
+		find_indices << <blocks, threads, 0, plan[index].stream >> > (gpuCapabilities[plan[index].deviceId].d_labels, numLabels, label, d_indices, plan[index].d_indicesSize);
+		runCuda(cudaPeekAtLastError());
+		runCuda(cudaMemcpyAsync(&(plan[index].indicesSize), plan[index].d_indicesSize, sizeof(int), cudaMemcpyDeviceToHost));
 
-	runCuda(cudaMemsetAsync(gpuCapabilities[deviceId].d_j1, 0, sizeof(int), stream));
-	runCuda(cudaMemsetAsync(gpuCapabilities[deviceId].d_j2, 0, sizeof(int), stream));
+		runCuda(cudaMallocAsync((void**)&(plan[index].d_pts), sizeof(double) * pointsRows * plan[index].indicesSize, plan[index].stream));
 
-	dim3 blocks_size = dim3(indicesSize / threads.x + 1);
-	create_suff_stats_dict_worker_all << <blocks_size, threads, 0, stream >> > (
-		gpuCapabilities[deviceId].d_sub_labels,
-		numLabels,
-		d_indices,
-		d_indicesSize,
-		gpuCapabilities[deviceId].d_points,
-		pointsRows,
-		d_pts,
-		d_pts1,
-		d_pts2,
-		gpuCapabilities[deviceId].d_j1,
-		gpuCapabilities[deviceId].d_j2);
-	runCuda(cudaPeekAtLastError());
+		runCuda(cudaMallocAsync((void**)&(plan[index].d_pts1), sizeof(double) * pointsRows * plan[index].indicesSize, plan[index].stream));
 
-	runCuda(cudaStreamSynchronize(stream));
+		runCuda(cudaMallocAsync((void**)&(plan[index].d_pts2), sizeof(double) * pointsRows * plan[index].indicesSize, plan[index].stream));
 
-	cudaStream_t stream1;
-	runCuda(cudaStreamCreate(&stream1));
-	do_create_sufficient_statistics(d_pts1, pointsRows, gpuCapabilities[deviceId].d_j1, hyperParams, posterior, stream1, tss->l_suff, deviceId);
+		runCuda(cudaMallocAsync(&(plan[index].d_j1), sizeof(int), plan[index].stream));
+		runCuda(cudaMemsetAsync(plan[index].d_j1, 0, sizeof(int), plan[index].stream));
+		runCuda(cudaMallocAsync(&(plan[index].d_j2), sizeof(int), plan[index].stream));
+		runCuda(cudaMemsetAsync(plan[index].d_j2, 0, sizeof(int), plan[index].stream));
 
-	cudaStream_t stream2;
-	runCuda(cudaStreamCreate(&stream2));
-	do_create_sufficient_statistics(d_pts2, pointsRows, gpuCapabilities[deviceId].d_j2, hyperParams, posterior, stream2, tss->r_suff, deviceId);
+		dim3 blocks_size = dim3(numLabels / threads.x + 1);
+		create_suff_stats_dict_worker_all << <blocks_size, threads, 0, plan[index].stream >> > (
+			gpuCapabilities[plan[index].deviceId].d_sub_labels,
+			numLabels,
+			d_indices,
+			plan[index].d_indicesSize,
+			gpuCapabilities[plan[index].deviceId].d_points,
+			pointsRows,
+			plan[index].d_pts,
+			plan[index].d_pts1,
+			plan[index].d_pts2,
+			plan[index].d_j1,
+			plan[index].d_j2);
+		runCuda(cudaPeekAtLastError());
 
-	cudaStream_t stream3;
-	runCuda(cudaStreamCreate(&stream3));
-	do_create_sufficient_statistics(d_pts, pointsRows, d_indicesSize, hyperParams, posterior, stream3, tss->cluster_suff, deviceId);
+		runCuda(cudaFreeAsync(d_indices, plan[index].stream));
+	}
+	
+	for (LabelType index = 0; index < indices.size(); index++)
+	{
+		int pointsRows = gpuCapabilities[plan[index].deviceId].pointsRows;
+		plan[index].tss = std::make_shared<thin_suff_stats>();
 
-	runCuda(cudaStreamSynchronize(stream1));
-	runCuda(cudaStreamSynchronize(stream2));
-	runCuda(cudaStreamSynchronize(stream3));
+		runCuda(cudaStreamSynchronize(plan[index].stream));
 
-	runCuda(cudaStreamDestroy(stream1));
-	runCuda(cudaStreamDestroy(stream2));
-	runCuda(cudaStreamDestroy(stream3));
+		runCuda(cudaStreamCreate(&(plan[index].stream1)));
+		do_create_sufficient_statistics(plan[index].d_pts1, pointsRows, plan[index].d_j1, hyperParams, posterior, plan[index].stream1, plan[index].tss->l_suff, plan[index].deviceId);
 
-	runCuda(cudaFreeAsync(d_indices, stream));
-	runCuda(cudaFreeAsync(d_indicesSize, stream));
-	runCuda(cudaFreeAsync(d_pts, stream));
-	runCuda(cudaFreeAsync(d_pts1, stream));
-	runCuda(cudaFreeAsync(d_pts2, stream));
-	runCuda(cudaStreamSynchronize(stream));
-	runCuda(cudaStreamDestroy(stream));
+		runCuda(cudaStreamCreate(&(plan[index].stream2)));
+		do_create_sufficient_statistics(plan[index].d_pts2, pointsRows, plan[index].d_j2, hyperParams, posterior, plan[index].stream2, plan[index].tss->r_suff, plan[index].deviceId);
+
+		runCuda(cudaStreamCreate(&(plan[index].stream3)));
+		do_create_sufficient_statistics(plan[index].d_pts, pointsRows, plan[index].d_indicesSize, hyperParams, posterior, plan[index].stream3, plan[index].tss->cluster_suff, plan[index].deviceId);
+
+	}
+
+	for (LabelType index = 0; index < indices.size(); index++)
+	{
+		runCuda(cudaStreamSynchronize(plan[index].stream1));
+		runCuda(cudaStreamSynchronize(plan[index].stream2));
+		runCuda(cudaStreamSynchronize(plan[index].stream3));
+
+		runCuda(cudaStreamDestroy(plan[index].stream1));
+		runCuda(cudaStreamDestroy(plan[index].stream2));
+		runCuda(cudaStreamDestroy(plan[index].stream3));
+
+		runCuda(cudaFreeAsync(plan[index].d_indicesSize, plan[index].stream));
+		runCuda(cudaFreeAsync(plan[index].d_pts, plan[index].stream));
+		runCuda(cudaFreeAsync(plan[index].d_pts1, plan[index].stream));
+		runCuda(cudaFreeAsync(plan[index].d_pts2, plan[index].stream));
+		runCuda(cudaFreeAsync(plan[index].d_j1, plan[index].stream));
+		runCuda(cudaFreeAsync(plan[index].d_j2, plan[index].stream));
+		runCuda(cudaStreamDestroy(plan[index].stream));
+
+		suff_stats_dict[indices[index]] = plan[index].tss;
+	}
+
+	delete[]plan;
+	return suff_stats_dict;
 }
 
 // A -> (N x M) 
@@ -1514,7 +1546,7 @@ void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared
 	//Allocate memory for all streams
 	for (int i = 0; i < numClusters; i++)
 	{
-		plan[i].deviceId = peak_first_device();
+		plan[i].deviceId = peak_any_device();
 
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
 

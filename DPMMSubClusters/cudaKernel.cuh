@@ -21,8 +21,6 @@ struct gpuCapability
 	curandState* devState;
 	int pointsRows;
 	int pointsCols;
-	int* d_j1;
-	int* d_j2;
 
 	void (*do_multiplie_matrix_by_transpose)(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t& stream, bool use_verbose);
 	void (*matrixMultiply)(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose);
@@ -71,12 +69,11 @@ public:
 	void merge_clusters_worker(LabelType index, LabelType newIndex);
 	void reset_bad_clusters_worker(LabelType index);
 
-	void create_sufficient_statistics(
-		LabelType label,
-		LabelType& indicesSize,
+	std::map<LabelType, std::shared_ptr<thin_suff_stats>> create_sufficient_statistics(
+		LabelsType& indices,
 		const std::shared_ptr<hyperparams>& hyperParams,
-		const std::shared_ptr<hyperparams>& posterior,
-		std::shared_ptr<thin_suff_stats>& tss);
+		const std::shared_ptr<hyperparams>& posterior);
+
 	virtual void do_create_sufficient_statistics(
 		double* d_pts,
 		int rows,
