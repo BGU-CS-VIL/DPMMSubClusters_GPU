@@ -53,9 +53,9 @@ __device__ void sample_by_probability(curandState* state, double* weight, int nu
 
 	i = 0;
 	j = n + 1;
-	for (; ; )
+	
+	while (true)
 	{
-
 		do
 		{
 			i++;
@@ -583,6 +583,8 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 	lastDevice = 0;
 
 	runCuda(cudaGetDeviceCount(&numGPU));
+
+	//Remove the following line in order to run with more than 1 GPU
 	numGPU = 1;
 
 	if (use_verbose)
@@ -782,26 +784,15 @@ void cudaKernel::release()
 	}
 }
 
-int cudaKernel::peak_first_device()
+int cudaKernel::pick_first_device()
 {
 	int result;
-	//++lastDevice;
-	//if (lastDevice >= gpuCapabilities.size())
-	//	lastDevice = 0;
-
-	//int i = 0;
-	//for (std::map<int, gpuCapability>::iterator iter = gpuCapabilities.begin(); i <= lastDevice && iter != gpuCapabilities.end(); iter++, ++i)
-	//{
-	//	result = iter->first;
-	//}
-	//cudaSetDevice(result);
-	//return result;
 	result = gpuCapabilities.begin()->first;
 	cudaSetDevice(result);
 	return result;
 }
 
-int cudaKernel::peak_any_device()
+int cudaKernel::pick_any_device()
 {
 	int result;
 	++lastDevice;
@@ -838,7 +829,6 @@ void cudaKernel::sample_log_cat_array_sub_cluster(
 	build_log_likelihood_array_sub_cluster_kernel << <blocks, threads, 0, stream >> > (indicesSize, d_r, r_offset, d_lr_weights);
 	runCuda(cudaPeekAtLastError());
 
-	//TODO - Can we remove d_y, d_a, d_b?
 	sample_log_cat_array_sub_cluster_all << <blocks, threads, 0, stream >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_sub_labels, indicesSize, 2, d_r, d_indices, d_y, d_a, d_b);
 	runCuda(cudaPeekAtLastError());
 
@@ -921,7 +911,7 @@ std::map<LabelType, std::shared_ptr<thin_suff_stats>> cudaKernel::create_suffici
 	{
 		LabelType label = indices[index] + 1;
 
-		plan[index].deviceId = peak_any_device();
+		plan[index].deviceId = pick_any_device();
 		runCuda(cudaStreamCreate(&(plan[index].stream)));
 
 		int pointsRows = gpuCapabilities[plan[index].deviceId].pointsRows;
@@ -1093,7 +1083,7 @@ void cudaKernel::create_suff_stats_dict_worker(
 	Eigen::MatrixXd& pts2)
 {
 	CHECK_TIME("cudaKernel::create_suff_stats_dict_worker", use_verbose);
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	int pointsRows = gpuCapabilities[deviceId].pointsRows;
 	int* d_indices;
 	runCuda(cudaMalloc((void**)&d_indices, sizeof(int) * numLabels));
@@ -1163,7 +1153,7 @@ void cudaKernel::create_suff_stats_dict_worker(
 
 void cudaKernel::sample_sub_labels()
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	sample_sub_labels_all << <blocks, threads >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_sub_labels, numLabels);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
@@ -1173,7 +1163,7 @@ void cudaKernel::sample_sub_labels()
 
 void cudaKernel::sample_labels(int initial_clusters, double outlier_mod)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	sample_labels_all << <blocks, threads >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_labels, numLabels, initial_clusters, outlier_mod);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
@@ -1183,7 +1173,7 @@ void cudaKernel::sample_labels(int initial_clusters, double outlier_mod)
 
 void cudaKernel::get_sub_labels(std::shared_ptr<LabelsType> &subLabels)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	int *h_subLabels;
 	h_subLabels = (int*)malloc(numLabels * sizeof(int));
 	runCuda(cudaMemcpy(h_subLabels, gpuCapabilities[deviceId].d_sub_labels, numLabels * sizeof(int), cudaMemcpyDeviceToHost));
@@ -1199,7 +1189,7 @@ void cudaKernel::get_sub_labels(std::shared_ptr<LabelsType> &subLabels)
 
 void cudaKernel::get_labels(std::shared_ptr<LabelsType> &labels)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	int *h_labels;
 	h_labels = (int*)malloc(numLabels * sizeof(int));
 	runCuda(cudaMemcpy(h_labels, gpuCapabilities[deviceId].d_labels, numLabels * sizeof(int), cudaMemcpyDeviceToHost));
@@ -1264,7 +1254,7 @@ void cudaKernel::update_labels_by_max_index(double* parr, int dim, cudaStream_t&
 
 void cudaKernel::remove_empty_clusters_worker(int limit)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	remove_empty_clusters_worker_all << <blocks, threads >> > (gpuCapabilities[deviceId].d_labels, numLabels, limit);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
@@ -1274,7 +1264,7 @@ void cudaKernel::remove_empty_clusters_worker(int limit)
 
 void cudaKernel::split_cluster_local_worker(LabelType index, LabelType newIndex)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	split_cluster_local_worker_all << <blocks, threads >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_labels, numLabels, gpuCapabilities[deviceId].d_sub_labels, index, newIndex);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
@@ -1285,7 +1275,7 @@ void cudaKernel::split_cluster_local_worker(LabelType index, LabelType newIndex)
 
 void cudaKernel::merge_clusters_worker(LabelType index, LabelType newIndex)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	merge_clusters_worker_all << <blocks, threads >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_labels, numLabels, gpuCapabilities[deviceId].d_sub_labels, index, newIndex);
 	runCuda(cudaPeekAtLastError());
 	runCuda(cudaDeviceSynchronize());
@@ -1296,7 +1286,7 @@ void cudaKernel::merge_clusters_worker(LabelType index, LabelType newIndex)
 
 void cudaKernel::reset_bad_clusters_worker(LabelType index)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 
 	reset_bad_clusters_worker_all << <blocks, threads >> > (gpuCapabilities[deviceId].devState, gpuCapabilities[deviceId].d_labels, numLabels, gpuCapabilities[deviceId].d_sub_labels, index);
 	runCuda(cudaPeekAtLastError());
@@ -1307,7 +1297,7 @@ void cudaKernel::reset_bad_clusters_worker(LabelType index)
 
 void cudaKernel::get_sub_labels_count(int &l, int &r)
 {
-	int deviceId = peak_first_device();
+	int deviceId = pick_first_device();
 	int *d_l;
 	runCuda(cudaMalloc((void **)&d_l, sizeof(int)));
 	runCuda(cudaMemset(d_l, 0, sizeof(int)));
@@ -1422,7 +1412,7 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	{
 		//		unsigned int i = omp_get_thread_num();
 
-		plan[i].deviceId = peak_any_device();
+		plan[i].deviceId = pick_any_device();
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
 		runCuda(cudaMallocAsync((void**)&(plan[i].d_indices), sizeof(int) * numLabels, plan[i].stream));
 
@@ -1546,7 +1536,7 @@ void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared
 	//Allocate memory for all streams
 	for (int i = 0; i < numClusters; i++)
 	{
-		plan[i].deviceId = peak_any_device();
+		plan[i].deviceId = pick_any_device();
 
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
 

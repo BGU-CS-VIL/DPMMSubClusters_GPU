@@ -33,7 +33,7 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
 		cudaStream_t stream;
@@ -86,7 +86,7 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
 		cudaStream_t stream;
@@ -144,7 +144,7 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, 12345, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		double* d_r;
 		object->allocate_in_device(log_likelihood_array, d_r);
 		cudaStream_t stream;
@@ -228,7 +228,7 @@ namespace DPMMSubClustersTest
 		lr_weights << 0.5, 0.5;
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		cudaStream_t stream;
 
 		object->create_stream(stream);
@@ -306,7 +306,7 @@ namespace DPMMSubClustersTest
 		object->init(numLabels, points, NULL, true, 0);
 
 		//First set values for sub labels
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		cudaStream_t stream;
 
 		object->create_stream(stream);
@@ -395,7 +395,7 @@ namespace DPMMSubClustersTest
 		MatrixXd points(2, numLabels);
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		double leftProb = 0.5;
 		for (int i = 0; i < numLabels; i++)
 		{
@@ -498,7 +498,7 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		cudaStream_t stream;
 		object->create_stream(stream);
 		int* d_indices;
@@ -592,7 +592,7 @@ namespace DPMMSubClustersTest
 		}
 
 		object->init(numLabels, points, NULL, true, 0);
-		int deviceId = object->peak_first_device();
+		int deviceId = object->pick_first_device();
 		cudaStream_t stream;
 		object->create_stream(stream);
 		int* d_indices;
@@ -764,7 +764,7 @@ namespace DPMMSubClustersTest
 
 		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_r;
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
@@ -807,7 +807,7 @@ namespace DPMMSubClustersTest
 		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
 
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_r;
 		cuda.allocate_in_device(10, d_r);
 		cuda.create_stream(stream);
@@ -852,7 +852,7 @@ namespace DPMMSubClustersTest
 		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
 
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_r1;
 		cuda.allocate_in_device(10, d_r1);
 		cuda.create_stream(stream);
@@ -894,7 +894,7 @@ namespace DPMMSubClustersTest
 		mv_gaussian* gaussian = new mv_gaussian(mu, sigma, invSigma, logdetSigma, invChol);
 
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_z;
 		cuda.allocate_in_device(2 * 10, d_z);
 		cuda.create_stream(stream);
@@ -931,7 +931,7 @@ namespace DPMMSubClustersTest
 
 		cuda.init(0, x, NULL, true, 0);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;
@@ -972,7 +972,7 @@ namespace DPMMSubClustersTest
 
 		cuda.init(0, x, NULL, true, 0);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;
@@ -1014,7 +1014,7 @@ namespace DPMMSubClustersTest
 
 		cuda.init(0, x, NULL, true, 0);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;
@@ -1051,7 +1051,7 @@ namespace DPMMSubClustersTest
 
 		cuda.init(0, x, NULL, true, 0);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;
@@ -1085,7 +1085,7 @@ namespace DPMMSubClustersTest
 
 		cuda.init(0, x, NULL, true, 0);
 		cudaStream_t stream;
-		int deviceId = cuda.peak_first_device();
+		int deviceId = cuda.pick_first_device();
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;

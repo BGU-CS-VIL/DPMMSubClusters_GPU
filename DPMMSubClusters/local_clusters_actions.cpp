@@ -225,8 +225,6 @@ void local_clusters_actions::merge_clusters_worker(LabelsType &indices, LabelsTy
 {
 	for (LabelType i = 0; i < indices.size(); i++)
 	{
-//		printf("\n\n\n************** merge_clusters_worker ******************\n\n\n");
-
 		globalParams->cuda->merge_clusters_worker(indices[i], new_indices[i]);
 	}
 }
@@ -412,9 +410,9 @@ void local_clusters_actions::create_thin_cluster_params(std::vector<std::shared_
 	CHECK_TIME("local_clusters_actions::create_thin_cluster_params", globalParams->use_verbose);
 	for (ClusterIndexType i = 0; i < clusters.size(); i++)
 	{
-		tcp.push_back(std::make_shared<thin_cluster_params>(clusters[i]->cluster_params->cluster_params->distribution->clone(),
-			clusters[i]->cluster_params->cluster_params_l->distribution->clone(),
-			clusters[i]->cluster_params->cluster_params_r->distribution->clone(),
+		tcp.push_back(std::make_shared<thin_cluster_params>(clusters[i]->cluster_params->cluster_params->distribution,
+			clusters[i]->cluster_params->cluster_params_l->distribution,
+			clusters[i]->cluster_params->cluster_params_r->distribution,
 			clusters[i]->cluster_params->lr_weights));
 	}
 }

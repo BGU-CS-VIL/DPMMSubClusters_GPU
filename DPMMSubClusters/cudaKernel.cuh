@@ -35,8 +35,8 @@ public:
 	void init(int numLabels, MatrixXd& points, unsigned long long seed, bool verbose, int forceKernel);
 	void optimize_kernels(gpuCapability& gpu, int forceKernel);
 	void release();
-	int peak_first_device();
-	int peak_any_device();
+	int pick_first_device();
+	int pick_any_device();
 	void sample_log_cat_array_sub_cluster(
 		double* d_r,
 		int r_offset,

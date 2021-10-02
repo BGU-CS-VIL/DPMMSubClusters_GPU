@@ -118,7 +118,7 @@ namespace DPMMSubClustersTest
 	}
 
 	//Good for testing performance for bottlenecks 
-	TEST(module_tests_test, DISABLED_HighDim)
+	TEST(module_tests_test, HighDim)
 	{
 		srand(12345);
 		data_generators data_generators;
@@ -156,57 +156,6 @@ namespace DPMMSubClustersTest
 		std::cout << str << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
 		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[microseconds]" << std::endl;
-	}
-
-	TEST(module_tests_test, DISABLED_VeryHighDim)
-	{
-		srand(12345);
-		data_generators data_generators;
-		MatrixXd  x;
-		std::shared_ptr<LabelsType> labels = std::make_shared<LabelsType>();
-		double** tmean;
-		double** tcov;
-		int N = (int)pow(10, 5);
-		int D = 1000;
-		int numClusters = 3;
-		int numIters = 100;
-		std::string fileName = "VeryHighDim_" + std::to_string(N) + "_" + std::to_string(D) + "_" + std::to_string(numClusters);
-
-		struct stat buffer;
-		if (stat((fileName + ".npy").c_str(), &buffer) == 0)
-		{
-			utils::load_data_model(fileName, x);
-		}
-		else
-		{
-			data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
-			for (DimensionsType i = 0; i < D; i++)
-			{
-				delete[] tmean[i];
-			}
-			for (DimensionsType i = 0; i < D; i++)
-			{
-				delete[] tcov[i];
-			}
-			utils::save_data(fileName, x);
-		}
-
-		std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 1000, MatrixXd::Identity(D, D));
-
-		dp_parallel_sampling_class dps(N, x, 0, prior_type::Gaussian);
-
-		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-		ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, false, true, false, 15);
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-		EXPECT_TRUE(dp.dp_model->group.local_clusters.size() > 6);
-
-		std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
-		std::cout << str << std::endl;
-		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
-		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[microseconds]" << std::endl;
-
-		ASSERT_FALSE(true);
 	}
 
 	TEST(module_tests_test, CompareTiming)
