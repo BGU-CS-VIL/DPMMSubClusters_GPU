@@ -22,10 +22,6 @@ struct model_hyper_params : public IJsonSerializable
 		root["alpha"] = alpha;
 		root["total_dim"] = total_dim;
 	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
-	}
 	
 	std::shared_ptr<hyperparams> distribution_hyper_params;
 	double alpha;
@@ -114,10 +110,6 @@ public:
 		posterior_hyperparams->serialize(posterior_hyperparams_val);
 		root["posterior_hyperparams"] = posterior_hyperparams_val;
 	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
-	}
 
 	std::shared_ptr<hyperparams> prior_hyperparams;
 	std::shared_ptr<distribution_sample> distribution;
@@ -192,8 +184,8 @@ public:
 		cluster_params_r->serialize(cluster_params_r_val);
 		root["cluster_params_r"] = cluster_params_r_val;
 
-		int size = lr_weights.size();
-		for (int i = 0; i < size; i++)
+		size_t size = lr_weights.size();
+		for (size_t i = 0; i < size; i++)
 		{
 			root["lr_weights"].append(lr_weights[i]);
 		}
@@ -201,7 +193,7 @@ public:
 		root["splittable"] = splittable;
 
 		size = logsublikelihood_hist.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			Json::Value pair;
 			pair.append(logsublikelihood_hist[i].first);
@@ -209,10 +201,6 @@ public:
 			root["logsublikelihood_hist"].append(pair);
 		}
 
-	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
 	}
 
 	std::shared_ptr<cluster_parameters> cluster_params;
@@ -299,10 +287,6 @@ struct local_cluster : public IJsonSerializable
 		root["r_count"] = r_count;
 
 	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
-	}
 
 	std::shared_ptr<splittable_cluster_params> cluster_params;
 	DimensionsType total_dim;
@@ -322,15 +306,15 @@ struct local_group : public IJsonSerializable
 		model_hyperparams.serialize(model_hyperparams_val);
 		root["model_hyperparams"] = model_hyperparams_val;
 
-		int size = points.size();
+		size_t size = points.size();
 		double* data = points.data();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["points"].append(data[i]);
 		}
 
 		size = local_clusters.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			Json::Value local_cluster_val;
 			local_clusters[i]->serialize(local_cluster_val);
@@ -338,14 +322,10 @@ struct local_group : public IJsonSerializable
 		}
 
 		size = weights.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["weights"].append(weights[i]);
 		}
-	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
 	}
 
 	LabelType num_labels()
@@ -359,7 +339,6 @@ struct local_group : public IJsonSerializable
 	std::vector<double> weights;
 };
 
-//
 class pts_less_group
 {
 public:
@@ -372,8 +351,6 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const pts_less_group& plg)
 	{
 		os << "{model_hyperparams: " << plg.model_hyperparams <<
-			//" || labels: " << plg.labels.size() <<
-			//" || labels_subcluster: " << plg.labels_subcluster.size() <<
 			" || local_clusters: " << plg.local_clusters.size() <<
 			" || weights: " << plg.weights.size() <<
 			"}" << std::endl;
@@ -394,10 +371,6 @@ struct dp_parallel_sampling : public IJsonSerializable
 		Json::Value group_val;
 		group.serialize(group_val);
 		root["group"] = group_val;
-	}
-	virtual void deserialize(Json::Value& root) 
-	{
-		//TODO
 	}
 	
 	model_hyper_params model_hyperparams;

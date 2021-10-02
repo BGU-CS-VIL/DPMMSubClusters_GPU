@@ -4,7 +4,6 @@
 #include "cudaKernel_gaussian.cuh"
 #include "niw_hyperparams.h"
 #include "niw_sufficient_statistics.h"
-#include "check_time.h"
 
 __global__ void divide_points_by_mu_kernel(double* d_points, int* d_indices, int dim, int indicesSize, double* d_mu, double* d_z)
 {
@@ -29,11 +28,11 @@ __global__ void divide_points_by_mu_all_kernel(double* d_points, int dim, int in
 		}
 	}
 }
+
 __global__ void mul_scalar_sum_A_AT_kernel(double* d_A, double* d_B, int n, double scalar)
 {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0;
 
 	if (col < n && row < n)
 	{
@@ -51,7 +50,6 @@ void cudaKernel_gaussian::log_likelihood_sub_labels(
 	cudaStream_t& stream,
 	int deviceId)
 {
-	CHECK_TIME("cudaKernel_gaussian::log_likelihood_sub_labels", use_verbose);
 	mv_gaussian* pDistribution_sample = dynamic_cast<mv_gaussian*>(distribution_sample.get());
 
 	double* d_b;
@@ -145,11 +143,8 @@ void cudaKernel_gaussian::do_create_sufficient_statistics(
 	}
 	else
 	{
-		CHECK_TIME("cudaKernel_gaussian::do_create_sufficient_statistics", use_verbose);
-
 		double* d_c;
 		runCuda(cudaMallocAsync(&d_c, rows * rows * sizeof(double), stream));
-		//runCuda(cudaStreamSynchronize(stream));
 
 		multiplie_matrix_by_transpose(d_pts, d_c, rows, cols, deviceId, stream);
 

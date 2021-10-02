@@ -760,9 +760,8 @@ namespace DPMMSubClustersTest
 		MatrixXd invSigma(2, 2);
 		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
 		double logdetSigma = 5.117007f;
-		LLT<MatrixXd, Upper> invChol;
 
-		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma);
 		cudaStream_t stream;
 		int deviceId = cuda.pick_first_device();
 		double* d_r;
@@ -802,9 +801,8 @@ namespace DPMMSubClustersTest
 		MatrixXd invSigma(2, 2);
 		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
 		double logdetSigma = 5.117007f;
-		LLT<MatrixXd, Upper> invChol;
 
-		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma);
 
 		cudaStream_t stream;
 		int deviceId = cuda.pick_first_device();
@@ -847,9 +845,8 @@ namespace DPMMSubClustersTest
 		MatrixXd invSigma(2, 2);
 		invSigma << 1, 0, 0, 1;
 		double logdetSigma = 5.117007f;
-		LLT<MatrixXd, Upper> invChol;
 
-		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma, invChol);
+		std::shared_ptr<mv_gaussian> gaussian = std::make_shared<mv_gaussian>(mu, sigma, invSigma, logdetSigma);
 
 		cudaStream_t stream;
 		int deviceId = cuda.pick_first_device();
@@ -888,10 +885,9 @@ namespace DPMMSubClustersTest
 		MatrixXd invSigma(2, 2);
 		invSigma << 0.19052099, -0.3465031, -0.3465031, 0.66165066;
 		double logdetSigma = 5.117007f;
-		LLT<MatrixXd, Upper> invChol;
 		MatrixXd z1;
 
-		mv_gaussian* gaussian = new mv_gaussian(mu, sigma, invSigma, logdetSigma, invChol);
+		mv_gaussian* gaussian = new mv_gaussian(mu, sigma, invSigma, logdetSigma);
 
 		cudaStream_t stream;
 		int deviceId = cuda.pick_first_device();
@@ -1018,7 +1014,7 @@ namespace DPMMSubClustersTest
 		double* d_A;
 		cuda.allocate_in_device(A, d_A);
 		double* d_B;
-		cuda.allocate_in_device(A.size(), d_B);
+		cuda.allocate_in_device((int)(A.size()), d_B);
 
 		cuda.create_stream(stream);
 
@@ -1026,7 +1022,7 @@ namespace DPMMSubClustersTest
 
 		cuda.release_stream(stream);
 
-		cuda.copy_from_device(d_B, B1.rows(), B1.cols(), B1);
+		cuda.copy_from_device(d_B, (int)(B1.rows()), (int)(B1.cols()), B1);
 		cuda.release_in_device(d_A);
 		cuda.release_in_device(d_B);
 
@@ -1063,7 +1059,7 @@ namespace DPMMSubClustersTest
 
 		cuda.release_stream(stream);
 
-		cuda.copy_from_device(d_B, B1.rows(), B1);
+		cuda.copy_from_device(d_B, (int)(B1.rows()), B1);
 		cuda.release_in_device(d_A);
 		cuda.release_in_device(d_B);
 

@@ -15,9 +15,7 @@ public:
 	{
 		copy(niwObj);
 	}
-	virtual ~niw()
-	{
-	}
+	virtual ~niw(){}
 
 	niw *do_clone()
 	{
@@ -49,8 +47,5 @@ protected:
 	virtual MatrixXd inverseWishart(const MatrixXd& sigma, double v);
 	virtual MatrixXd wishart(const MatrixXd& sigma, double v);
 	virtual void inverseWishartNoInverse(const MatrixXd& sigma, double v, std::unique_ptr < cudaKernel >& cuda, MatrixXd& matOut);
-
 	virtual double* multinormal_sample(int n, double mu[], double r[]);
-
 };
-

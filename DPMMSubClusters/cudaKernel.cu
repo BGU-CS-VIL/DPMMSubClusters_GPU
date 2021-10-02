@@ -8,10 +8,12 @@
 #include<curand_kernel.h>
 #include<time.h>
 #include "cudaKernel.cuh"
-#include "check_time.h"
+#include "cudaKernel_plan.cuh"
 
 #define TILE_DIM  32
 #define BLOCK_ROWS  8
+
+//Begin of kernels
 
 // function to define seed
 __global__ void initCurand(curandState *state, unsigned long long seed, int maxIdx) {
@@ -141,9 +143,7 @@ __global__ void sample_log_cat_array_sub_cluster_all(curandState *state, int *de
 
 __device__ void sample_sub_label(curandState *state, int *d_label)
 {
-	//*d_label = ((int)(curand_uniform(state) * 2)) % 2 + 1;
 	*d_label = (int)(curand_uniform(state) * (2 - 1 + 0.999999) + 1);
-
 }
 
 __global__ void sample_sub_labels_all(curandState *state, int *d_labels, int maxIdx)
@@ -157,9 +157,7 @@ __global__ void sample_sub_labels_all(curandState *state, int *d_labels, int max
 
 __device__ void sample_label(curandState *state, int *d_label, int initial_clusters, double outlier_mod)
 {
-//	*d_label = ((int)(curand_uniform(state)*initial_clusters)) % initial_clusters + 1 + ((outlier_mod > 0) ? 1 : 0);
 	*d_label = (int)(curand_uniform(state) * (initial_clusters - 1 + 0.999999) + 1 + ((outlier_mod > 0) ? 1 : 0));
-
 }
 
 __global__ void sample_labels_all(curandState *state, int *d_labels, int maxIdx, int initial_clusters, double outlier_mod)
@@ -347,7 +345,6 @@ __global__ void dcolwise_dot_with_log_kernel(int maxIdx, int rows, double* d_a, 
 			sum += d_a[idx * rows + i] * d_b[idx * rows + i];
 		}
 
-//		d_r[idx] = scalar - sum / 2 + __logf(weight);
 		d_r[idx] = scalar - sum / 2 + log(weight);
 	}
 }
@@ -361,15 +358,11 @@ __global__ void build_log_likelihood_array_sub_cluster_kernel(int maxIdx, double
 		double maxRow;
 		double sum;
 
-		//d_r[idx] += __logf(d_lr_weights[0]);
 		d_r[idx] += log(d_lr_weights[0]);
-		//d_r[idx + r_offset] += __logf(d_lr_weights[1]);
 		d_r[idx + r_offset] += log(d_lr_weights[1]);
 		maxRow = fmax(d_r[idx], d_r[idx + r_offset]);
 
-		//d_r[idx] = __expf(d_r[idx] - maxRow);
 		d_r[idx] = exp(d_r[idx] - maxRow);
-		//d_r[idx + r_offset] = __expf(d_r[idx + r_offset] - maxRow);
 		d_r[idx + r_offset] = exp(d_r[idx + r_offset] - maxRow);
 		sum = d_r[idx] + d_r[idx + r_offset];
 
@@ -481,7 +474,6 @@ __global__ void diag_normalize(double* A, double* I, int n, int i) {
 			I[x * n + y] /= A[i * n + i];
 			A[x * n + y] /= A[i * n + i];
 		}
-
 }
 
 __global__ void gaussjordan(double* A, double* I, int n, int i)
@@ -539,35 +531,9 @@ __global__ void transposeGPUcoalescing(double* matIn, int n, int m, double* matT
 	}
 }
 
-//__global__ void inv_kernel(double* a_i, double* c_o, int n)
-//{
-//	int* p = (int*)malloc(n * sizeof(int));
-//	int* info = (int*)malloc(sizeof(int));
-//	int batch;
-//	cublasHandle_t hdl;
-//	cublasStatus_t status = cublasCreate(&hdl);
-//	printf("handle %d n = %d\n", status, n);
-//
-//	info[0] = 0;
-//	batch = 1;
-//	double** a = (double**)malloc(sizeof(double*));
-//	*a = a_i;
-//	const double** aconst = (const double**)a;
-//	double** c = (double**)malloc(sizeof(double*));
-//	*c = c_o;
-//	// See
-//	// http://docs.nvidia.com/cuda/pdf/CUDA_Dynamic_Parallelism_Programming_Guide.pdf
-//	//http://stackoverflow.com/questions/27094612/cublas-matrix-inversion-from-device
-//	status = cublasDgetrfBatched(hdl, n, a, n, p, info, batch);
-//	__syncthreads();
-//	printf("rf %d info %d\n", status, info[0]);
-//	status = cublasDgetriBatched(hdl, n, aconst, n, p, c, n, info, batch);
-//	__syncthreads();
-//	printf("ri %d info %d\n", status, info[0]);
-//	cublasDestroy_v2(hdl);
-//	printf("done\n");
-//}
+//End of kernels
 
+//cudaKernel class is the class that wraps all the calls to cuda APIs
 void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed, bool verbose, int forceKernel)
 {
 	use_verbose = verbose;
@@ -668,8 +634,6 @@ void cudaKernel::init(int numLabelsIn, MatrixXd &points, unsigned long long seed
 	}
 }
 
-void boo(double* d_A, double* d_B, int N, int M, cudaStream_t& stream) {}
-
 void cudaKernel::optimize_kernels(gpuCapability& gpu, int forceKernel)
 {
 	if (forceKernel == 1)
@@ -696,26 +660,26 @@ void cudaKernel::optimize_kernels(gpuCapability& gpu, int forceKernel)
 		runCuda(cudaStreamCreate(&stream));
 
 		gpu.matrixMultiply = &do_matrixMultiply1;
-		do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		do_multiplie_matrix_by_transpose1(d_A, d_B, (int)(A.rows()), (int)(A.cols()), gpu, stream, use_verbose);
 		runCuda(cudaStreamSynchronize(stream));
 
 		clock_t begin = clock();
 		for (int i = 0; i < numIter; i++)
 		{
-			do_multiplie_matrix_by_transpose1(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+			do_multiplie_matrix_by_transpose1(d_A, d_B, (int)(A.rows()), (int)(A.cols()), gpu, stream, use_verbose);
 		}
 		runCuda(cudaStreamSynchronize(stream));
 		clock_t end = clock();
 		double took1 = double(end - begin);
 
 		gpu.matrixMultiply = &do_matrixMultiply2;
-		do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+		do_multiplie_matrix_by_transpose2(d_A, d_B, (int)(A.rows()), (int)(A.cols()), gpu, stream, use_verbose);
 		runCuda(cudaStreamSynchronize(stream));
 
 		begin = clock();
 		for (int i = 0; i < numIter; i++)
 		{
-			do_multiplie_matrix_by_transpose2(d_A, d_B, A.rows(), A.cols(), gpu, stream, use_verbose);
+			do_multiplie_matrix_by_transpose2(d_A, d_B, (int)(A.rows()), (int)(A.cols()), gpu, stream, use_verbose);
 		}
 		runCuda(cudaStreamSynchronize(stream));
 		end = clock();
@@ -817,7 +781,6 @@ void cudaKernel::sample_log_cat_array_sub_cluster(
 	cudaStream_t& stream,
 	int deviceId)
 {
-	CHECK_TIME("cudaKernel::sample_log_cat_array_sub_cluster", use_verbose);
 	double* d_y;
 	int* d_a;
 	int* d_b;
@@ -867,7 +830,6 @@ void cudaKernel::sample_log_cat_array(
 
 void cudaKernel::sample_sub_clusters_worker(LabelType label, int* d_indices, int &indicesSize, cudaStream_t& stream, int deviceId)
 {
-	CHECK_TIME("cudaKernel::sample_sub_clusters_worker", use_verbose);
 	int* d_indicesSize;
 	runCuda(cudaMallocAsync(&d_indicesSize, sizeof(int), stream));
 	runCuda(cudaMemsetAsync(d_indicesSize, 0, sizeof(int), stream));
@@ -879,31 +841,11 @@ void cudaKernel::sample_sub_clusters_worker(LabelType label, int* d_indices, int
 	runCuda(cudaPeekAtLastError());
 }
 
-typedef struct
-{
-	//Stream for asynchronous command execution
-	cudaStream_t stream;
-	cudaStream_t stream1;
-	cudaStream_t stream2;
-	cudaStream_t stream3;
-	std::shared_ptr<thin_suff_stats> tss;
-	double* d_pts;
-	double* d_pts1;
-	double* d_pts2;
-	int* d_indicesSize;
-	LabelType indicesSize;
-	int deviceId;
-	int* d_j1;
-	int* d_j2;
-} sufficient_statistics_plan;
-
 std::map<LabelType, std::shared_ptr<thin_suff_stats>> cudaKernel::create_sufficient_statistics(
 	LabelsType& indices,
 	const std::shared_ptr<hyperparams>& hyperParams,
 	const std::shared_ptr<hyperparams>& posterior)
 {
-	CHECK_TIME("cudaKernel::create_sufficient_statistics", use_verbose);
-
 	std::map<LabelType, std::shared_ptr<thin_suff_stats>> suff_stats_dict;
 	sufficient_statistics_plan* plan = new sufficient_statistics_plan[indices.size()];
 
@@ -1008,7 +950,6 @@ void cudaKernel::multiplie_matrix_by_transpose(double* d_A, double* d_B, int N, 
 //This method is good from low dimensions
 void cudaKernel::do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int N, int M, gpuCapability &gpu, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose1", use_verbose);
 	dim3 blocks_size = dim3(N / TILE_DIM + 1, M / TILE_DIM + 1);
 	dim3 threads = dim3(TILE_DIM, BLOCK_ROWS);
 
@@ -1024,7 +965,6 @@ void cudaKernel::do_multiplie_matrix_by_transpose1(double* d_A, double* d_B, int
 //This method is good from high dimensions
 void cudaKernel::do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int N, int M, gpuCapability& gpu, cudaStream_t &stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_multiplie_matrix_by_transpose2", use_verbose);
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	runCuda(cublasSetStream(handle, stream));
@@ -1038,7 +978,6 @@ void cudaKernel::do_multiplie_matrix_by_transpose2(double* d_A, double* d_B, int
 //C = A*B * (A* B)T
 void cudaKernel::multiplie_matrix_for_inverseWishart(const MatrixXd& A, const MatrixXd& B, MatrixXd& C)
 {
-	CHECK_TIME("cudaKernel::multiplie_matrix_for_inverseWishart", use_verbose);
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	double alpha = 1.0;
@@ -1056,9 +995,9 @@ void cudaKernel::multiplie_matrix_for_inverseWishart(const MatrixXd& A, const Ma
 	runCuda(cudaMalloc(&d_C, sizeof(double) * A.rows() * A.rows()));
 
 	// temp(m,k) = A(m,n) * B(n,k)
-	int m = A.rows();
-	int n = A.cols();
-	int k = B.cols();
+	int m = (int)(A.rows());
+	int n = (int)(A.cols());
+	int k = (int)(B.cols());
 	runCuda(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &alpha, d_A, m, d_B, n, &beta, d_temp, m));
 
 	// C(m,m) = temp(m,k) * temp(m,k)'
@@ -1082,7 +1021,6 @@ void cudaKernel::create_suff_stats_dict_worker(
 	Eigen::MatrixXd& pts1,
 	Eigen::MatrixXd& pts2)
 {
-	CHECK_TIME("cudaKernel::create_suff_stats_dict_worker", use_verbose);
 	int deviceId = pick_first_device();
 	int pointsRows = gpuCapabilities[deviceId].pointsRows;
 	int* d_indices;
@@ -1320,7 +1258,6 @@ void cudaKernel::get_sub_labels_count(int &l, int &r)
 // C(m,k) = A(m,n) * B(n,k)
 void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_matrixMultiply1", use_verbose);
 	const int BlockSize = 16;
 
 	unsigned int grid_rows = (m + BlockSize - 1) / BlockSize;
@@ -1338,8 +1275,6 @@ void cudaKernel::do_matrixMultiply1(double* d_A, double* d_B, double* d_C, int m
 // C(m,k) = A(m,n) * B(n,k)
 void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m, int n, int k, cudaStream_t& stream, bool use_verbose)
 {
-	CHECK_TIME("cudaKernel::do_matrixMultiply2", use_verbose);
-
 	cublasHandle_t handle;
 	runCuda(cublasCreate(&handle));
 	runCuda(cublasSetStream(handle, stream));
@@ -1350,26 +1285,8 @@ void cudaKernel::do_matrixMultiply2(double* d_A, double* d_B, double* d_C, int m
 	runCuda(cublasDestroy(handle));
 }
 
-//void cudaKernel::matrixMultiply(double* d_A, double* d_B, double* d_C, int m, int n, int k)
-//{
-//	const int BlockSize = 16;
-//
-//	unsigned int grid_rows = (m + BlockSize - 1) / BlockSize;
-//	unsigned int grid_cols = (k + BlockSize - 1) / BlockSize;
-//	dim3 dimGrid(grid_cols, grid_rows);
-//	dim3 dimBlock(BlockSize, BlockSize);
-//
-//	if (k > 0)
-//	{
-//		gpu_matrix_mult << <dimGrid, dimBlock >> > (d_A, d_B, d_C, m, n, k);
-//		runCuda(cudaPeekAtLastError());
-//		runCuda(cudaDeviceSynchronize());
-//	}
-//}
-
 void cudaKernel::dcolwise_dot_all_sub_labels(int maxIdx, int rows, double* d_a, double* d_b, double scalar, double* d_r, int r_offset, cudaStream_t& stream)
 {
-	CHECK_TIME("cudaKernel::dcolwise_dot_all_sub_labels", use_verbose);
 	dcolwise_dot_all_kernel << <blocks, threads, 0, stream >> > (maxIdx, rows, d_a, d_b, scalar, d_r, r_offset);
 }
 
@@ -1378,40 +1295,15 @@ void cudaKernel::dcolwise_dot_all_labels(int maxIdx, int rows, double* d_a, doub
 	dcolwise_dot_with_log_kernel << <blocks, threads, 0, stream >> > (maxIdx, rows, d_a, d_b, scalar, d_r, weight);
 }
 
-typedef struct
-{
-	//Stream for asynchronous command execution
-	cudaStream_t stream;
-
-	int* d_indices;
-	int indicesSize;
-	double* d_r;
-	double* d_lr_weights;
-	int deviceId;
-} subclusters_labels_plan;
-
 void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::shared_ptr<thin_cluster_params>>& cluster_params, int dim)
 {
-	CHECK_TIME("cudaKernel::create_subclusters_labels", use_verbose);
-//	omp_set_num_threads(20);
-//	#pragma omp parallel
-	{
-//		unsigned int i = omp_get_thread_num();
-
-//		printf("**** i=%d\n", i);
-	}
-
 	subclusters_labels_plan* plan = new subclusters_labels_plan[numClusters];
 
 	//Allocate memory for all streams
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel
+	for (int i = 0; i < numClusters; i++)
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 1", use_verbose);
-		for (int i = 0; i < numClusters; i++)
-	{
-		//		unsigned int i = omp_get_thread_num();
-
 		plan[i].deviceId = pick_any_device();
 		runCuda(cudaStreamCreate(&(plan[i].stream)));
 		runCuda(cudaMallocAsync((void**)&(plan[i].d_indices), sizeof(int) * numLabels, plan[i].stream));
@@ -1419,114 +1311,88 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 		//Both
 		runCuda(cudaMallocAsync((void**)&(plan[i].d_lr_weights), sizeof(double) * cluster_params[i]->lr_weights.size(), plan[i].stream));
 		runCuda(cudaMemcpyAsync(plan[i].d_lr_weights, cluster_params[i]->lr_weights.data(), sizeof(double) * cluster_params[i]->lr_weights.size(), cudaMemcpyHostToDevice, plan[i].stream));
-	}}
+	}
 
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel
+	for (int i = 0; i < numClusters; i++)
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 2", use_verbose);
-		for (int i = 0; i < numClusters; i++)
-		{
-			//		unsigned int i = omp_get_thread_num();
+		//Find indices
+		//Can be used on any GPU
+		sample_sub_clusters_worker(i + 1, plan[i].d_indices, plan[i].indicesSize, plan[i].stream, plan[i].deviceId);
 
-	//		cudaSetDevice(plan[i].deviceId);
-			//Find indices
-			//Can be used on any GPU
-			sample_sub_clusters_worker(i + 1, plan[i].d_indices, plan[i].indicesSize, plan[i].stream, plan[i].deviceId);
+		//Return the likelihood in r vector.
+		//Can be used on any GPU
+		runCuda(cudaMallocAsync((void**)&(plan[i].d_r), sizeof(double) * plan[i].indicesSize * 2, plan[i].stream));
 
-			//Return the likelihood in r vector.
-			//Can be used on any GPU
-			runCuda(cudaMallocAsync((void**)&(plan[i].d_r), sizeof(double) * plan[i].indicesSize * 2, plan[i].stream));
-
-			log_likelihood_sub_labels(plan[i].d_r, 0, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->l_dist, plan[i].stream, plan[i].deviceId);
-			log_likelihood_sub_labels(plan[i].d_r, plan[i].indicesSize, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->r_dist, plan[i].stream, plan[i].deviceId);
-		}
+		log_likelihood_sub_labels(plan[i].d_r, 0, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->l_dist, plan[i].stream, plan[i].deviceId);
+		log_likelihood_sub_labels(plan[i].d_r, plan[i].indicesSize, plan[i].d_indices, plan[i].indicesSize, dim, cluster_params[i]->r_dist, plan[i].stream, plan[i].deviceId);
 	}
-
-	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 3", use_verbose);
-		//omp_set_num_threads(numClusters);
-		//#pragma omp parallel for
-		for (int i = 0; i < numClusters; i++)
-		{
-			CHECK_TIME("cudaKernel::create_subclusters_labels 3.5", use_verbose);
-	//		cudaSetDevice(plan[i].deviceId);
-			runCuda(cudaStreamSynchronize(plan[i].stream));
-		}}
 
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
+	for (int i = 0; i < numClusters; i++)
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 4", use_verbose);
-		for (int i = 0; i < numClusters; i++)
+		runCuda(cudaStreamSynchronize(plan[i].stream));
+	}
+
+	//omp_set_num_threads(numClusters);
+	//#pragma omp parallel for
+	for (int i = 0; i < numClusters; i++)
+	{
+		cudaSetDevice(plan[0].deviceId);
+
+		int* d_indices;
+		bool needToFree_d_indices;
+		device_to_device_copy(plan[i].deviceId, plan[0].deviceId, plan[i].indicesSize, plan[i].d_indices, d_indices, false, needToFree_d_indices);
+
+		double* d_lr_weights;
+		bool needToFree_d_lr_weights;
+		device_to_device_copy(plan[i].deviceId, plan[0].deviceId, (int)cluster_params[i]->lr_weights.size(), plan[i].d_lr_weights, d_lr_weights, false, needToFree_d_lr_weights);
+
+		double* d_r;
+		bool needToFree_d_r;
+		device_to_device_copy(plan[i].deviceId, plan[0].deviceId, plan[i].indicesSize * 2, plan[i].d_r, d_r, false, needToFree_d_r);
+
+		sample_log_cat_array_sub_cluster(d_r, plan[i].indicesSize, d_indices, plan[i].indicesSize, d_lr_weights, plan[0].stream, plan[0].deviceId);
+
+		if (needToFree_d_indices)
 		{
-			//run on one GPU (plan[0].deviceId) - maybe could be optimized
-			cudaSetDevice(plan[0].deviceId);
-
-			int* d_indices;
-			bool needToFree_d_indices;
-			device_to_device_copy(plan[i].deviceId, plan[0].deviceId, plan[i].indicesSize, plan[i].d_indices, d_indices, false, needToFree_d_indices);
-
-			double* d_lr_weights;
-			bool needToFree_d_lr_weights;
-			device_to_device_copy(plan[i].deviceId, plan[0].deviceId, (int)cluster_params[i]->lr_weights.size(), plan[i].d_lr_weights, d_lr_weights, false, needToFree_d_lr_weights);
-
-			double* d_r;
-			bool needToFree_d_r;
-			device_to_device_copy(plan[i].deviceId, plan[0].deviceId, plan[i].indicesSize * 2, plan[i].d_r, d_r, false, needToFree_d_r);
-
-			sample_log_cat_array_sub_cluster(d_r, plan[i].indicesSize, d_indices, plan[i].indicesSize, d_lr_weights, plan[0].stream, plan[0].deviceId);
-
-			if (needToFree_d_indices)
-			{
-				runCuda(cudaFreeAsync(d_indices, plan[0].stream));
-			}
-			if (needToFree_d_lr_weights)
-			{
-				runCuda(cudaFreeAsync(d_lr_weights, plan[0].stream));
-			}
-			if (needToFree_d_r)
-			{
-				runCuda(cudaFreeAsync(d_r, plan[0].stream));
-			}
-		}}
+			runCuda(cudaFreeAsync(d_indices, plan[0].stream));
+		}
+		if (needToFree_d_lr_weights)
+		{
+			runCuda(cudaFreeAsync(d_lr_weights, plan[0].stream));
+		}
+		if (needToFree_d_r)
+		{
+			runCuda(cudaFreeAsync(d_r, plan[0].stream));
+		}
+	}
 
 	//Wait for all operations to finish
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
+	for (int i = 0; i < numClusters; i++)
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 5", use_verbose);
-		for (int i = 0; i < numClusters; i++)
-		{
-			cudaSetDevice(plan[i].deviceId);
-			runCuda(cudaStreamSynchronize(plan[i].stream));
-		}}
+		cudaSetDevice(plan[i].deviceId);
+		runCuda(cudaStreamSynchronize(plan[i].stream));
+	}
 
 	//omp_set_num_threads(numClusters);
 	//#pragma omp parallel for
+	for (int i = 0; i < numClusters; i++)
 	{
-		CHECK_TIME("cudaKernel::create_subclusters_labels 6", use_verbose);
-		for (int i = 0; i < numClusters; i++)
-		{
-			cudaSetDevice(plan[i].deviceId);
-			runCuda(cudaFreeAsync(plan[i].d_indices, plan[i].stream));
-			runCuda(cudaFreeAsync(plan[i].d_r, plan[i].stream));
+		cudaSetDevice(plan[i].deviceId);
+		runCuda(cudaFreeAsync(plan[i].d_indices, plan[i].stream));
+		runCuda(cudaFreeAsync(plan[i].d_r, plan[i].stream));
 
-			runCuda(cudaFreeAsync(plan[i].d_lr_weights, plan[i].stream));
+		runCuda(cudaFreeAsync(plan[i].d_lr_weights, plan[i].stream));
 
-			runCuda(cudaStreamDestroy(plan[i].stream));
-		}
+		runCuda(cudaStreamDestroy(plan[i].stream));
 	}
 	delete[]plan;
 }
-
-typedef struct
-{
-	//Stream for asynchronous command execution
-	cudaStream_t stream;
-	int deviceId;
-	double* d_r;
-} clusters_labels_plan;
 
 void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared_ptr<thin_cluster_params>>& cluster_params, std::vector<double>& weights, bool bFinal)
 {
@@ -1582,7 +1448,6 @@ void cudaKernel::create_clusters_labels(int numClusters, std::vector<std::shared
 	{
 		if (masterDevice != plan[i].deviceId)
 		{
-			//For improvement maybe worth to check if cudaDeviceCanAccessPeer
 			double* r = new double[numLabels];
 
 			cudaSetDevice(plan[i].deviceId);
@@ -1689,9 +1554,8 @@ void cudaKernel::sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaS
 
 void cudaKernel::inverse_matrix(const MatrixXd &A, MatrixXd& B)
 {
-	CHECK_TIME("cudaKernel::inverse_matrix", use_verbose);
 	int blocksize = 8;
-	int n = A.rows();
+	int n = (int)(A.rows());
 	int ddsize = n * n * sizeof(double);
 	double* d_A, * d_B, *I;
 
@@ -1707,7 +1571,6 @@ void cudaKernel::inverse_matrix(const MatrixXd &A, MatrixXd& B)
 
 	dim3 threadsPerBlock(blocksize, blocksize);
 	dim3 numBlocks((n + blocksize - 1) / blocksize, (n + blocksize - 1) / blocksize);
-	// memory allocation    
 	runCuda(cudaMalloc((void**)&d_A, ddsize));
 	runCuda(cudaMemcpy(d_A, A.data(), ddsize, cudaMemcpyHostToDevice));
 
@@ -1730,89 +1593,5 @@ void cudaKernel::inverse_matrix(const MatrixXd &A, MatrixXd& B)
 	runCuda(cudaFree(d_A));
 	runCuda(cudaFree(d_B));
 }
-
-//void cudaKernel::inverse_matrix(const MatrixXd& A_in, MatrixXd& B)
-//{
-//	CHECK_TIME("cudaKernel::inverse_matrix");
-//	int n = A_in.rows();
-//	const double* src = A_in.data();
-//
-//	const int batchSize = 1;
-//	cublasHandle_t handle;
-//	runCuda(cublasCreate_v2(&handle));
-//
-//	int* P, * INFO;
-//
-//	runCuda(cudaMalloc(&P, n * batchSize * sizeof(int)));
-//	runCuda(cudaMalloc(&INFO, batchSize * sizeof(int)));
-//
-//	int lda = n;
-//
-//	double** A = (double**)malloc(batchSize * sizeof(double*));
-//	double** A_d, * A_dflat;
-//	runCuda(cudaMalloc(&A_d, batchSize * sizeof(double*)));
-//	runCuda(cudaMalloc(&A_dflat, n * n * batchSize * sizeof(double)));
-//	A[0] = A_dflat;
-//	for (int i = 1; i < batchSize; i++)
-//	{
-//		A[i] = A[i - 1] + (n * n);
-//	}
-//	runCuda(cudaMemcpy(A_d, A, batchSize * sizeof(double*), cudaMemcpyHostToDevice));
-//	for (int i = 0; i < batchSize; i++)
-//	{
-//		runCuda(cudaMemcpy(A_dflat + (i * n * n), &(src[i]), n * n * sizeof(double), cudaMemcpyHostToDevice));
-//	}
-//	runCuda(cublasDgetrfBatched(handle, n, A_d, lda, P, INFO, batchSize));
-//
-//	int INFOh[batchSize];
-//	runCuda(cudaMemcpy(INFOh, INFO, batchSize * sizeof(int), cudaMemcpyDeviceToHost));
-//
-//	for (int i = 0; i < batchSize; i++)
-//	{
-//		if (INFOh[i] != 0)
-//		{
-//			fprintf(stderr, "Factorization of matrix %d Failed: Matrix may be singular\n", i);
-//			cudaDeviceReset();
-//			exit(EXIT_FAILURE);
-//		}
-//	}
-//	double** C = (double**)malloc(batchSize * sizeof(double*));
-//	double** C_d, * C_dflat;
-//	runCuda(cudaMalloc(&C_d, batchSize * sizeof(double*)));
-//	runCuda(cudaMalloc(&C_dflat, n * n * batchSize * sizeof(double)));
-//	C[0] = C_dflat;
-//	for (int i = 1; i < batchSize; i++)
-//	{
-//		C[i] = C[i - 1] + (n * n);
-//	}
-//	runCuda(cudaMemcpy(C_d, C, batchSize * sizeof(double*), cudaMemcpyHostToDevice));
-//	runCuda(cublasDgetriBatched(handle, n, (const double**)A_d, lda, P, C_d, lda, INFO, batchSize));
-//
-//	runCuda(cudaMemcpy(INFOh, INFO, batchSize * sizeof(int), cudaMemcpyDeviceToHost));
-//
-//	for (int i = 0; i < batchSize; i++)
-//	{
-//		if (INFOh[i] != 0)
-//		{
-//			fprintf(stderr, "Inversion of matrix %d Failed: Matrix may be singular\n", i);
-//			cudaDeviceReset();
-//			exit(EXIT_FAILURE);
-//		}
-//	}
-//	B.resize(n, n);
-//
-//	for (int i = 0; i < batchSize; i++)
-//		runCuda(cudaMemcpy(B.data(), C_dflat + (i * n * n), n * n * sizeof(double), cudaMemcpyDeviceToHost));
-//	//	runCuda(cudaMemcpy(dst[i], C_dflat + (i * n * n), n * n * sizeof(double), cudaMemcpyDeviceToHost));
-//	cudaFree(A_d);
-//	cudaFree(A_dflat); 
-//	free(A);
-//	cudaFree(C_d);
-//	cudaFree(C_dflat); 
-//	free(C);
-//	cudaFree(P);
-//	cudaFree(INFO); 
-//	cublasDestroy_v2(handle);
-//}
 
 #endif

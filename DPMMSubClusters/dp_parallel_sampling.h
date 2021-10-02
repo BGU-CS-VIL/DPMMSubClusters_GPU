@@ -8,7 +8,6 @@
 
 using namespace Eigen;
 
-
 class dp_parallel_sampling_class
 {
 public:

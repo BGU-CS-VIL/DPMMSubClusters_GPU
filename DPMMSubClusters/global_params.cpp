@@ -2,7 +2,6 @@
 #include "global_params.h"
 #include "multinomial_prior.h"
 #include "niw.h"
-#include "check_time.h"
 #include "niw_hyperparams.h"
 #include "multinomial_hyper.h"
 
@@ -66,17 +65,16 @@ void global_params::init(std::string modelParamsFileName, DimensionsType d, prio
 	force_kernel = root.get("force_kernel", force_kernel).asInt();
 
 	cuda = pPrior->get_cuda();
-	numLabels = points.cols();
+	numLabels = (int)(points.cols());
 	cuda->init(numLabels, points, random_seed, use_verbose, force_kernel);
 }
 
 void global_params::init(int numLabels, MatrixXd& all_data, unsigned long long randomSeed, prior_type priorType)
 {
-	CHECK_TIME("global_params::init", use_verbose);
 	init_prior(priorType);
 	init_random(randomSeed);
-	hyper_params = pPrior->create_hyperparams(all_data.rows());
-	outlier_hyper_params = pPrior->create_hyperparams(all_data.rows());
+	hyper_params = pPrior->create_hyperparams((DimensionsType)(all_data.rows()));
+	outlier_hyper_params = pPrior->create_hyperparams((DimensionsType)(all_data.rows()));
 
 	cuda = pPrior->get_cuda();
 	cuda->init(numLabels, all_data, random_seed, use_verbose, force_kernel);
@@ -96,11 +94,10 @@ void global_params::init_prior(prior_type priorType)
 	}
 }
 
-
 void global_params::init_random(unsigned long long randomSeed)
 {
 	random_seed = randomSeed;//When nothing, a random seed will be used.
-	gen = std::make_unique<std::mt19937>(random_seed);
+	gen = std::make_unique<std::mt19937>((unsigned long)random_seed);
 }
 
 global_params::~global_params()

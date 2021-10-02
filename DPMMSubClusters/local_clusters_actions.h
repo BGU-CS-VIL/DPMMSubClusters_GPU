@@ -28,7 +28,7 @@ public:
 	void reset_bad_clusters(local_group& group);
 	void reset_bad_clusters_worker(LabelsType& indices, MatrixXd& group_points);
 	void check_and_split(local_group& group, bool bFinal, LabelsType& all_indices);
-	void should_split_local(double& should_split, std::shared_ptr<splittable_cluster_params>& cluster_params, double alpha, bool bFinal);
+	void should_split_local(int& should_split, std::shared_ptr<splittable_cluster_params>& cluster_params, double alpha, bool bFinal);
 	void split_cluster_local(local_group& group, std::shared_ptr<local_cluster>& cluster, ClusterIndexType index, ClusterIndexType new_index);
 	void split_cluster_local_worker(LabelsType& indices, LabelsType& new_indices);
 	void merge_clusters_worker(LabelsType& indices, LabelsType& new_indices);
@@ -43,4 +43,3 @@ protected:
 private:
 	std::shared_ptr<global_params> globalParams;
 };
-

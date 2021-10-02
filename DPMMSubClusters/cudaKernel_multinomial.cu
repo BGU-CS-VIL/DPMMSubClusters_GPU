@@ -19,7 +19,6 @@ __global__ void get_first_row_multiple_alpha_with_x(double* d_points, int dim, i
 	}
 }
 
-
 __global__ void get_first_row_multiple_alpha_with_x_all(double* d_points, int dim, int indicesSize, double* d_alpha, double* d_r)
 {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;

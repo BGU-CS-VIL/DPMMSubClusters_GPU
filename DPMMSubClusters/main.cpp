@@ -58,31 +58,32 @@ int main(int argc, char** argv)
 	{
 		std::ofstream out(result_path);
 		Json::Value root;
-		Json::StyledWriter writer;
-		//try
+		Json::StreamWriterBuilder builder;
+		std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+		try
 		{
 			prior_type pt = priortype.rfind("Multinomial", 0) == 0 ? prior_type::Multinomial : prior_type::Gaussian;
 			dp_parallel_sampling_class dps(model_path, params_path, pt);
 			ModelInfo dp = dps.dp_parallel_from_file();
-			int size = dp.labels->size();
+			size_t size = dp.labels->size();
 			double* data = NULL;
 
 			size = dp.nmi_score_history.size();
 			data = dp.nmi_score_history.data();
-			for (int i = 0; i < size; i++)
+			for (size_t i = 0; i < size; i++)
 			{
 				root["nmi_score_history"].append(data[i]);
 			}
 
 			size = dp.iter_count.size();
 			data = dp.iter_count.data();
-			for (int i = 0; i < size; i++)
+			for (size_t i = 0; i < size; i++)
 			{
 				root["iter_count"].append(data[i]);
 			}
 
 			//Below can be enabled if needed. But it might take time to save it to the file.
-			//for (int i = 0; i < size; i++)
+			//for (size_t i = 0; i < size; i++)
 			//{
 			//	root["labels"].append((*dp.labels)[i]);
 			//}
@@ -94,36 +95,31 @@ int main(int argc, char** argv)
 
 			//size = dp.dp_model->group.points.size();
 			//data = dp.dp_model->group.points.data();
-			//for (int i = 0; i < size; i++)
+			//for (size_t i = 0; i < size; i++)
 			//{
 			//	root["points"].append(data[i]);
 			//}
 
-			//const int rows = dp.dp_model->group.points.rows();
-			//const int cols = dp.dp_model->group.points.cols();
-			//for (int i = 0; i < rows; i++)
+			//const size_t rows = dp.dp_model->group.points.rows();
+			//const size_t cols = dp.dp_model->group.points.cols();
+			//for (size_t i = 0; i < rows; i++)
 			//{
 			//	std::string str = "points" + std::to_string(i);
-			//	for (int j = 0; j < cols; j++)
+			//	for (size_t j = 0; j < cols; j++)
 			//	{
 			//		root[str.c_str()].append(dp.dp_model->group.points(i, j));
 			//	}
 			//}
-
-			
-
-			out << writer.write(root);;
-			out.close();
+			writer->write(root, &out);
 		}
-		/*catch (const std::exception& e)
+		catch (const std::exception& e)
 		{
 			printf("exception:%s\n", e.what());
 			root["error"].append(e.what());
-			out << writer.write(root);
-			out.close();
+			writer->write(root, &out);
 
 			return EXIT_FAILURE;
-		}*/
+		}
 	}
 	return EXIT_SUCCESS;
 }

@@ -82,7 +82,7 @@ namespace DPMMSubClustersTest
 				delete[] tcov[i];
 			}
 
-			actualNumClusters = dp.dp_model->group.local_clusters.size();
+			actualNumClusters = (int)(dp.dp_model->group.local_clusters.size());
 
 			std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 			std::cout << str << std::endl;
@@ -196,7 +196,7 @@ namespace DPMMSubClustersTest
 				delete[] tcov[i];
 			}
 
-			actualNumClusters = dp.dp_model->group.local_clusters.size();
+			actualNumClusters = (int)(dp.dp_model->group.local_clusters.size());
 			std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
 			std::cout << str << std::endl;
 			std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;

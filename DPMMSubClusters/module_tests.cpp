@@ -12,7 +12,6 @@
 #include "moduleTypes.h"
 #include "utils.h"
 #include "distributions_util/logdet.h"
-#include "check_time.h"
 #include "niw_hyperparams.h"
 
 using namespace std;
@@ -66,10 +65,8 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	std::string fileName = "RandomMessHighDim_" + std::to_string(N) + "_" + std::to_string(D) + "_" + std::to_string(numClusters);
 
 	struct stat buffer;
-	//fileName = "E:\\VIL\\DPMMSubClusters.jl-master\\very_high_D";
 	if (stat((fileName + ".npy").c_str(), &buffer) == 0)
 	{
-		//CHECK_TIME("module_tests::load_data");
 		utils::load_data_model(fileName, x);
 		if (stat((fileName + ".labels").c_str(), &buffer) == 0)
 		{
@@ -78,7 +75,6 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	}
 	else
 	{
-		//CHECK_TIME("module_tests::generate_data");
 		data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
 		for (DimensionsType i = 0; i < D; i++)
 		{
@@ -88,7 +84,6 @@ ClusterIndexType module_tests::RandomMessHighDim()
 		{
 			delete[] tcov[i];
 		}
-	//	utils::save_data(fileName, x);
 	}
 	
 	std::vector<int> count(numClusters);
@@ -103,9 +98,9 @@ ClusterIndexType module_tests::RandomMessHighDim()
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, true, false, false, 15, labels);
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	std::string str = "Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
-	std::cout << str << std::endl;
-	std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
+	printf("Found: %lld clusters\n", dp.dp_model->group.local_clusters.size());
+	printf("Time:%lld[seconds]\n", std::chrono::duration_cast<std::chrono::seconds>(end - begin).count());
+
 	foundClusters = (int)dp.dp_model->group.local_clusters.size();
 
 	return foundClusters;
@@ -167,9 +162,8 @@ void module_tests::CheckMemoryLeak()
 		ModelInfo dp = dps.dp_parallel(hyper_params, N, numIters, 1, false, false, false, 15);
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-		std::string str = "Test " + std::to_string(i) + ": Found: " + std::to_string(dp.dp_model->group.local_clusters.size()) + " clusters";
-		std::cout << str << std::endl;
-		std::cout << "Time:" << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[seconds]" << std::endl;
+		printf("Test %ld: Found: %lld clusters\n", i, dp.dp_model->group.local_clusters.size());
+		printf("Time:%lld[seconds]\n", std::chrono::duration_cast<std::chrono::seconds>(end - begin).count());
 	}
 }
 

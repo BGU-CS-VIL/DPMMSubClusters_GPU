@@ -48,7 +48,6 @@ std::shared_ptr<distribution_sample> multinomial_prior::sample_distribution(cons
 	return ms;
 }
 
-
 std::shared_ptr<sufficient_statistics> multinomial_prior::create_sufficient_statistics(const std::shared_ptr<hyperparams>& hyperParams, const std::shared_ptr<hyperparams>& posterior, const MatrixXd& points)
 {
 	return std::make_shared<multinomial_sufficient_statistics>((int)points.cols(), points.rowwise().sum());

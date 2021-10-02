@@ -28,7 +28,4 @@ public:
 	std::unique_ptr<cudaKernel> get_cuda() override;
 	std::shared_ptr<hyperparams> create_hyperparams(Json::Value& hyper_params_value) override;
 	std::shared_ptr<hyperparams> create_hyperparams(DimensionsType d) override;
-
-private:
 };
-

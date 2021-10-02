@@ -14,15 +14,11 @@ public:
 	~multinomial_hyper() {}
 	virtual void serialize(Json::Value& root)
 	{
-		int size = alpha.size();
+		size_t size = alpha.size();
 		for (int i = 0; i < size; i++)
 		{
 			root["alpha"].append(alpha[i]);
 		}
-	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
 	}
 
 	std::shared_ptr<hyperparams> clone() override
@@ -32,4 +28,3 @@ public:
 
 	VectorXd alpha;
 };
-

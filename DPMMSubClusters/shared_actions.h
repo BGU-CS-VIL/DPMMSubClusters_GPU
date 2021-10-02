@@ -23,4 +23,3 @@ protected:
 private:
 	std::shared_ptr<global_params> globalParams;
 };
-

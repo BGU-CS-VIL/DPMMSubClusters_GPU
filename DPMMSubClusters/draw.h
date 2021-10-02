@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <random>
 #include <map>
 #include <vector>

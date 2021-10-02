@@ -106,8 +106,10 @@ namespace DPMMSubClustersTest
 	{
 		std::string strJson = "{\"alpha\":[1.0,2.0]}";
 		Json::Value root;
-		Json::Reader reader;
-		reader.parse(strJson.c_str(), root);
+		Json::CharReaderBuilder builder;
+		std::unique_ptr<Json::CharReader> reader = std::unique_ptr<Json::CharReader>(builder.newCharReader());
+		Json::String errs;
+		bool parsingSuccessful = reader->parse(strJson.c_str(), strJson.c_str() + strJson.size(), &root, &errs);
 
 		multinomial_prior object;
 		std::shared_ptr<hyperparams> resultBase = object.create_hyperparams(root);

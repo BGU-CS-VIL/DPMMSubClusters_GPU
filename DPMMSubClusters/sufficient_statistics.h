@@ -16,19 +16,14 @@ public:
 	{
 		root["N"] = N;
 
-		int size = points_sum.size();
+		size_t size = points_sum.size();
 		double* data = points_sum.data();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["points_sum"].append(data[i]);
 		}
 	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
-	}
 
 	int N;
 	VectorXd points_sum;
-
 };

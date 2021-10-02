@@ -5,11 +5,9 @@ using namespace std;
 #include "distributions_util/dirichlet.h"
 #include "distributions_util/pdflib.hpp"
 #include "prior.h"
-#include "check_time.h"
 
 void shared_actions::sample_cluster_params(std::shared_ptr<splittable_cluster_params>& params, double alpha, bool first)
 {
-	CHECK_TIME("shared_actions::sample_cluster_params", globalParams->use_verbose);
 	std::vector<double> points_count;
 
 	params->cluster_params->distribution = first ? globalParams->pPrior->sample_distribution(params->cluster_params->prior_hyperparams, globalParams->gen, globalParams->cuda) : globalParams->pPrior->sample_distribution(params->cluster_params->posterior_hyperparams, globalParams->gen, globalParams->cuda);
@@ -71,8 +69,6 @@ void shared_actions::create_splittable_from_params(std::shared_ptr<cluster_param
 	scpOut->splittable = false;
 }
 
-
-
 void shared_actions::merge_clusters_to_splittable(std::shared_ptr<splittable_cluster_params>& scpl, std::shared_ptr<cluster_parameters>& cpr, double alpha)
 {
 	globalParams->pPrior->aggregate_suff_stats(scpl->cluster_params->suff_statistics, cpr->suff_statistics, scpl->cluster_params->suff_statistics);
@@ -88,7 +84,6 @@ void shared_actions::merge_clusters_to_splittable(std::shared_ptr<splittable_clu
 	scpl->splittable = false;
 	scpl->logsublikelihood_hist = Logsublikelihood_hist(globalParams->burnout_period + 5, std::make_pair(false, 0));
 }
-
 
 void shared_actions::should_merge(bool& should_merge, std::shared_ptr<cluster_parameters>& cpl, std::shared_ptr<cluster_parameters>& cpr, double alpha, bool bFinal)
 {

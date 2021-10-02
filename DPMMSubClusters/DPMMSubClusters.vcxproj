@@ -133,11 +133,11 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="check_time.h" />
     <ClInclude Include="cnpy\cnpy.h" />
     <ClInclude Include="cudaKernel.cuh" />
     <ClInclude Include="cudaKernel_gaussian.cuh" />
     <ClInclude Include="cudaKernel_multinomial.cuh" />
+    <ClInclude Include="cudaKernel_plan.cuh" />
     <ClInclude Include="data_generators.h" />
     <ClInclude Include="distribution_sample.h" />
     <ClInclude Include="distributions_util\dirichlet.h" />
@@ -169,7 +169,6 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
     <CudaCompile Include="cudaKernel.cu" />
     <CudaCompile Include="cudaKernel_gaussian.cu" />
     <CudaCompile Include="cudaKernel_multinomial.cu" />
-    <ClCompile Include="check_time.cpp" />
     <ClCompile Include="cnpy\cnpy.cpp" />
     <ClCompile Include="IJsonSerializable.cpp" />
     <ClCompile Include="jsoncpp\src\lib_json\json_reader.cpp" />

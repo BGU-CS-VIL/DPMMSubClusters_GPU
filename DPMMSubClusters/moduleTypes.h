@@ -8,4 +8,3 @@ typedef BaseType DimensionsType;
 typedef BaseType PointType;
 typedef BaseType LabelType;
 typedef std::vector<LabelType> LabelsType;
-

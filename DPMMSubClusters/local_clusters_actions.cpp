@@ -10,22 +10,6 @@
 using namespace std;
 #include "distributions_util/pdflib.hpp"
 #include "draw.h"
-// #include <ppl.h>
-#include "check_time.h"
-
-template<typename Func>
-struct lambda_as_visitor_wrapper : Func {
-	lambda_as_visitor_wrapper(const Func& f) : Func(f) {}
-	template<typename S, typename I>
-	void init(const S& v, I i, I j) { return Func::operator()(v, i, j); }
-};
-
-template<typename Mat, typename Func>
-void visit_lambda(const Mat& m, const Func& f)
-{
-	lambda_as_visitor_wrapper<Func> visitor(f);
-	m.visit(visitor);
-}
 
 std::shared_ptr<local_cluster> local_clusters_actions::create_first_local_cluster(local_group &group)
 {
@@ -61,7 +45,6 @@ std::shared_ptr<local_cluster> local_clusters_actions::create_first_local_cluste
 	return cluster;
 }
 
-
 std::shared_ptr<local_cluster> local_clusters_actions::create_outlier_local_cluster(local_group& group, std::shared_ptr<hyperparams>& outlier_params)
 {
 	std::shared_ptr<local_cluster> cluster = std::make_shared<local_cluster>();
@@ -95,22 +78,18 @@ std::shared_ptr<local_cluster> local_clusters_actions::create_outlier_local_clus
 	return cluster;
 }
 
-
 void local_clusters_actions::sample_sub_clusters(local_group& group)
 {
-	CHECK_TIME("local_clusters_actions::sample_sub_clusters", globalParams->use_verbose);
 	globalParams->cuda->create_subclusters_labels((int)globalParams->clusters_vector.size(), globalParams->clusters_vector, (int)group.points.rows());
 }
 				
 void local_clusters_actions::sample_labels(local_group& group, bool bFinal, bool no_more_splits)
 {
-	CHECK_TIME("local_clusters_actions::sample_labels", globalParams->use_verbose);
 	globalParams->cuda->create_clusters_labels((int)globalParams->clusters_vector.size(), globalParams->clusters_vector, globalParams->clusters_weights, bFinal);
 }
 
 void local_clusters_actions::update_splittable_cluster_params(std::shared_ptr<splittable_cluster_params>& splittable_cluser)
 {
-	CHECK_TIME("local_clusters_actions::update_splittable_cluster_params", globalParams->use_verbose);
 	splittable_cluser->cluster_params->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params->prior_hyperparams, splittable_cluser->cluster_params->suff_statistics);
 	splittable_cluser->cluster_params_l->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params_l->prior_hyperparams, splittable_cluser->cluster_params_l->suff_statistics);
 	splittable_cluser->cluster_params_r->posterior_hyperparams = globalParams->pPrior->calc_posterior(splittable_cluser->cluster_params_r->prior_hyperparams, splittable_cluser->cluster_params_r->suff_statistics);
@@ -118,8 +97,6 @@ void local_clusters_actions::update_splittable_cluster_params(std::shared_ptr<sp
 
 std::map<LabelType, std::shared_ptr<thin_suff_stats>> local_clusters_actions::create_suff_stats_dict_worker(MatrixXd& group_pts, std::shared_ptr<hyperparams>& hyper_params, LabelsType& indices)
 {
-	CHECK_TIME("local_clusters_actions::create_suff_stats_dict_worker", globalParams->use_verbose);
-
 	return globalParams->cuda->create_sufficient_statistics(indices, hyper_params, hyper_params);
 }
 
@@ -131,11 +108,9 @@ void local_clusters_actions::update_suff_stats_posterior(local_group &group)
 
 void local_clusters_actions::update_suff_stats_posterior(local_group& group, LabelsType& indices, bool indicesValid)
 {
-	CHECK_TIME("local_clusters_actions::update_suff_stats_posterior", globalParams->use_verbose);
 	std::map<int, std::map<LabelType, std::shared_ptr<thin_suff_stats>>> workers_suff_dict;
 	if (!indicesValid)
 	{
-		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior fill indices", globalParams->use_verbose);
 		indices.resize(group.local_clusters.size());
 		std::iota(std::begin(indices), std::end(indices), 0); // Fill with 0, 1, 2...
 	}
@@ -146,8 +121,6 @@ void local_clusters_actions::update_suff_stats_posterior(local_group& group, Lab
 
 	std::vector<std::vector<std::shared_ptr<thin_suff_stats>>>	suff_stats_vectors(indices.size());
 	{
-		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior loop 1", globalParams->use_verbose);
-
 		std::map<ClusterIndexType, ClusterIndexType> cluster_to_index;
 		for (LabelType i = 0; i < indices.size(); i++)
 		{
@@ -169,7 +142,6 @@ void local_clusters_actions::update_suff_stats_posterior(local_group& group, Lab
 
 	{
 		int sum = 0;
-		CHECK_TIME("local_clusters_actions:: update_suff_stats_posterior loop 2", globalParams->use_verbose);
 		for (LabelType index = 0; index < indices.size(); index++)
 		{
 			if (suff_stats_vectors[index].size() == 0)
@@ -239,9 +211,8 @@ void local_clusters_actions::merge_clusters(local_group &group, ClusterIndexType
 	group.local_clusters[index_r]->cluster_params->cluster_params->suff_statistics->N = 0;
 	group.local_clusters[index_r]->cluster_params->splittable = false;
 }
-
 																											
-void local_clusters_actions::should_split_local(double& should_split, std::shared_ptr<splittable_cluster_params>& cluster_params, double alpha, bool bFinal)
+void local_clusters_actions::should_split_local(int& should_split, std::shared_ptr<splittable_cluster_params>& cluster_params, double alpha, bool bFinal)
 {
 	if (bFinal || cluster_params->cluster_params_l->suff_statistics->N == 0 || cluster_params->cluster_params_r->suff_statistics->N == 0)
 	{
@@ -272,8 +243,7 @@ void local_clusters_actions::should_split_local(double& should_split, std::share
 																													
 void local_clusters_actions::check_and_split(local_group& group, bool bFinal, LabelsType& all_indices)
 {
-	CHECK_TIME("local_clusters_actions::check_and_split", globalParams->use_verbose);
-	std::vector<double> split_arr = std::vector<double>(group.local_clusters.size(), 0);
+	std::vector<int> split_arr = std::vector<int>(group.local_clusters.size(), 0);
 
 	for (ClusterIndexType index = 0; index < group.local_clusters.size(); index++)
 	{
@@ -301,8 +271,6 @@ void local_clusters_actions::check_and_split(local_group& group, bool bFinal, La
 			indices.push_back(i);
 			new_indices.push_back(new_index);
 			split_cluster_local(group, group.local_clusters[i], i, new_index);
-			
-	//		printf("Split: %ld\n", new_index);
 			++new_index;
 		}
 	}
@@ -318,7 +286,6 @@ void local_clusters_actions::check_and_split(local_group& group, bool bFinal, La
 
 void local_clusters_actions::check_and_merge(local_group& group, bool bFinal)
 {
-	CHECK_TIME("local_clusters_actions::check_and_merge", globalParams->use_verbose);
 	bool mergable = false;
 	LabelsType indices;
 	LabelsType new_indices;
@@ -359,55 +326,40 @@ std::vector<double> local_clusters_actions::get_dirichlet_distribution(std::vect
 	return d(*globalParams->gen);
 }
 
-void local_clusters_actions::sample_clusters(local_group &group, bool first)
+void local_clusters_actions::sample_clusters(local_group& group, bool first)
 {
-	CHECK_TIME("local_clusters_actions::sample_clusters", globalParams->use_verbose);
-
 	shared_actions sa(globalParams);
 	std::vector<double> points_count;
 
+	for (ClusterIndexType i = 0; i < group.local_clusters.size(); i++)
 	{
-		CHECK_TIME("local_clusters_actions:: Build sample_cluster_params", globalParams->use_verbose);
-		for (ClusterIndexType i = 0; i < group.local_clusters.size(); i++)
+		if (globalParams->outlier_mod > 0 && i == 1)
 		{
-			if (globalParams->outlier_mod > 0 && i == 1)
-			{
-				continue;
-			}
-			sa.sample_cluster_params(group.local_clusters[i]->cluster_params, group.model_hyperparams.alpha, first);
-			group.local_clusters[i]->points_count = group.local_clusters[i]->cluster_params->cluster_params->suff_statistics->N;
-			points_count.push_back(group.local_clusters[i]->points_count);
-			//printf("Cluster #%ld: count=%ld\n", i, group.local_clusters[i]->points_count);
+			continue;
 		}
+		sa.sample_cluster_params(group.local_clusters[i]->cluster_params, group.model_hyperparams.alpha, first);
+		group.local_clusters[i]->points_count = group.local_clusters[i]->cluster_params->cluster_params->suff_statistics->N;
+		points_count.push_back(group.local_clusters[i]->points_count);
 	}
 
 	points_count.push_back(group.model_hyperparams.alpha);
 
-	std::vector<double> dirichlet;
-	{
-		CHECK_TIME("local_clusters_actions:: get_dirichlet_distribution", globalParams->use_verbose);
-		dirichlet = get_dirichlet_distribution(points_count);
-	}
+	std::vector<double> dirichlet = get_dirichlet_distribution(points_count);
 
 	group.weights.clear();
+	for (ClusterIndexType i = 0; i < dirichlet.size() - 1; ++i)
 	{
-		CHECK_TIME("local_clusters_actions:: Build group.weights", globalParams->use_verbose);
-		for (ClusterIndexType i = 0; i < dirichlet.size() - 1; ++i)
-		{
-			group.weights.push_back(dirichlet[i] * (1 - globalParams->outlier_mod));
-			//printf("Cluster #%ld: weight=%f\n", i, group.weights.back());
-		}
+		group.weights.push_back(dirichlet[i] * (1 - globalParams->outlier_mod));
 	}
+
 	if (globalParams->outlier_mod > 0)
 	{
 		group.weights.insert(group.weights.begin(), globalParams->outlier_mod);
 	}
 }
-
 						
 void local_clusters_actions::create_thin_cluster_params(std::vector<std::shared_ptr<local_cluster>> &clusters, std::vector<std::shared_ptr<thin_cluster_params>> &tcp)
 {
-	CHECK_TIME("local_clusters_actions::create_thin_cluster_params", globalParams->use_verbose);
 	for (ClusterIndexType i = 0; i < clusters.size(); i++)
 	{
 		tcp.push_back(std::make_shared<thin_cluster_params>(clusters[i]->cluster_params->cluster_params->distribution,
@@ -425,22 +377,16 @@ void local_clusters_actions::remove_empty_clusters_worker(std::vector<PointType>
 	for (PointType index = 0; index < pts_count.size(); index++)
 	{
 		sum += pts_count[index];
-		//printf("Cluster #%ld count:%ld\n", index, pts_count[index]);
 		if (pts_count[index] == 0)
 		{
-	//		printf("\n************** remove_empty_clusters_worker %ld******************\n", index);
-
 			globalParams->cuda->remove_empty_clusters_worker(index - removed + 1);
 			++removed;
 		}
-	//	printf("\n************** removed %ld ******************\n", removed);
-
 	}
 }
 
 void local_clusters_actions::remove_empty_clusters(local_group& group)
 {
-	CHECK_TIME("local_clusters_actions::remove_empty_clusters", globalParams->use_verbose);
 	std::vector<std::shared_ptr<local_cluster>> new_vec;
 	std::vector<PointType> pts_count;
 
@@ -470,7 +416,6 @@ void local_clusters_actions::reset_bad_clusters_worker(LabelsType &indices, Matr
 
 void local_clusters_actions::reset_bad_clusters(local_group& group)
 {
-	CHECK_TIME("local_clusters_actions::reset_bad_clusters", globalParams->use_verbose);
 	LabelsType bad_clusters;
 	bad_clusters.reserve(group.local_clusters.size());
 
@@ -491,7 +436,6 @@ void local_clusters_actions::reset_bad_clusters(local_group& group)
 															
 void local_clusters_actions::broadcast_cluster_params(std::vector<std::shared_ptr<thin_cluster_params>>& params_vector, std::vector<double> &weights_vector)
 {
-	CHECK_TIME("local_clusters_actions::broadcast_cluster_params", globalParams->use_verbose);
 	set_global_data(params_vector, weights_vector);
 }											
 
@@ -503,7 +447,6 @@ void local_clusters_actions::set_global_data(const std::vector<std::shared_ptr<t
 																																																									
 void local_clusters_actions::group_step(local_group &group, bool no_more_splits, bool bFinal, bool first)
 {
-	CHECK_TIME("local_clusters_actions::group_step", globalParams->use_verbose);
 	sample_clusters(group, false);
 	std::vector<std::shared_ptr<thin_cluster_params>> tcp;
 	create_thin_cluster_params(group.local_clusters, tcp);

@@ -7,7 +7,6 @@ using namespace std;
 #include "utils.h"
 #include "distributions_util/pdflib.hpp"
 #include "cnpy.h"
-#include "check_time.h"
 
 // We expects the data to be in npy format, return a dict of{ group: items }, each file is a different group
 void utils::load_data_model(std::string fileName, Eigen::MatrixXd& mat_out, bool swapDimension)
@@ -94,7 +93,6 @@ void utils::save_data(std::string fileName, const Eigen::MatrixXd& mat)
 
 double utils::log_multivariate_gamma(double x, long D)
 {
-	CHECK_TIME("utils::log_multivariate_gamma", false);
 	double res = D * (D - 1) / 4.0 * log(EIGEN_PI);
 	for (long d = 1; d <= D; ++d)
 	{
@@ -102,7 +100,6 @@ double utils::log_multivariate_gamma(double x, long D)
 	}
 	return res;
 }
-
 
 template<typename T>
 void utils::data_to_mat(const T& data, Eigen::MatrixXd& mat)
@@ -136,6 +133,6 @@ void utils::data_to_vec(const T& data, std::shared_ptr<LabelsType> &vec)
 {
 	for (int i = 0; i < vec->size(); i++)
 	{
-		(*vec)[i] = data[i];
+		(*vec)[i] = (LabelType)(data[i]);
 	}
 }

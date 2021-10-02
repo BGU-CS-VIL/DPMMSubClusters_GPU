@@ -16,34 +16,29 @@ public:
 		dp_model->serialize(dp_model_val);
 		root["dp_model"] = dp_model_val;
 
-		int size = iter_count.size();
-		for (int i = 0; i < size; i++)
+		size_t size = iter_count.size();
+		for (size_t i = 0; i < size; i++)
 		{
 			root["iter_count"].append(iter_count[i]);
 		}
 
 		size = nmi_score_history.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["nmi_score_history"].append(nmi_score_history[i]);
 		}
 
 		size = likelihood_history.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["likelihood_history"].append(likelihood_history[i]);
 		}
 
 		size = cluster_count_history.size();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["cluster_count_history"].append(cluster_count_history[i]);
 		}
-	}
-
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
 	}
 
 	//	- `dp_model` The DPMM model inferred

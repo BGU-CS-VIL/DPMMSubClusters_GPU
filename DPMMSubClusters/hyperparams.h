@@ -8,5 +8,4 @@ public:
 	virtual std::shared_ptr<hyperparams> clone() = 0;
 	virtual ~hyperparams() {}
 	virtual void serialize(Json::Value& root) = 0;
-	virtual void deserialize(Json::Value& root) = 0;
 };

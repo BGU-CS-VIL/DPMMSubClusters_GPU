@@ -55,7 +55,6 @@ namespace DPMMSubClustersTest
 		mvGaussian->invSigma = MatrixXd(2, 2);
 		mvGaussian->invSigma << 2.0982506, -0.31917322, -0.31917322, 0.44176984;
 		mvGaussian->logdetSigma = 0.19228421;
-		//1.4485339889930742 -0.22034223288786076; 0.0 0.6270718778453257: LLT<MatrixXd, Upper> invChol;
 		localCluster->cluster_params->cluster_params->distribution = mvGaussian;
 		std::shared_ptr<niw_sufficient_statistics> suff_statistics = std::make_shared<niw_sufficient_statistics>();
 		suff_statistics->N = 10;
@@ -76,7 +75,6 @@ namespace DPMMSubClustersTest
 		mvGaussian->invSigma = MatrixXd(2, 2);
 		mvGaussian->invSigma << 2.0982506, -0.31917322, -0.31917322, 0.44176984;
 		mvGaussian->logdetSigma = 0.19228421;
-		//1.4485339889930742 -0.22034223288786076; 0.0 0.6270718778453257: LLT<MatrixXd, Upper> invChol;
 		localCluster->cluster_params->cluster_params_l->distribution = mvGaussian;
 		suff_statistics = std::make_shared<niw_sufficient_statistics>();
 		suff_statistics->N = 5;
@@ -97,7 +95,6 @@ namespace DPMMSubClustersTest
 		mvGaussian->invSigma = MatrixXd(2, 2);
 		mvGaussian->invSigma << 2.0982506, -0.31917322, -0.31917322, 0.44176984;
 		mvGaussian->logdetSigma = 0.19228421;
-		//1.4485339889930742 -0.22034223288786076; 0.0 0.6270718778453257: LLT<MatrixXd, Upper> invChol;
 		localCluster->cluster_params->cluster_params_r->distribution = mvGaussian;
 		suff_statistics = std::make_shared<niw_sufficient_statistics>();
 		suff_statistics->N = 0;
@@ -272,13 +269,13 @@ namespace DPMMSubClustersTest
 		niw_hyperparams niwHyperparams3(6.0, m3, 10.0, psi3);
 		cluster_params->cluster_params_r->posterior_hyperparams = niwHyperparams3.clone();
 
-		double should_split;
+		int should_split;
 		object.should_split_local(should_split, cluster_params, 10.0, false);
 
 		delete prior;
 
 		//log_HR : close to 0.5208818912506104
-		EXPECT_EQ(1.0, should_split);
+		EXPECT_EQ(1, should_split);
 	}
 
 	TEST(local_clusters_actions_test, create_suff_stats_dict_worker)

@@ -22,4 +22,3 @@ private:
 	static void data_to_vec(const T& data, std::shared_ptr<LabelsType> &vec);
 
 };
-

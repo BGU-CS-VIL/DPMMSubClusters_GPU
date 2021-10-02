@@ -12,7 +12,6 @@ using namespace std;
 #include "priors/multinomial_prior.h"
 #include "draw.h"
 #include "utils.h"
-#include "check_time.h"
 #define COMPILE_C
 #include "MIToolbox/MutualInformation.h"
 #include "MIToolbox/Entropy.h"
@@ -28,7 +27,7 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 	globalParams = std::make_shared<global_params>();
 
 	utils::load_data_model(modelDataFileName, globalParams->points);
-	globalParams->init(modelParamsFileName, globalParams->points.rows(), priorType);
+	globalParams->init(modelParamsFileName, (int)(globalParams->points.rows()), priorType);
 }
 
 //
@@ -48,7 +47,6 @@ dp_parallel_sampling_class::dp_parallel_sampling_class(std::string modelDataFile
 //Returns an `dp_parallel_sampling` (e.g.the main data structure) with the configured parameters and data.
 std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(MatrixXd& all_data)
 {
-	CHECK_TIME("dp_parallel_sampling_class::init_model", globalParams->use_verbose);
 	std::shared_ptr<dp_parallel_sampling> dps = std::make_shared<dp_parallel_sampling>();
 
 	dps->group.points = all_data;
@@ -62,7 +60,6 @@ std::shared_ptr<dp_parallel_sampling> dp_parallel_sampling_class::init_model(Mat
 
 	return dps;
 }
-
 
 //Initialize the first clusters in the model, according to the number defined by initial_cluster_count
 void dp_parallel_sampling_class::init_first_clusters(std::shared_ptr<dp_parallel_sampling>& dp_model, ClusterIndexType initial_cluster_count)
@@ -88,7 +85,6 @@ void dp_parallel_sampling_class::init_first_clusters(std::shared_ptr<dp_parallel
 	weights_vector.push_back(1.0);
 	local_clusters_actions.broadcast_cluster_params(tcp, weights_vector);
 }
-
 
 ModelInfo dp_parallel_sampling_class::dp_parallel(
 	std::shared_ptr<hyperparams>& local_hyper_params,
@@ -127,7 +123,6 @@ ModelInfo dp_parallel_sampling_class::dp_parallel_from_file()
 
 ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 {
-	CHECK_TIME("dp_parallel_sampling_class::init_and_run_model", globalParams->use_verbose);
 	std::shared_ptr<dp_parallel_sampling> dp_model = init_model(all_data);
 
 	init_first_clusters(dp_model, globalParams->initial_clusters);
@@ -136,7 +131,6 @@ ModelInfo dp_parallel_sampling_class::init_and_run_model(MatrixXd& all_data)
 
 ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_sampling>& dp_model, int first_iter, const char* model_params, std::chrono::steady_clock::time_point prev_time)
 {
-	CHECK_TIME("dp_parallel_sampling_class::run_model", globalParams->use_verbose);
 	ModelInfo	modelInfo;
 	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 	modelInfo.dp_model = dp_model;
@@ -144,8 +138,6 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 
 	for (int i = first_iter; i <= globalParams->iterations; ++i)
 	{
-		CHECK_TIME("Iteration #" + std::to_string(i), globalParams->use_verbose);
-
 		bool final = false;
 		bool no_more_splits = false;
 		if (i >= globalParams->iterations - globalParams->argmax_sample_stop) //We assume the cluters k has been setteled by now, and a low probability random split can do dmg
@@ -186,7 +178,6 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 				//NMI = -2 * I(X;Y)/(H(X)+H(Y))
 				modelInfo.nmi_score_history.push_back(2 * I_X_Y / (H_X + H_Y));
 			}
-//			printf("Iteration: %ld || Clusters count: %ld\n", i, modelInfo.cluster_count_history.back());
 			printf("Iteration: %d || Clusters count: %d || Log posterior: %f || NMI score: %f || Iter Time: %f  || Total time: %f\n",
 				i,
 				modelInfo.cluster_count_history.back(),
@@ -203,14 +194,12 @@ ModelInfo dp_parallel_sampling_class::run_model(std::shared_ptr<dp_parallel_samp
 		if (i % globalParams->model_save_interval == 0 && globalParams->should_save_model)
 		{
 			printf("Saving Model:\n");
-			//TODO - print time @time
 			long long time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start_time).count();
 			save_model(modelInfo.dp_model, globalParams->save_path, globalParams->save_file_prefix, i, time, model_params);
 		}
 	}
-
-//	globalParams->clusterInfos.print();
 	
+	//If we don't care how we classified at the end the labels we can remove this line
 	globalParams->cuda->get_labels(modelInfo.labels);
 
 	return modelInfo;
@@ -226,10 +215,8 @@ void dp_parallel_sampling_class::save_model(std::shared_ptr<dp_parallel_sampling
 	myfile.close();
 }
 
-
 double dp_parallel_sampling_class::calculate_posterior(std::shared_ptr<dp_parallel_sampling>& model)
 {
-	//TODO - should be logabsgamma <= abs
 	double log_posterior = r8_gamma_log(model->model_hyperparams.alpha) - r8_gamma_log(model->group.points.cols() + model->model_hyperparams.alpha);
 	for (ClusterIndexType i = 0; i < model->group.local_clusters.size(); ++i)
 	{

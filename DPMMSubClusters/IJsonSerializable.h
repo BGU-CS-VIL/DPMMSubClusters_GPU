@@ -5,8 +5,7 @@
 class IJsonSerializable
 {
 public:
-	virtual ~IJsonSerializable(void) {};
+	virtual ~IJsonSerializable() {};
 	virtual void serialize(Json::Value& root) = 0;
-	virtual void deserialize(Json::Value& root) = 0;
 };
 

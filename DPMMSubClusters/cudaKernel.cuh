@@ -137,8 +137,6 @@ protected:
 	void sum_rowwise(double* d_A, double* d_B, int rows, int cols, cudaStream_t& stream);
 };
 
-
-
 #define IDX2C(i,j,ld) ((j)*(ld) + (i))
 #define runCuda(ans) { cudaKernel::checkCUDAError((ans), __FILE__, __LINE__); }
 

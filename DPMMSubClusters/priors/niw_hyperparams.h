@@ -16,8 +16,8 @@ public:
 	{
 		root["k"] = k;
 
-		int size = m.size();
-		for (int i = 0; i < size; i++)
+		size_t size = m.size();
+		for (size_t i = 0; i < size; i++)
 		{
 			root["m"].append(m[i]);
 		}
@@ -26,14 +26,10 @@ public:
 
 		size = psi.size();
 		double* data = psi.data();
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			root["psi"].append(data[i]);
 		}
-	}
-	virtual void deserialize(Json::Value& root)
-	{
-		//TODO
 	}
 
 	std::shared_ptr<hyperparams> clone() override
