@@ -1,3 +1,10 @@
+/*
+    vcflib C++ library for parsing and manipulating VCF files
+    Copyright © 2010-2020 Erik Garrison
+    Copyright © 2020      Pjotr Prins
+    This software is published under the MIT License. See the LICENSE file.
+*/
+
 double i4_binomial_pdf ( int n, double p, int k );
 int i4_binomial_sample ( int n, double pp );
 int i4_max ( int i1, int i2 );

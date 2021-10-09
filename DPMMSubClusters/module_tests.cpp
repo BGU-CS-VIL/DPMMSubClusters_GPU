@@ -31,7 +31,6 @@ ClusterIndexType module_tests::RandomMess()
 	int numIters = 100;
 
 	data_generators.generate_gaussian_data(N, D, numClusters, 100.0, x, labels, tmean, tcov);
-	draw::draw_labels("Expected", x, labels);
 
 	std::shared_ptr<hyperparams> hyper_params = std::make_shared<niw_hyperparams>(1.0, VectorXd::Zero(D), 5, MatrixXd::Identity(D, D));
 
