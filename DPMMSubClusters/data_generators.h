@@ -1,5 +1,5 @@
 #pragma once
-
+#include <memory>
 using namespace std;
 #include "Eigen/Dense"
 using namespace Eigen;
