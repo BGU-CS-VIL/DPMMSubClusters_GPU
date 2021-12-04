@@ -80,8 +80,6 @@ include_directories(${PRIORS_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 
 add_executable(DPMMSubClusters
-  ${CMAKE_SOURCE_DIR}/check_time.cpp
-  ${CMAKE_SOURCE_DIR}/check_time.h
   ${CMAKE_SOURCE_DIR}/cudaKernel.cu
   ${CMAKE_SOURCE_DIR}/cudaKernel.cuh
   ${CMAKE_SOURCE_DIR}/cudaKernel_gaussian.cu
@@ -187,16 +185,6 @@ set_target_properties( DPMMSubClusters
 
 if (WIN32)
     target_link_libraries(DPMMSubClusters ${CMAKE_CUBLAS_DIR}/cublas.lib)
-    
-    add_custom_command(TARGET DPMMSubClusters POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll
-        ${CMAKE_BINARY_DIR}/Release)
-
-    add_custom_command(TARGET DPMMSubClusters POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll
-        ${CMAKE_BINARY_DIR}/Debug)
 endif(WIN32)
 
 if (UNIX)
@@ -211,5 +199,9 @@ if (UNIX)
     SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_OPEN_MP_FLAGS}")
 endif(UNIX)
 
+if (WIN32)
+    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
+    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
+endif(WIN32)
 message(STATUS "CMAKE_BINARY_DIR  = ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY  = ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
