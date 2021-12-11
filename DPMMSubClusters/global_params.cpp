@@ -97,6 +97,11 @@ void global_params::init_prior(prior_type priorType)
 void global_params::init_random(unsigned long long randomSeed)
 {
 	random_seed = randomSeed;//When nothing, a random seed will be used.
+	if (random_seed == 0)
+	{
+		srand((unsigned)time(NULL));
+		random_seed = rand();
+	}
 	gen = std::make_unique<std::mt19937>((unsigned long)random_seed);
 }
 

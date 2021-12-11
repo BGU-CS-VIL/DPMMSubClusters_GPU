@@ -68,11 +68,15 @@ int main(int argc, char** argv)
 			size_t size = dp.labels->size();
 			double* data = NULL;
 
-			size = dp.nmi_score_history.size();
-			data = dp.nmi_score_history.data();
+			//Below can be enabled if needed. But it might take time to save it to the file.
 			for (size_t i = 0; i < size; i++)
 			{
-				root["nmi_score_history"].append(data[i]);
+				root["labels"].append((*dp.labels)[i]);
+			}
+			size = dp.dp_model->group.weights.size();
+			for (int i = 0; i < size; i++)
+			{
+				root["weights"].append(dp.dp_model->group.weights[i]);
 			}
 
 			size = dp.iter_count.size();
