@@ -1,19 +1,26 @@
-if (WIN32)
-    set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin/nvcc.exe")
-    set(CMAKE_CUBLAS_DIR "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/lib/x64")
-endif (WIN32)
-
-if (UNIX)
-    set(CMAKE_CUDA_COMPILER "/usr/local/cuda-11.3/bin/nvcc")
-    set(CMAKE_CUBLAS_DIR "/usr/local/cuda-11.3/lib64")
-endif (UNIX)
-
 set(PROJECT_NAME "DPMMSubClusters")
 set(CMAKE_PROJECT_NAME ${PROJECT_NAME})
+
 cmake_policy(SET CMP0048 NEW)
 project(${CMAKE_PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX CUDA C)
 
 cmake_minimum_required(VERSION 3.8)
+
+ message(STATUS "CUDA_PATH: $ENV{CUDA_PATH}")
+
+if (DEFINED ENV{CUDA_PATH})
+    if (WIN32)
+        set(CMAKE_CUDA_COMPILER $ENV{CUDA_PATH}/bin/nvcc.exe)
+        set(CMAKE_CUBLAS_DIR $ENV{CUDA_PATH}/lib/x64)
+    endif (WIN32)
+
+    if (UNIX)
+        set(CMAKE_CUDA_COMPILER $ENV{CUDA_PATH}/bin/nvcc)
+        set(CMAKE_CUBLAS_DIR $ENV{CUDA_PATH}/lib64)
+    endif (UNIX)
+else()
+    message(STATUS "Missing Enviroment Variable: CUDA_PATH")
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -200,8 +207,8 @@ if (UNIX)
 endif(UNIX)
 
 if (WIN32)
-    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
-    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
+    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    file(COPY ${CMAKE_SOURCE_DIR}/install/opencv/x64/vc16/bin/opencv_world452d.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif(WIN32)
 message(STATUS "CMAKE_BINARY_DIR  = ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY  = ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
