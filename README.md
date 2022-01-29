@@ -1,7 +1,7 @@
 # DPMMSubClusters_GPU
 This is a fast GPU implenentation, using CUDA/C++, for sampling-based inference in a Dirichlet Process Mixture Model (DPMM). 
 An optional [Python wrapper](https://github.com/BGU-CS-VIL/dpmmpython) is also available. 
-This package is Cross Platforms (supporting both Windows &amp; Linux).
+This package is Cross Platform (supporting both Windows &amp; Linux).
 
 <br>
 <p align="center">
