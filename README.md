@@ -1,6 +1,8 @@
 # DPMMSubClusters_GPU
-This is a C++ SW package for sampling models with utilizing the power of GPU hardware for sampling and calculating sufficient statistics.
-This is the code repository for the *CUDA/C++* package (with an optional [Python wrapper](https://github.com/BGU-CS-VIL/dpmmpython)). This package performs DPMM Sub Clusters C++ on GPU Cross Platforms (Windows &amp; Linux).
+This is a fast GPU implenentation, using CUDA/C++, for sampling-based inference in a Dirichlet Process Mixture Model (DPMM). 
+An optional [Python wrapper](https://github.com/BGU-CS-VIL/dpmmpython) is also available. 
+This package is Cross Platform (supporting both Windows &amp; Linux). The underlying algorithm is the DPMM sampler proposed by Chang and Fisher III, NIPS 2013.
+This repository, together with its [CPU counterpart](https://github.com/BGU-CS-VIL/DPMMSubClusters.jl), is part of our upcoming paper "CPU- and GPU-based Distributed Sampling in Dirichlet Process Mixtures for Large-scale Analysis" (authors: Dinari*, Zamir*, Fisher III, and Freifeld). 
 
 <br>
 <p align="center">
@@ -113,4 +115,4 @@ The Json file containing the model parameters can contain many parameters that c
 
 For any questions: dinari@post.bgu.ac.il or razzam@post.bgu.ac.il
 
-Contributions, feature requests, suggestion etc.. are welcomed.
+Contributions, feature requests, suggestions etc.. are welcome.
