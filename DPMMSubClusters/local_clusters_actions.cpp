@@ -322,8 +322,20 @@ void local_clusters_actions::check_and_merge(local_group& group, bool bFinal)
 
 std::vector<double> local_clusters_actions::get_dirichlet_distribution(std::vector<double> &points_count)
 {
-	dirichlet_distribution<std::mt19937> d(points_count);
-	return d(*globalParams->gen);
+	//dirichlet_distribution in DEBUG checks for alpha bigger than 0. 
+	//So in this case we can skip on it.
+	if (points_count.size() == 2 && points_count[0] == 0.0)
+	{
+		std::vector<double> result;
+		result.push_back(0);
+		result.push_back(1);
+		return result;
+	}
+	else
+	{
+		dirichlet_distribution<std::mt19937> d(points_count);
+		return d(*globalParams->gen);
+	}
 }
 
 void local_clusters_actions::sample_clusters(local_group& group, bool first)

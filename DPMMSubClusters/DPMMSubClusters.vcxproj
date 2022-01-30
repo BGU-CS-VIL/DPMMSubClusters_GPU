@@ -57,7 +57,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>./;$(CUDA_PATH)/include;$(CUDA_PATH_V11_2)/include;cuda_helper;priors;eigen-3.3.9;eigen-3.3.9/Eigen;dislin/win;dislin;gcem/include;stats/include;zlib;zlib/out/build/x64-Release;install/opencv/include;cnpy;MIToolbox/include;jsoncpp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -74,6 +73,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
+      <PreprocessorDefinitions>WIN32;DEBUG_OPENCV;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <OpenMPSupport Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OpenMPSupport>
@@ -102,6 +102,7 @@ xcopy /y "$(ProjectDir)zlib/out/build/x64-Release\zlib.dll" "$(TargetDir)"</Comm
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
+      <PreprocessorDefinitions>WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Full</Optimization>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
