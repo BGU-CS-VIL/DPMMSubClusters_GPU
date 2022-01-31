@@ -39,11 +39,16 @@ The following dependencies are required:
 For Windows for the CUDA/C++ package both of the build options below are viable. For Linux use Option 2.
 - Option 1: DPMMSubClusters.sln - Solution file for Visual Studio 2019
 - Option 2: CMakeLists.txt
-    1. Open the CMakeLists.txt file (located in DPMMSubClusters_GPU/DPMMSubClusters directory).
-    2. Run in the terminal: mkdir build
-    3. Build:
-        - Windows: cmake --build build --config Release --target ALL_BUILD
-        - Linux: cmake --build build --config Release --target all
+    1. Run in the terminal: 
+        ```
+        cd <PATH_FOR_DPMMSubClusters_DIRECTORY>
+        mkdir build
+        cd build
+        cmake -S ../
+        ```        
+    2. Build:
+        - Windows: cmake --build . --config Release --target ALL_BUILD
+        - Linux: cmake --build . --config Release --target all
 
 
 ## Usage
