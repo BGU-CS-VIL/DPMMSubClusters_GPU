@@ -24,12 +24,15 @@ The following dependencies are required:
 2. git clone https://github.com/BGU-CS-VIL/DPMMSubClusters_GPU
 3. Add Environment Variables:
     #### On Linux:
-    1. Add "DPMM_GPU_FULL_PATH_TO_PACKAGE_IN_LINUX" with the value of the path to binary of the package DPMMSubClusters_GPU.
-    2. Add "CUDA_VERSION" with the value of the version of your CUDA installation (e.g., 11.5).
+    1. Add "CUDA_VERSION" with the value of the version of your CUDA installation (e.g., 11.5).
+    2. Make sure that CUDA_PATH exist. If it is missing add it with a path to CUDA (e.g., export CUDA_PATH=/usr/local/cuda-11.5/).
+    3. Make sure that the relevant CUDA paths are included in $PATH and $LD_LIBRARY_PATH (e.g., export PATH=/usr/local/cuda-11.5/bin:$PATH, export LD_LIBRARY_PATH=/usr/local/cuda-
+11.5/lib64:$LD_LIBRARY_PATH).
     #### On Windows:
-    1. Add "DPMM_GPU_FULL_PATH_TO_PACKAGE_IN_WINDOWS" with the value of the path to the exe for the package DPMMSubClusters_GPU.
-    2. Add "CUDA_VERSION" with the value of the version of your CUDA installation (e.g.,11.5).
-4. For Windows only (optional, used on for debugging purposes): Install OpenCV
+    1. Add "CUDA_VERSION" with the value of the version of your CUDA installation (e.g., 11.5).
+    2. Make sure that CUDA_PATH exists. If it is missing add it with a path to CUDA (e.g., C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5)
+4. Install cmake if necessary. 
+5. For Windows only (optional, used on for debugging purposes): Install OpenCV
     1. run Git Bash
     2. cd <YOUR_PATH_TO_DPMMSubClusters_GPU>/DPMMSubClusters
     3. ./installOCV.sh
