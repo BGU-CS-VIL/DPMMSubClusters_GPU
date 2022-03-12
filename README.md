@@ -54,6 +54,11 @@ For Windows for the CUDA/C++ package both of the build options below are viable.
         - Linux: cmake --build . --config Release --target all
 
 
+## Precompiled Binaries -
+[Windows](https://drive.google.com/file/d/1gQE6BWSseOEBW3xFTuahXJPIZI16uwj7/view?usp=sharing) <br>
+[Linux](https://drive.google.com/file/d/1EWBqZG2jv4yH_O-BIwvDdn6gTJbF4mU4/view?usp=sharing)<br>
+Both binaries were compiled with CUDA 11.2, note that you still need to have cuda and cudnn installed in order to use these.
+
 ## Usage
 
 The package currently contains priors for handling *Multinomial* or *Gaussian* mixture models.
