@@ -176,7 +176,7 @@ if(NOT EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h AND EXISTS ${ZLIB_INCLUDE_DIR}/zconf.h
 endif()
 
 if (WIN32)
-    target_link_libraries(DPMMSubClusters "${CMAKE_SOURCE_DIR}/zlib/out/build/x64-Release/zlib.lib")
+    target_link_libraries(DPMMSubClusters "${CMAKE_SOURCE_DIR}/zlib/out/build/x64-Release/zlibstatic.lib")
 endif(WIN32)
 
 if (UNIX)
