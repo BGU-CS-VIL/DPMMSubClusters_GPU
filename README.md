@@ -129,3 +129,15 @@ The Json file containing the model parameters can contain many parameters that c
 For any questions: dinari@post.bgu.ac.il or razzam@post.bgu.ac.il
 
 Contributions, feature requests, suggestions etc.. are welcome.
+
+
+If you use this code for your work, please cite the following work:
+
+```
+@article{dinari2022cpu,
+  title={CPU-and GPU-based Distributed Sampling in Dirichlet Process Mixtures for Large-scale Analysis},
+  author={Dinari, Or and Zamir, Raz and Fisher III, John W and Freifeld, Oren},
+  journal={arXiv preprint arXiv:2204.08988},
+  year={2022}
+}
+```
