@@ -900,7 +900,8 @@ std::map<LabelType, std::shared_ptr<thin_suff_stats>> cudaKernel::create_suffici
 	{
 		int pointsRows = gpuCapabilities[plan[index].deviceId].pointsRows;
 		plan[index].tss = std::make_shared<thin_suff_stats>();
-
+		cudaSetDevice(plan[index].deviceId);
+		
 		runCuda(cudaStreamSynchronize(plan[index].stream));
 
 		runCuda(cudaStreamCreate(&(plan[index].stream1)));
@@ -1319,6 +1320,8 @@ void cudaKernel::create_subclusters_labels(int numClusters, std::vector<std::sha
 	{
 		//Find indices
 		//Can be used on any GPU
+		cudaSetDevice(plan[i].deviceId);
+
 		sample_sub_clusters_worker(i + 1, plan[i].d_indices, plan[i].indicesSize, plan[i].stream, plan[i].deviceId);
 
 		//Return the likelihood in r vector.
